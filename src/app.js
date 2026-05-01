@@ -2,7 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const expressLayouts = require('express-ejs-layouts');
 const session = require('express-session');
-const FileStore = require('session-file-store')(session);
+const MemoryStore = require('memorystore')(session);
 const methodOverride = require('method-override');
 const morgan = require('morgan');
 const helmet = require('helmet');
@@ -45,7 +45,7 @@ const dataDir = path.resolve('./data');
 if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
 
 app.use(session({
-  store: new FileStore({ path: path.join(dataDir, 'sessions'), retries: 1, logFn: () => {} }),
+  store: new MemoryStore({ checkPeriod: 86400000 }),
   secret: process.env.SESSION_SECRET || 'cotou-secret',
   resave: false,
   saveUninitialized: false,
