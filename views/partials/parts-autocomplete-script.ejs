@@ -1,0 +1,31 @@
+function initAutocomplete(codeInput, nameInput) {
+  if (!codeInput || !nameInput) return;
+  const list = nameInput.parentElement.querySelector('.autocomplete-list');
+
+  async function search(q) {
+    if (!q || q.length < 1) { list.classList.add('d-none'); return; }
+    try {
+      const r = await fetch(`/api/pecas?q=${encodeURIComponent(q)}`);
+      const items = await r.json();
+      if (!items.length) { list.classList.add('d-none'); return; }
+      list.innerHTML = items.map(i =>
+        `<div class="autocomplete-item" data-code="${i.code}" data-name="${i.name}">
+           <strong>${i.code}</strong> — ${i.name}${i.default_price ? ` (R$ ${parseFloat(i.default_price).toFixed(2)})` : ''}
+         </div>`
+      ).join('');
+      list.classList.remove('d-none');
+      list.querySelectorAll('.autocomplete-item').forEach(el => {
+        el.addEventListener('click', () => {
+          codeInput.value = el.dataset.code;
+          nameInput.value = el.dataset.name;
+          list.classList.add('d-none');
+        });
+      });
+    } catch (_) { list.classList.add('d-none'); }
+  }
+
+  let timer;
+  nameInput.addEventListener('input', () => { clearTimeout(timer); timer = setTimeout(() => search(nameInput.value), 250); });
+  codeInput.addEventListener('input', () => { clearTimeout(timer); timer = setTimeout(() => search(codeInput.value), 250); });
+  document.addEventListener('click', e => { if (!nameInput.closest('.position-relative').contains(e.target)) list.classList.add('d-none'); });
+}

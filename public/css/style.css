@@ -1,0 +1,79 @@
+:root {
+  --primary: #0d6efd;
+}
+
+body {
+  font-size: 0.92rem;
+}
+
+.navbar-brand {
+  font-size: 1.3rem;
+  letter-spacing: 0.05em;
+}
+
+.notif-unread {
+  background-color: #eef4ff !important;
+  border-left: 3px solid var(--primary);
+}
+
+.notif-dropdown {
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.card {
+  border-radius: 0.75rem;
+}
+
+.card-header {
+  border-radius: 0.75rem 0.75rem 0 0 !important;
+  padding: 0.75rem 1.25rem;
+}
+
+.table th {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #666;
+}
+
+.badge {
+  font-size: 0.75rem;
+}
+
+.autocomplete-list {
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  border-radius: 0 0 6px 6px;
+}
+
+.autocomplete-item {
+  padding: 6px 12px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.autocomplete-item:hover {
+  background: #f0f4ff;
+}
+
+.spin {
+  animation: spin 1s linear infinite;
+  display: inline-block;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.status-pendente   { background: #ffc107; color:#000; }
+.status-em_cotacao { background: #0dcaf0; color:#000; }
+.status-cotado     { background: #198754; color:#fff; }
+.status-peca_chegou{ background: #0d6efd; color:#fff; }
+.status-cancelado  { background: #6c757d; color:#fff; }
+
+@media (max-width: 768px) {
+  .container-fluid { padding: 1rem 0.75rem; }
+  .table { font-size: 0.8rem; }
+}

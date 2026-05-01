@@ -1,0 +1,8 @@
+<% const cfg = {
+  pendente:    { label: 'Aguardando',    cls: 'bg-warning text-dark' },
+  em_cotacao:  { label: 'Em Cotação',   cls: 'bg-info text-dark'    },
+  cotado:      { label: 'Cotado',        cls: 'bg-success'           },
+  peca_chegou: { label: 'Peça Chegou',  cls: 'bg-primary'           },
+  cancelado:   { label: 'Cancelado',     cls: 'bg-secondary'         }
+}[status] || { label: status, cls: 'bg-secondary' }; %>
+<span class="badge <%= cfg.cls %>"><%= cfg.label %></span>

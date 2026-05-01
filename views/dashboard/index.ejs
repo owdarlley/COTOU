@@ -1,0 +1,66 @@
+<div class="row g-4 mb-4">
+  <div class="col-12">
+    <h4 class="fw-bold"><i class="bi bi-speedometer2 me-2 text-primary"></i>Painel — Olá, <%= currentUser.name %>!</h4>
+  </div>
+
+  <% const stats = [
+    { label: 'Aguardando', key: 'pendente',    icon: 'clock',          color: 'warning' },
+    { label: 'Em Cotação', key: 'em_cotacao',  icon: 'search',         color: 'info'    },
+    { label: 'Cotado',     key: 'cotado',      icon: 'check-circle',   color: 'success' },
+    { label: 'Peça Chegou',key: 'peca_chegou', icon: 'box-arrow-in-down', color: 'primary' }
+  ]; %>
+
+  <% stats.forEach(s => { %>
+  <div class="col-6 col-md-3">
+    <a href="/cotacoes?status=<%= s.key %>" class="text-decoration-none">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-body text-center py-4">
+          <i class="bi bi-<%= s.icon %> fs-1 text-<%= s.color %>"></i>
+          <div class="display-6 fw-bold mt-2"><%= statusMap[s.key] || 0 %></div>
+          <div class="text-muted small"><%= s.label %></div>
+        </div>
+      </div>
+    </a>
+  </div>
+  <% }) %>
+</div>
+
+<div class="card border-0 shadow-sm">
+  <div class="card-header bg-white d-flex justify-content-between align-items-center">
+    <span class="fw-semibold"><i class="bi bi-clock-history me-2"></i>Cotações Recentes</span>
+    <a href="/cotacoes" class="btn btn-sm btn-outline-primary">Ver todas</a>
+  </div>
+  <div class="card-body p-0">
+    <% if (recentQuotations.length === 0) { %>
+    <div class="text-center py-5 text-muted">
+      <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+      Nenhuma cotação ainda.
+      <% if (currentUser.role === 'vendas' || currentUser.role === 'admin') { %>
+      <br><a href="/cotacoes/nova" class="btn btn-primary mt-3"><i class="bi bi-plus-circle me-1"></i>Criar primeira cotação</a>
+      <% } %>
+    </div>
+    <% } else { %>
+    <div class="table-responsive">
+      <table class="table table-hover mb-0">
+        <thead class="table-light">
+          <tr>
+            <th>Nº</th><th>Cliente</th><th>Veículo</th><th>Status</th><th>Data</th><th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <% recentQuotations.forEach(q => { %>
+          <tr>
+            <td><a href="/cotacoes/<%= q.id %>" class="fw-semibold text-decoration-none">#<%= q.quote_number %></a></td>
+            <td><%= q.customer_name %></td>
+            <td><%= q.make || '' %> <%= q.model || '' %> <span class="text-muted small"><%= q.license_plate %></span></td>
+            <td><%- include('../partials/status-badge', { status: q.status }) %></td>
+            <td class="text-muted small"><%= new Date(q.created_at).toLocaleDateString('pt-BR') %></td>
+            <td><a href="/cotacoes/<%= q.id %>" class="btn btn-sm btn-outline-secondary"><i class="bi bi-eye"></i></a></td>
+          </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+    <% } %>
+  </div>
+</div>

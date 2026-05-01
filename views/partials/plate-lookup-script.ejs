@@ -1,0 +1,36 @@
+document.getElementById('btn-buscar-placa').addEventListener('click', async () => {
+  const plate = document.getElementById('vehicle_plate').value.trim();
+  if (!plate || plate.length < 7) return;
+  const icon = document.getElementById('icon-placa');
+  const status = document.getElementById('placa-status');
+  icon.className = 'bi bi-arrow-clockwise spin';
+  status.textContent = 'Buscando...';
+  status.className = 'form-text text-muted';
+  try {
+    const r = await fetch(`/api/placa/${encodeURIComponent(plate)}`);
+    const json = await r.json();
+    if (json.ok && json.data) {
+      const d = json.data;
+      if (d.make) document.getElementById('vehicle_make').value = d.make;
+      if (d.model) document.getElementById('vehicle_model').value = d.model;
+      if (d.year_model) document.getElementById('vehicle_year_model').value = d.year_model;
+      if (d.year_manuf) document.getElementById('vehicle_year_manuf').value = d.year_manuf;
+      if (d.color) document.getElementById('vehicle_color').value = d.color;
+      if (d.fuel) document.getElementById('vehicle_fuel').value = d.fuel;
+      if (d.chassis) document.getElementById('vehicle_chassis').value = d.chassis;
+      status.textContent = '✓ Dados preenchidos automaticamente';
+      status.className = 'form-text text-success';
+    } else {
+      status.textContent = json.message || 'Placa não encontrada. Preencha manualmente.';
+      status.className = 'form-text text-warning';
+    }
+  } catch (e) {
+    status.textContent = 'Erro na consulta. Preencha manualmente.';
+    status.className = 'form-text text-danger';
+  }
+  icon.className = 'bi bi-search';
+});
+
+document.getElementById('vehicle_plate').addEventListener('keydown', e => {
+  if (e.key === 'Enter') { e.preventDefault(); document.getElementById('btn-buscar-placa').click(); }
+});

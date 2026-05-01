@@ -1,0 +1,105 @@
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h4 class="fw-bold mb-0"><i class="bi bi-box-seam me-2 text-primary"></i>Catálogo de Peças</h4>
+  <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalNovaPeca">
+    <i class="bi bi-plus-lg me-1"></i>Nova Peça
+  </button>
+</div>
+
+<div class="card border-0 shadow-sm mb-4">
+  <div class="card-body">
+    <form class="row g-2" method="GET">
+      <div class="col-md-6">
+        <input type="text" name="q" class="form-control" placeholder="Buscar por código ou nome..." value="<%= q %>">
+      </div>
+      <div class="col-auto">
+        <button type="submit" class="btn btn-outline-primary"><i class="bi bi-search me-1"></i>Buscar</button>
+        <% if (q) { %><a href="/pecas" class="btn btn-outline-secondary ms-1">Limpar</a><% } %>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="card border-0 shadow-sm">
+  <div class="card-body p-0">
+    <% if (items.length === 0) { %>
+    <div class="text-center py-5 text-muted">
+      <i class="bi bi-box fs-1 d-block mb-2"></i>Nenhuma peça encontrada.
+    </div>
+    <% } else { %>
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead class="table-light">
+          <tr><th>Código</th><th>Nome</th><th>Descrição</th><th>Preço Ref.</th><th style="width:120px">Ações</th></tr>
+        </thead>
+        <tbody>
+          <% items.forEach(p => { %>
+          <tr>
+            <td><span class="badge bg-secondary"><%= p.code %></span></td>
+            <td class="fw-semibold"><%= p.name %></td>
+            <td class="text-muted small"><%= p.description || '—' %></td>
+            <td><%= p.default_price ? 'R$ ' + parseFloat(p.default_price).toFixed(2) : '—' %></td>
+            <td>
+              <button class="btn btn-sm btn-outline-primary me-1" data-bs-toggle="modal" data-bs-target="#modalEditar-<%= p.id %>">
+                <i class="bi bi-pencil"></i>
+              </button>
+              <form action="/pecas/<%= p.id %>/excluir" method="POST" class="d-inline"
+                onsubmit="return confirm('Excluir esta peça do catálogo?')">
+                <button type="submit" class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
+              </form>
+            </td>
+          </tr>
+          <!-- Modal editar -->
+          <div class="modal fade" id="modalEditar-<%= p.id %>" tabindex="-1">
+            <div class="modal-dialog"><div class="modal-content">
+              <form action="/pecas/<%= p.id %>/editar" method="POST">
+                <div class="modal-header"><h5 class="modal-title">Editar Peça</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+                <div class="modal-body">
+                  <div class="mb-3"><label class="form-label">Código</label><input type="text" name="code" class="form-control" value="<%= p.code %>" required></div>
+                  <div class="mb-3"><label class="form-label">Nome</label><input type="text" name="name" class="form-control" value="<%= p.name %>" required></div>
+                  <div class="mb-3"><label class="form-label">Descrição</label><textarea name="description" class="form-control" rows="2"><%= p.description || '' %></textarea></div>
+                  <div class="mb-3"><label class="form-label">Preço de Referência</label><input type="number" name="default_price" class="form-control" value="<%= p.default_price || '' %>" step="0.01"></div>
+                </div>
+                <div class="modal-footer">
+                  <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                  <button type="submit" class="btn btn-primary">Salvar</button>
+                </div>
+              </form>
+            </div></div>
+          </div>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+    <% if (pages > 1) { %>
+    <div class="d-flex justify-content-center py-3">
+      <nav><ul class="pagination pagination-sm mb-0">
+        <% for (let p2 = 1; p2 <= pages; p2++) { %>
+        <li class="page-item <%= p2 === page ? 'active' : '' %>">
+          <a class="page-link" href="?q=<%= q %>&page=<%= p2 %>"><%= p2 %></a>
+        </li>
+        <% } %>
+      </ul></nav>
+    </div>
+    <% } %>
+    <% } %>
+  </div>
+</div>
+
+<!-- Modal Nova Peça -->
+<div class="modal fade" id="modalNovaPeca" tabindex="-1">
+  <div class="modal-dialog"><div class="modal-content">
+    <form action="/pecas" method="POST">
+      <div class="modal-header"><h5 class="modal-title">Nova Peça</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+      <div class="modal-body">
+        <div class="mb-3"><label class="form-label">Código <span class="text-danger">*</span></label><input type="text" name="code" class="form-control text-uppercase" required placeholder="Ex: FILTRO-AR-001"></div>
+        <div class="mb-3"><label class="form-label">Nome <span class="text-danger">*</span></label><input type="text" name="name" class="form-control" required placeholder="Ex: Filtro de Ar"></div>
+        <div class="mb-3"><label class="form-label">Descrição</label><textarea name="description" class="form-control" rows="2"></textarea></div>
+        <div class="mb-3"><label class="form-label">Preço de Referência (R$)</label><input type="number" name="default_price" class="form-control" step="0.01" min="0"></div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="submit" class="btn btn-primary">Adicionar</button>
+      </div>
+    </form>
+  </div></div>
+</div>

@@ -1,0 +1,51 @@
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h4 class="fw-bold mb-0"><i class="bi bi-bell me-2 text-primary"></i>Notificações</h4>
+  <form action="/notificacoes/todas-lidas" method="POST">
+    <button type="submit" class="btn btn-outline-secondary btn-sm">
+      <i class="bi bi-check-all me-1"></i>Marcar todas como lidas
+    </button>
+  </form>
+</div>
+
+<div class="card border-0 shadow-sm">
+  <div class="card-body p-0">
+    <% if (items.length === 0) { %>
+    <div class="text-center py-5 text-muted">
+      <i class="bi bi-bell-slash fs-1 d-block mb-2"></i>Nenhuma notificação.
+    </div>
+    <% } else { %>
+    <div class="list-group list-group-flush">
+      <% items.forEach(n => { %>
+      <a href="<%= n.quotation_id ? '/cotacoes/' + n.quotation_id : '#' %>" class="list-group-item list-group-item-action py-3 px-4 <%= n.read_at ? '' : 'notif-unread' %>">
+        <div class="d-flex gap-3 align-items-start">
+          <div class="mt-1">
+            <% const iconMap = { nova_cotacao:'bell-fill text-primary', cotacao_respondida:'check-circle-fill text-success', peca_chegou:'box-arrow-in-down text-info', status_atualizado:'arrow-clockwise text-warning', cotacao_atualizada:'pencil-fill text-secondary' }; %>
+            <i class="bi bi-<%= iconMap[n.type] || 'bell text-muted' %> fs-5"></i>
+          </div>
+          <div class="flex-grow-1">
+            <div class="fw-semibold <%= n.read_at ? 'text-muted' : '' %>"><%= n.title %></div>
+            <div class="small text-muted"><%= n.message %></div>
+            <div class="small text-muted mt-1">
+              <%= new Date(n.created_at).toLocaleString('pt-BR') %>
+              <% if (n.quote_number) { %> — Cotação #<%= n.quote_number %><% } %>
+            </div>
+          </div>
+          <% if (!n.read_at) { %><div><span class="badge bg-primary rounded-pill">Nova</span></div><% } %>
+        </div>
+      </a>
+      <% }) %>
+    </div>
+    <% if (pages > 1) { %>
+    <div class="d-flex justify-content-center py-3">
+      <nav><ul class="pagination pagination-sm mb-0">
+        <% for (let p = 1; p <= pages; p++) { %>
+        <li class="page-item <%= p === page ? 'active' : '' %>">
+          <a class="page-link" href="?page=<%= p %>"><%= p %></a>
+        </li>
+        <% } %>
+      </ul></nav>
+    </div>
+    <% } %>
+    <% } %>
+  </div>
+</div>

@@ -1,0 +1,81 @@
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h4 class="fw-bold mb-0"><i class="bi bi-clipboard-list me-2 text-primary"></i>Cotações</h4>
+  <% if (currentUser.role === 'vendas' || currentUser.role === 'admin') { %>
+  <a href="/cotacoes/nova" class="btn btn-primary"><i class="bi bi-plus-circle me-1"></i>Nova Cotação</a>
+  <% } %>
+</div>
+
+<div class="mb-3 d-flex flex-wrap gap-2">
+  <% const filters = [
+    { val: 'todos',      label: 'Todas'       },
+    { val: 'pendente',   label: 'Aguardando'  },
+    { val: 'em_cotacao', label: 'Em Cotação'  },
+    { val: 'cotado',     label: 'Cotado'      },
+    { val: 'peca_chegou',label: 'Peça Chegou' },
+    { val: 'cancelado',  label: 'Cancelado'   }
+  ]; %>
+  <% filters.forEach(f => { %>
+  <a href="/cotacoes?status=<%= f.val %>" class="btn btn-sm <%= currentStatus === f.val ? 'btn-primary' : 'btn-outline-secondary' %>">
+    <%= f.label %>
+  </a>
+  <% }) %>
+</div>
+
+<div class="card border-0 shadow-sm">
+  <div class="card-body p-0">
+    <% if (items.length === 0) { %>
+    <div class="text-center py-5 text-muted">
+      <i class="bi bi-inbox fs-1 d-block mb-2"></i>Nenhuma cotação encontrada.
+    </div>
+    <% } else { %>
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead class="table-light">
+          <tr>
+            <th>Nº</th>
+            <th>Cliente</th>
+            <th>Telefone</th>
+            <th>Veículo / Placa</th>
+            <th>Status</th>
+            <% if (currentUser.role !== 'vendas') { %><th>Vendedor</th><% } %>
+            <th>Data</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <% items.forEach(q => { %>
+          <tr>
+            <td><a href="/cotacoes/<%= q.id %>" class="fw-semibold text-decoration-none text-primary">#<%= q.quote_number %></a></td>
+            <td><%= q.customer_name %></td>
+            <td><a href="tel:<%= q.customer_phone %>" class="text-decoration-none text-muted small"><%= q.customer_phone %></a></td>
+            <td>
+              <span class="fw-semibold"><%= q.make || '' %> <%= q.model || '' %></span>
+              <br><span class="badge bg-light text-dark border small"><%= q.license_plate %></span>
+            </td>
+            <td><%- include('../partials/status-badge', { status: q.status }) %></td>
+            <% if (currentUser.role !== 'vendas') { %><td class="small text-muted"><%= q.creator_name %></td><% } %>
+            <td class="small text-muted"><%= new Date(q.created_at).toLocaleDateString('pt-BR') %></td>
+            <td>
+              <a href="/cotacoes/<%= q.id %>" class="btn btn-sm btn-outline-primary">
+                <i class="bi bi-eye"></i>
+              </a>
+            </td>
+          </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+    <% if (pages > 1) { %>
+    <div class="d-flex justify-content-center py-3">
+      <nav><ul class="pagination pagination-sm mb-0">
+        <% for (let p = 1; p <= pages; p++) { %>
+        <li class="page-item <%= p === page ? 'active' : '' %>">
+          <a class="page-link" href="?status=<%= currentStatus %>&page=<%= p %>"><%= p %></a>
+        </li>
+        <% } %>
+      </ul></nav>
+    </div>
+    <% } %>
+    <% } %>
+  </div>
+</div>
