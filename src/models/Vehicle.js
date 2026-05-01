@@ -20,7 +20,7 @@ class Vehicle {
     const result = db.prepare(
       'INSERT INTO vehicles (license_plate, make, model, year_model, year_manuf, color, fuel, chassis, plate_data_json) VALUES (?,?,?,?,?,?,?,?,?)'
     ).run(plate, make, model, year_model, year_manuf, color, fuel, chassis, plate_data_json);
-    return result.lastInsertRowid;
+    return Number(result.lastInsertRowid);
   }
 }
 

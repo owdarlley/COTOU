@@ -13,7 +13,7 @@ class Customer {
     let customer = this.findByPhone(phone);
     if (!customer) {
       const result = db.prepare('INSERT INTO customers (name, phone) VALUES (?, ?)').run(name, phone);
-      customer = this.findById(result.lastInsertRowid);
+      customer = this.findById(Number(result.lastInsertRowid));
     } else if (customer.name !== name) {
       db.prepare("UPDATE customers SET name = ?, updated_at = datetime('now') WHERE id = ?").run(name, customer.id);
       customer.name = name;

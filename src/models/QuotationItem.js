@@ -13,7 +13,7 @@ class QuotationItem {
     const result = db.prepare(
       'INSERT INTO quotation_items (quotation_id, part_name, part_code, part_catalog_id, quantity, labor_cost_vendas) VALUES (?,?,?,?,?,?)'
     ).run(quotationId, partName, partCode || null, partCatalogId || null, quantity || 1, laborCostVendas || 0);
-    return result.lastInsertRowid;
+    return Number(result.lastInsertRowid);
   }
 
   static updatePrices(id, { unitPrice, totalPrice, laborCostCompras, deliveryDays, deliveryDeadline, supplierName, notes }) {

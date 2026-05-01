@@ -35,7 +35,7 @@ class Quotation {
     const result = db.prepare(
       'INSERT INTO quotations (quote_number, customer_id, vehicle_id, created_by_user_id, notes_vendas) VALUES (?,?,?,?,?)'
     ).run(quoteNumber, customerId, vehicleId, createdByUserId, notesVendas || null);
-    return result.lastInsertRowid;
+    return Number(result.lastInsertRowid);
   }
 
   static updateStatus(id, newStatus, byUserId) {

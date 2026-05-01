@@ -5,7 +5,7 @@ class Notification {
     const result = db.prepare(
       'INSERT INTO notifications (user_id, quotation_id, quotation_item_id, type, title, message) VALUES (?,?,?,?,?,?)'
     ).run(userId, quotationId || null, quotationItemId || null, type, title, message);
-    return db.prepare('SELECT * FROM notifications WHERE id = ?').get(result.lastInsertRowid);
+    return db.prepare('SELECT * FROM notifications WHERE id = ?').get(Number(result.lastInsertRowid));
   }
 
   static findByUserId(userId, { onlyUnread = false, page = 1, limit = 20 } = {}) {

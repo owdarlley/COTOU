@@ -28,7 +28,7 @@ class PartsCatalog {
     const result = db.prepare(
       'INSERT INTO parts_catalog (code, name, description, default_price) VALUES (?, ?, ?, ?)'
     ).run(code, name, description || null, default_price || null);
-    return result.lastInsertRowid;
+    return Number(result.lastInsertRowid);
   }
 
   static update(id, { code, name, description, default_price }) {

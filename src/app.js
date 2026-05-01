@@ -2,7 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const expressLayouts = require('express-ejs-layouts');
 const session = require('express-session');
-const SQLiteStore = require('connect-sqlite3')(session);
+const FileStore = require('session-file-store')(session);
 const methodOverride = require('method-override');
 const morgan = require('morgan');
 const helmet = require('helmet');
@@ -45,7 +45,7 @@ const dataDir = path.resolve('./data');
 if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
 
 app.use(session({
-  store: new SQLiteStore({ db: 'sessions.db', dir: dataDir }),
+  store: new FileStore({ path: path.join(dataDir, 'sessions'), retries: 1, logFn: () => {} }),
   secret: process.env.SESSION_SECRET || 'cotou-secret',
   resave: false,
   saveUninitialized: false,

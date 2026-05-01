@@ -23,7 +23,7 @@ class User {
     const result = db.prepare(
       'INSERT INTO users (name, email, password_hash, role, phone_whatsapp) VALUES (?, ?, ?, ?, ?)'
     ).run(name, email, hash, role, phone_whatsapp || null);
-    return result.lastInsertRowid;
+    return Number(result.lastInsertRowid);
   }
 
   static update(id, { name, email, role, phone_whatsapp, active }) {
