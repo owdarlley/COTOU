@@ -1,11 +1,23 @@
-<div class="d-flex justify-content-between align-items-center mb-4">
-  <h4 class="fw-bold mb-0"><i class="bi bi-clipboard-list me-2 text-primary"></i>Cotações</h4>
-  <% if (currentUser.role === 'vendas' || currentUser.role === 'admin') { %>
-  <a href="/cotacoes/nova" class="btn btn-primary"><i class="bi bi-plus-circle me-1"></i>Nova Cotação</a>
-  <% } %>
+<div class="toolbar">
+  <div class="toolbar-left">
+    <form method="GET" class="search-box">
+      <i class="bi bi-search"></i>
+      <input type="text" name="q" placeholder="Buscar cliente, veículo..." value="<%= typeof q !== 'undefined' ? q : '' %>">
+      <% if (typeof currentStatus !== 'undefined' && currentStatus !== 'todos') { %>
+      <input type="hidden" name="status" value="<%= currentStatus %>">
+      <% } %>
+    </form>
+  </div>
+  <div class="toolbar-right">
+    <% if (currentUser.role === 'vendas' || currentUser.role === 'admin') { %>
+    <a href="/cotacoes/nova" class="btn-primary">
+      <i class="bi bi-plus-circle"></i>Nova Cotação
+    </a>
+    <% } %>
+  </div>
 </div>
 
-<div class="mb-3 d-flex flex-wrap gap-2">
+<div class="filter-tabs">
   <% const filters = [
     { val: 'todos',      label: 'Todas'       },
     { val: 'pendente',   label: 'Aguardando'  },
@@ -15,67 +27,63 @@
     { val: 'cancelado',  label: 'Cancelado'   }
   ]; %>
   <% filters.forEach(f => { %>
-  <a href="/cotacoes?status=<%= f.val %>" class="btn btn-sm <%= currentStatus === f.val ? 'btn-primary' : 'btn-outline-secondary' %>">
+  <a href="/cotacoes?status=<%= f.val %>" class="ftab <%= currentStatus === f.val ? 'active' : '' %>">
     <%= f.label %>
   </a>
   <% }) %>
 </div>
 
-<div class="card border-0 shadow-sm">
-  <div class="card-body p-0">
-    <% if (items.length === 0) { %>
-    <div class="text-center py-5 text-muted">
-      <i class="bi bi-inbox fs-1 d-block mb-2"></i>Nenhuma cotação encontrada.
-    </div>
-    <% } else { %>
-    <div class="table-responsive">
-      <table class="table table-hover align-middle mb-0">
-        <thead class="table-light">
-          <tr>
-            <th>Nº</th>
-            <th>Cliente</th>
-            <th>Telefone</th>
-            <th>Veículo / Placa</th>
-            <th>Status</th>
-            <% if (currentUser.role !== 'vendas') { %><th>Vendedor</th><% } %>
-            <th>Data</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody>
-          <% items.forEach(q => { %>
-          <tr>
-            <td><a href="/cotacoes/<%= q.id %>" class="fw-semibold text-decoration-none text-primary">#<%= q.quote_number %></a></td>
-            <td><%= q.customer_name %></td>
-            <td><a href="tel:<%= q.customer_phone %>" class="text-decoration-none text-muted small"><%= q.customer_phone %></a></td>
-            <td>
-              <span class="fw-semibold"><%= q.make || '' %> <%= q.model || '' %></span>
-              <br><span class="badge bg-light text-dark border small"><%= q.license_plate %></span>
-            </td>
-            <td><%- include('../partials/status-badge', { status: q.status }) %></td>
-            <% if (currentUser.role !== 'vendas') { %><td class="small text-muted"><%= q.creator_name %></td><% } %>
-            <td class="small text-muted"><%= new Date(q.created_at).toLocaleDateString('pt-BR') %></td>
-            <td>
-              <a href="/cotacoes/<%= q.id %>" class="btn btn-sm btn-outline-primary">
-                <i class="bi bi-eye"></i>
-              </a>
-            </td>
-          </tr>
-          <% }) %>
-        </tbody>
-      </table>
-    </div>
-    <% if (pages > 1) { %>
-    <div class="d-flex justify-content-center py-3">
-      <nav><ul class="pagination pagination-sm mb-0">
-        <% for (let p = 1; p <= pages; p++) { %>
-        <li class="page-item <%= p === page ? 'active' : '' %>">
-          <a class="page-link" href="?status=<%= currentStatus %>&page=<%= p %>"><%= p %></a>
-        </li>
-        <% } %>
-      </ul></nav>
-    </div>
-    <% } %>
-    <% } %>
+<div class="table-wrap">
+  <% if (items.length === 0) { %>
+  <div style="text-align:center;padding:48px 16px;color:var(--gray)">
+    <i class="bi bi-inbox" style="font-size:40px;display:block;margin-bottom:8px"></i>Nenhuma cotação encontrada.
   </div>
+  <% } else { %>
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>Nº</th>
+        <th>Cliente</th>
+        <th>Telefone</th>
+        <th>Veículo / Placa</th>
+        <th>Status</th>
+        <% if (currentUser.role !== 'vendas') { %><th>Vendedor</th><% } %>
+        <th>Data</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      <% items.forEach(q => { %>
+      <tr>
+        <td><a href="/cotacoes/<%= q.id %>" class="qid">#<%= q.quote_number %></a></td>
+        <td style="font-weight:600"><%= q.customer_name %></td>
+        <td style="color:var(--gray);font-size:13px">
+          <a href="tel:<%= q.customer_phone %>" style="text-decoration:none;color:inherit"><%= q.customer_phone %></a>
+        </td>
+        <td>
+          <span style="font-weight:600;font-size:13px"><%= q.make || '' %> <%= q.model || '' %></span>
+          <% if (q.license_plate) { %><br><span class="plate-tag"><%= q.license_plate %></span><% } %>
+        </td>
+        <td><%- include('../partials/status-badge', { status: q.status }) %></td>
+        <% if (currentUser.role !== 'vendas') { %>
+        <td style="color:var(--gray);font-size:13px"><%= q.creator_name %></td>
+        <% } %>
+        <td style="color:var(--gray);font-size:13px"><%= new Date(q.created_at).toLocaleDateString('pt-BR') %></td>
+        <td><a href="/cotacoes/<%= q.id %>" class="actions-btn" title="Ver detalhes">⋯</a></td>
+      </tr>
+      <% }) %>
+    </tbody>
+  </table>
+  <% if (pages > 1) { %>
+  <div class="pagination-wrap">
+    <ul class="pagination">
+      <% for (let p = 1; p <= pages; p++) { %>
+      <li class="page-item <%= p === page ? 'active' : '' %>">
+        <a class="page-link" href="?status=<%= currentStatus %>&page=<%= p %>"><%= p %></a>
+      </li>
+      <% } %>
+    </ul>
+  </div>
+  <% } %>
+  <% } %>
 </div>

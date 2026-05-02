@@ -1,66 +1,71 @@
-<div class="row g-4 mb-4">
-  <div class="col-12">
-    <h4 class="fw-bold"><i class="bi bi-speedometer2 me-2 text-primary"></i>Painel — Olá, <%= currentUser.name %>!</h4>
-  </div>
-
-  <% const stats = [
-    { label: 'Aguardando', key: 'pendente',    icon: 'clock',          color: 'warning' },
-    { label: 'Em Cotação', key: 'em_cotacao',  icon: 'search',         color: 'info'    },
-    { label: 'Cotado',     key: 'cotado',      icon: 'check-circle',   color: 'success' },
-    { label: 'Peça Chegou',key: 'peca_chegou', icon: 'box-arrow-in-down', color: 'primary' }
-  ]; %>
-
-  <% stats.forEach(s => { %>
-  <div class="col-6 col-md-3">
-    <a href="/cotacoes?status=<%= s.key %>" class="text-decoration-none">
-      <div class="card border-0 shadow-sm h-100">
-        <div class="card-body text-center py-4">
-          <i class="bi bi-<%= s.icon %> fs-1 text-<%= s.color %>"></i>
-          <div class="display-6 fw-bold mt-2"><%= statusMap[s.key] || 0 %></div>
-          <div class="text-muted small"><%= s.label %></div>
-        </div>
-      </div>
-    </a>
-  </div>
-  <% }) %>
+<div class="stats-grid">
+  <a href="/cotacoes?status=pendente" class="stat-card">
+    <div class="stat-icon si-orange"><i class="bi bi-clock"></i></div>
+    <div>
+      <div class="stat-num"><%= statusMap.pendente || 0 %></div>
+      <div class="stat-label">Aguardando</div>
+    </div>
+  </a>
+  <a href="/cotacoes?status=em_cotacao" class="stat-card">
+    <div class="stat-icon si-blue"><i class="bi bi-search"></i></div>
+    <div>
+      <div class="stat-num"><%= statusMap.em_cotacao || 0 %></div>
+      <div class="stat-label">Em Cotação</div>
+    </div>
+  </a>
+  <a href="/cotacoes?status=cotado" class="stat-card">
+    <div class="stat-icon si-green"><i class="bi bi-check-circle"></i></div>
+    <div>
+      <div class="stat-num"><%= statusMap.cotado || 0 %></div>
+      <div class="stat-label">Cotado</div>
+    </div>
+  </a>
+  <a href="/cotacoes?status=peca_chegou" class="stat-card">
+    <div class="stat-icon si-purple"><i class="bi bi-box-arrow-in-down"></i></div>
+    <div>
+      <div class="stat-num"><%= statusMap.peca_chegou || 0 %></div>
+      <div class="stat-label">Peça Chegou</div>
+    </div>
+  </a>
 </div>
 
-<div class="card border-0 shadow-sm">
-  <div class="card-header bg-white d-flex justify-content-between align-items-center">
-    <span class="fw-semibold"><i class="bi bi-clock-history me-2"></i>Cotações Recentes</span>
-    <a href="/cotacoes" class="btn btn-sm btn-outline-primary">Ver todas</a>
+<div class="table-wrap">
+  <div class="form-section-header">
+    <span><i class="bi bi-clock-history"></i> Cotações Recentes</span>
+    <a href="/cotacoes" class="btn-outline" style="padding:5px 12px;font-size:12px">Ver todas</a>
   </div>
-  <div class="card-body p-0">
-    <% if (recentQuotations.length === 0) { %>
-    <div class="text-center py-5 text-muted">
-      <i class="bi bi-inbox fs-1 d-block mb-2"></i>
-      Nenhuma cotação ainda.
-      <% if (currentUser.role === 'vendas' || currentUser.role === 'admin') { %>
-      <br><a href="/cotacoes/nova" class="btn btn-primary mt-3"><i class="bi bi-plus-circle me-1"></i>Criar primeira cotação</a>
-      <% } %>
-    </div>
-    <% } else { %>
-    <div class="table-responsive">
-      <table class="table table-hover mb-0">
-        <thead class="table-light">
-          <tr>
-            <th>Nº</th><th>Cliente</th><th>Veículo</th><th>Status</th><th>Data</th><th></th>
-          </tr>
-        </thead>
-        <tbody>
-          <% recentQuotations.forEach(q => { %>
-          <tr>
-            <td><a href="/cotacoes/<%= q.id %>" class="fw-semibold text-decoration-none">#<%= q.quote_number %></a></td>
-            <td><%= q.customer_name %></td>
-            <td><%= q.make || '' %> <%= q.model || '' %> <span class="text-muted small"><%= q.license_plate %></span></td>
-            <td><%- include('../partials/status-badge', { status: q.status }) %></td>
-            <td class="text-muted small"><%= new Date(q.created_at).toLocaleDateString('pt-BR') %></td>
-            <td><a href="/cotacoes/<%= q.id %>" class="btn btn-sm btn-outline-secondary"><i class="bi bi-eye"></i></a></td>
-          </tr>
-          <% }) %>
-        </tbody>
-      </table>
-    </div>
+  <% if (recentQuotations.length === 0) { %>
+  <div style="text-align:center;padding:48px 16px;color:var(--gray)">
+    <i class="bi bi-inbox" style="font-size:40px;display:block;margin-bottom:8px"></i>
+    Nenhuma cotação ainda.
+    <% if (currentUser.role === 'vendas' || currentUser.role === 'admin') { %>
+    <br><a href="/cotacoes/nova" class="btn-primary" style="margin-top:16px;display:inline-flex">
+      <i class="bi bi-plus-circle"></i>Criar primeira cotação
+    </a>
     <% } %>
   </div>
+  <% } else { %>
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>Nº</th><th>Cliente</th><th>Veículo</th><th>Status</th><th>Data</th><th></th>
+      </tr>
+    </thead>
+    <tbody>
+      <% recentQuotations.forEach(q => { %>
+      <tr>
+        <td><a href="/cotacoes/<%= q.id %>" class="qid">#<%= q.quote_number %></a></td>
+        <td><span style="font-weight:600"><%= q.customer_name %></span></td>
+        <td>
+          <span style="font-size:13px"><%= q.make || '' %> <%= q.model || '' %></span>
+          <% if (q.license_plate) { %><br><span class="plate-tag"><%= q.license_plate %></span><% } %>
+        </td>
+        <td><%- include('../partials/status-badge', { status: q.status }) %></td>
+        <td style="color:var(--gray);font-size:13px"><%= new Date(q.created_at).toLocaleDateString('pt-BR') %></td>
+        <td><a href="/cotacoes/<%= q.id %>" class="actions-btn" title="Ver">⋯</a></td>
+      </tr>
+      <% }) %>
+    </tbody>
+  </table>
+  <% } %>
 </div>

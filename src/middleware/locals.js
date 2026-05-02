@@ -4,6 +4,7 @@ const Notification = require('../models/Notification');
 module.exports = function injectLocals(req, res, next) {
   res.locals.flash = req.session.flash || {};
   delete req.session.flash;
+  res.locals.currentPath = req.path;
 
   if (req.session && req.session.userId) {
     try {

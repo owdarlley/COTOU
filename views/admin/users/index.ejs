@@ -1,40 +1,50 @@
-<div class="d-flex justify-content-between align-items-center mb-4">
-  <h4 class="fw-bold mb-0"><i class="bi bi-people me-2 text-primary"></i>Gestão de Usuários</h4>
-  <a href="/admin/usuarios/novo" class="btn btn-primary"><i class="bi bi-person-plus me-1"></i>Novo Usuário</a>
+<div class="toolbar">
+  <div class="toolbar-left">
+    <span style="font-size:16px;font-weight:700">Gestão de Usuários</span>
+  </div>
+  <div class="toolbar-right">
+    <a href="/admin/usuarios/novo" class="btn-primary">
+      <i class="bi bi-person-plus"></i>Novo Usuário
+    </a>
+  </div>
 </div>
 
-<div class="card border-0 shadow-sm">
-  <div class="card-body p-0">
-    <div class="table-responsive">
-      <table class="table table-hover align-middle mb-0">
-        <thead class="table-light">
-          <tr><th>Nome</th><th>E-mail</th><th>Setor</th><th>WhatsApp</th><th>Status</th><th>Ações</th></tr>
-        </thead>
-        <tbody>
-          <% users.forEach(u => { %>
-          <tr>
-            <td class="fw-semibold"><%= u.name %></td>
-            <td class="text-muted small"><%= u.email %></td>
-            <td>
-              <span class="badge <%= u.role === 'vendas' ? 'bg-info text-dark' : u.role === 'compras' ? 'bg-success' : 'bg-warning text-dark' %>">
-                <%= u.role %>
-              </span>
-            </td>
-            <td class="text-muted small"><%= u.phone_whatsapp || '—' %></td>
-            <td><span class="badge <%= u.active ? 'bg-success' : 'bg-secondary' %>"><%= u.active ? 'Ativo' : 'Inativo' %></span></td>
-            <td>
-              <a href="/admin/usuarios/<%= u.id %>/editar" class="btn btn-sm btn-outline-primary me-1"><i class="bi bi-pencil"></i></a>
-              <% if (u.id !== currentUser.id) { %>
-              <form action="/admin/usuarios/<%= u.id %>/desativar" method="POST" class="d-inline"
-                onsubmit="return confirm('Desativar usuário <%= u.name %>?')">
-                <button type="submit" class="btn btn-sm btn-outline-danger"><i class="bi bi-person-x"></i></button>
-              </form>
-              <% } %>
-            </td>
-          </tr>
-          <% }) %>
-        </tbody>
-      </table>
-    </div>
-  </div>
+<div class="table-wrap">
+  <table class="data-table">
+    <thead>
+      <tr><th>Nome</th><th>E-mail</th><th>Setor</th><th>WhatsApp</th><th>Status</th><th>Ações</th></tr>
+    </thead>
+    <tbody>
+      <% users.forEach(u => { %>
+      <tr>
+        <td style="font-weight:600"><%= u.name %></td>
+        <td style="color:var(--gray);font-size:13px"><%= u.email %></td>
+        <td>
+          <span class="role-badge <%= u.role === 'vendas' ? 'role-vendas' : u.role === 'compras' ? 'role-compras' : 'role-admin' %>">
+            <%= u.role %>
+          </span>
+        </td>
+        <td style="color:var(--gray);font-size:13px"><%= u.phone_whatsapp || '—' %></td>
+        <td>
+          <span class="role-badge <%= u.active ? 'role-ativo' : 'role-inativo' %>">
+            <%= u.active ? 'Ativo' : 'Inativo' %>
+          </span>
+        </td>
+        <td>
+          <div style="display:flex;gap:6px">
+            <a href="/admin/usuarios/<%= u.id %>/editar" class="btn-sm-icon blue" title="Editar">
+              <i class="bi bi-pencil"></i>
+            </a>
+            <% if (u.id !== currentUser.id) { %>
+            <form action="/admin/usuarios/<%= u.id %>/desativar" method="POST" style="display:inline"
+              onsubmit="return confirm('Desativar usuário <%= u.name %>?')">
+              <button type="submit" class="btn-sm-icon red" title="Desativar"><i class="bi bi-person-x"></i></button>
+            </form>
+            <% } %>
+          </div>
+        </td>
+      </tr>
+      <% }) %>
+    </tbody>
+  </table>
 </div>

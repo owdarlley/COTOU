@@ -1,163 +1,159 @@
-<div class="row justify-content-center">
-  <div class="col-lg-10">
-    <div class="d-flex align-items-center mb-4">
-      <a href="/cotacoes" class="btn btn-outline-secondary btn-sm me-3"><i class="bi bi-arrow-left"></i></a>
-      <h4 class="fw-bold mb-0"><i class="bi bi-plus-circle me-2 text-primary"></i>Nova Cotação</h4>
+<div style="max-width:900px;margin:0 auto">
+  <div style="display:flex;align-items:center;gap:12px;margin-bottom:24px">
+    <a href="/cotacoes" class="btn-cancel" style="padding:6px 10px">
+      <i class="bi bi-arrow-left"></i>
+    </a>
+    <h4 style="font-size:18px;font-weight:700;margin:0">Nova Cotação</h4>
+  </div>
+
+  <% if (typeof errors !== 'undefined' && errors.length) { %>
+  <div class="alert-danger-custom" style="margin-bottom:16px">
+    <i class="bi bi-exclamation-triangle-fill"></i>
+    <div><% errors.forEach(e => { %><div><%= e %></div><% }) %></div>
+  </div>
+  <% } %>
+
+  <form action="/cotacoes" method="POST" id="form-cotacao">
+
+    <!-- Cliente -->
+    <div class="form-section">
+      <div class="form-section-header">
+        <span><i class="bi bi-person"></i> Dados do Cliente</span>
+      </div>
+      <div class="form-section-body">
+        <div class="form-grid cols-2">
+          <div>
+            <label class="form-label">Nome do cliente <span style="color:var(--red)">*</span></label>
+            <input type="text" name="customer_name" class="form-control" required
+              value="<%= typeof body !== 'undefined' && body.customer_name ? body.customer_name : '' %>">
+          </div>
+          <div>
+            <label class="form-label">Telefone / WhatsApp <span style="color:var(--red)">*</span></label>
+            <input type="text" name="customer_phone" class="form-control" placeholder="(11) 99999-9999" required
+              value="<%= typeof body !== 'undefined' && body.customer_phone ? body.customer_phone : '' %>">
+          </div>
+        </div>
+      </div>
     </div>
 
-    <% if (typeof errors !== 'undefined' && errors.length) { %>
-    <div class="alert alert-danger">
-      <% errors.forEach(e => { %><div><i class="bi bi-exclamation-triangle me-1"></i><%= e %></div><% }) %>
+    <!-- Veículo -->
+    <div class="form-section">
+      <div class="form-section-header">
+        <span><i class="bi bi-car-front"></i> Dados do Veículo</span>
+      </div>
+      <div class="form-section-body">
+        <div class="form-grid cols-4" style="margin-bottom:16px">
+          <div style="grid-column:span 1">
+            <label class="form-label">Placa <span style="color:var(--red)">*</span></label>
+            <div class="input-group">
+              <input type="text" name="vehicle_plate" id="vehicle_plate" class="form-control"
+                style="text-transform:uppercase" placeholder="ABC1234" maxlength="8" required
+                value="<%= typeof body !== 'undefined' && body.vehicle_plate ? body.vehicle_plate : '' %>">
+              <button type="button" class="btn btn-outline-secondary" id="btn-buscar-placa" title="Buscar dados">
+                <i class="bi bi-search" id="icon-placa"></i>
+              </button>
+            </div>
+            <div id="placa-status" style="font-size:12px;margin-top:4px"></div>
+          </div>
+          <div style="grid-column:span 1">
+            <label class="form-label">Marca</label>
+            <input type="text" name="vehicle_make" id="vehicle_make" class="form-control" placeholder="FIAT"
+              value="<%= typeof body !== 'undefined' && body.vehicle_make ? body.vehicle_make : '' %>">
+          </div>
+          <div style="grid-column:span 2">
+            <label class="form-label">Modelo</label>
+            <input type="text" name="vehicle_model" id="vehicle_model" class="form-control" placeholder="PALIO"
+              value="<%= typeof body !== 'undefined' && body.vehicle_model ? body.vehicle_model : '' %>">
+          </div>
+        </div>
+        <div class="form-grid cols-4">
+          <div>
+            <label class="form-label">Ano Modelo</label>
+            <input type="number" name="vehicle_year_model" id="vehicle_year_model" class="form-control" placeholder="2020"
+              value="<%= typeof body !== 'undefined' && body.vehicle_year_model ? body.vehicle_year_model : '' %>">
+          </div>
+          <div>
+            <label class="form-label">Ano Fab.</label>
+            <input type="number" name="vehicle_year_manuf" id="vehicle_year_manuf" class="form-control" placeholder="2019"
+              value="<%= typeof body !== 'undefined' && body.vehicle_year_manuf ? body.vehicle_year_manuf : '' %>">
+          </div>
+          <div>
+            <label class="form-label">Cor</label>
+            <input type="text" name="vehicle_color" id="vehicle_color" class="form-control"
+              value="<%= typeof body !== 'undefined' && body.vehicle_color ? body.vehicle_color : '' %>">
+          </div>
+          <div>
+            <label class="form-label">Combustível</label>
+            <input type="text" name="vehicle_fuel" id="vehicle_fuel" class="form-control"
+              value="<%= typeof body !== 'undefined' && body.vehicle_fuel ? body.vehicle_fuel : '' %>">
+          </div>
+        </div>
+        <input type="hidden" name="vehicle_chassis" id="vehicle_chassis">
+      </div>
     </div>
-    <% } %>
 
-    <form action="/cotacoes" method="POST" id="form-cotacao">
-
-      <!-- Cliente -->
-      <div class="card border-0 shadow-sm mb-4">
-        <div class="card-header bg-white fw-semibold">
-          <i class="bi bi-person me-2 text-primary"></i>Dados do Cliente
-        </div>
-        <div class="card-body">
-          <div class="row g-3">
-            <div class="col-md-6">
-              <label class="form-label">Nome do cliente <span class="text-danger">*</span></label>
-              <input type="text" name="customer_name" class="form-control" required
-                value="<%= typeof body !== 'undefined' && body.customer_name ? body.customer_name : '' %>">
-            </div>
-            <div class="col-md-6">
-              <label class="form-label">Telefone / WhatsApp <span class="text-danger">*</span></label>
-              <input type="text" name="customer_phone" class="form-control" placeholder="(11) 99999-9999" required
-                value="<%= typeof body !== 'undefined' && body.customer_phone ? body.customer_phone : '' %>">
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Veículo -->
-      <div class="card border-0 shadow-sm mb-4">
-        <div class="card-header bg-white fw-semibold">
-          <i class="bi bi-car-front me-2 text-primary"></i>Dados do Veículo
-        </div>
-        <div class="card-body">
-          <div class="row g-3">
-            <div class="col-md-3">
-              <label class="form-label">Placa <span class="text-danger">*</span></label>
-              <div class="input-group">
-                <input type="text" name="vehicle_plate" id="vehicle_plate" class="form-control text-uppercase"
-                  placeholder="ABC1234" maxlength="8" required
-                  value="<%= typeof body !== 'undefined' && body.vehicle_plate ? body.vehicle_plate : '' %>">
-                <button type="button" class="btn btn-outline-secondary" id="btn-buscar-placa" title="Buscar dados">
-                  <i class="bi bi-search" id="icon-placa"></i>
-                </button>
-              </div>
-              <div id="placa-status" class="form-text"></div>
-            </div>
-            <div class="col-md-4">
-              <label class="form-label">Marca</label>
-              <input type="text" name="vehicle_make" id="vehicle_make" class="form-control" placeholder="Ex: FIAT"
-                value="<%= typeof body !== 'undefined' && body.vehicle_make ? body.vehicle_make : '' %>">
-            </div>
-            <div class="col-md-5">
-              <label class="form-label">Modelo</label>
-              <input type="text" name="vehicle_model" id="vehicle_model" class="form-control" placeholder="Ex: PALIO"
-                value="<%= typeof body !== 'undefined' && body.vehicle_model ? body.vehicle_model : '' %>">
-            </div>
-            <div class="col-md-3">
-              <label class="form-label">Ano Modelo</label>
-              <input type="number" name="vehicle_year_model" id="vehicle_year_model" class="form-control" placeholder="2020"
-                value="<%= typeof body !== 'undefined' && body.vehicle_year_model ? body.vehicle_year_model : '' %>">
-            </div>
-            <div class="col-md-3">
-              <label class="form-label">Ano Fab.</label>
-              <input type="number" name="vehicle_year_manuf" id="vehicle_year_manuf" class="form-control" placeholder="2019"
-                value="<%= typeof body !== 'undefined' && body.vehicle_year_manuf ? body.vehicle_year_manuf : '' %>">
-            </div>
-            <div class="col-md-3">
-              <label class="form-label">Cor</label>
-              <input type="text" name="vehicle_color" id="vehicle_color" class="form-control"
-                value="<%= typeof body !== 'undefined' && body.vehicle_color ? body.vehicle_color : '' %>">
-            </div>
-            <div class="col-md-3">
-              <label class="form-label">Combustível</label>
-              <input type="text" name="vehicle_fuel" id="vehicle_fuel" class="form-control"
-                value="<%= typeof body !== 'undefined' && body.vehicle_fuel ? body.vehicle_fuel : '' %>">
-            </div>
-            <input type="hidden" name="vehicle_chassis" id="vehicle_chassis">
-          </div>
-        </div>
-      </div>
-
-      <!-- Peças -->
-      <div class="card border-0 shadow-sm mb-4">
-        <div class="card-header bg-white d-flex justify-content-between align-items-center">
-          <span class="fw-semibold"><i class="bi bi-box-seam me-2 text-primary"></i>Peças para Cotar</span>
-          <button type="button" class="btn btn-sm btn-primary" id="btn-add-item">
-            <i class="bi bi-plus-lg me-1"></i>Adicionar Peça
-          </button>
-        </div>
-        <div class="card-body p-0">
-          <div class="table-responsive">
-            <table class="table mb-0" id="items-table">
-              <thead class="table-light">
-                <tr>
-                  <th>Código</th>
-                  <th>Nome da Peça <span class="text-danger">*</span></th>
-                  <th style="width:90px">Qtd</th>
-                  <th style="width:130px">Mão de Obra (R$)</th>
-                  <th style="width:50px"></th>
-                </tr>
-              </thead>
-              <tbody id="items-body">
-                <tr class="item-row">
-                  <td>
-                    <input type="text" name="part_codes[]" class="form-control form-control-sm part-code" placeholder="Opcional">
-                  </td>
-                  <td>
-                    <div class="position-relative">
-                      <input type="text" name="part_names[]" class="form-control form-control-sm part-name" placeholder="Nome da peça" required>
-                      <div class="autocomplete-list d-none"></div>
-                    </div>
-                  </td>
-                  <td><input type="number" name="quantities[]" class="form-control form-control-sm" value="1" min="1"></td>
-                  <td><input type="number" name="labor_costs[]" class="form-control form-control-sm" value="0" min="0" step="0.01"></td>
-                  <td>
-                    <button type="button" class="btn btn-sm btn-outline-danger btn-remove-item">
-                      <i class="bi bi-trash"></i>
-                    </button>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-
-      <!-- Observações -->
-      <div class="card border-0 shadow-sm mb-4">
-        <div class="card-header bg-white fw-semibold">
-          <i class="bi bi-chat-text me-2 text-primary"></i>Observações
-        </div>
-        <div class="card-body">
-          <textarea name="notes_vendas" class="form-control" rows="3" placeholder="Informações adicionais para o setor de compras..."></textarea>
-        </div>
-      </div>
-
-      <div class="d-flex gap-2 justify-content-end">
-        <a href="/cotacoes" class="btn btn-outline-secondary">Cancelar</a>
-        <button type="submit" class="btn btn-primary px-4">
-          <i class="bi bi-send me-2"></i>Enviar para Compras
+    <!-- Peças -->
+    <div class="form-section">
+      <div class="form-section-header">
+        <span><i class="bi bi-box-seam"></i> Peças para Cotar</span>
+        <button type="button" class="btn-primary" id="btn-add-item" style="padding:6px 14px;font-size:13px">
+          <i class="bi bi-plus-lg"></i>Adicionar Peça
         </button>
       </div>
-    </form>
-  </div>
-</div>
+      <div class="table-wrap" style="border:none;border-radius:0">
+        <table class="data-table" id="items-table">
+          <thead>
+            <tr>
+              <th>Código</th>
+              <th>Nome da Peça <span style="color:var(--red)">*</span></th>
+              <th style="width:90px">Qtd</th>
+              <th style="width:140px">Mão de Obra (R$)</th>
+              <th style="width:50px"></th>
+            </tr>
+          </thead>
+          <tbody id="items-body">
+            <tr class="item-row">
+              <td>
+                <input type="text" name="part_codes[]" class="form-control part-code" placeholder="Opcional">
+              </td>
+              <td>
+                <div class="position-relative">
+                  <input type="text" name="part_names[]" class="form-control part-name" placeholder="Nome da peça" required>
+                  <div class="autocomplete-list d-none"></div>
+                </div>
+              </td>
+              <td><input type="number" name="quantities[]" class="form-control" value="1" min="1"></td>
+              <td><input type="number" name="labor_costs[]" class="form-control" value="0" min="0" step="0.01"></td>
+              <td>
+                <button type="button" class="btn-sm-icon red btn-remove-item" title="Remover">
+                  <i class="bi bi-trash"></i>
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
 
-<style>
-.autocomplete-list { position:absolute; z-index:999; background:#fff; border:1px solid #dee2e6; border-radius:4px; width:100%; max-height:180px; overflow-y:auto; }
-.autocomplete-item { padding:6px 10px; cursor:pointer; font-size:.875rem; }
-.autocomplete-item:hover { background:#f0f4ff; }
-</style>
+    <!-- Observações -->
+    <div class="form-section">
+      <div class="form-section-header">
+        <span><i class="bi bi-chat-text"></i> Observações</span>
+      </div>
+      <div class="form-section-body">
+        <textarea name="notes_vendas" class="form-control" rows="3"
+          placeholder="Informações adicionais para o setor de compras..."></textarea>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:8px">
+      <a href="/cotacoes" class="btn-cancel">Cancelar</a>
+      <button type="submit" class="btn-primary">
+        <i class="bi bi-send"></i>Enviar para Compras
+      </button>
+    </div>
+  </form>
+</div>
 
 <script>
 <%- include('../partials/plate-lookup-script') %>
@@ -167,7 +163,11 @@ document.getElementById('btn-add-item').addEventListener('click', () => {
   const tbody = document.getElementById('items-body');
   const first = tbody.querySelector('.item-row');
   const clone = first.cloneNode(true);
-  clone.querySelectorAll('input').forEach(i => { if (i.type === 'number' && i.name.includes('quantit')) i.value = 1; else if (i.type === 'number') i.value = 0; else i.value = ''; });
+  clone.querySelectorAll('input').forEach(i => {
+    if (i.type === 'number' && i.name.includes('quantit')) i.value = 1;
+    else if (i.type === 'number') i.value = 0;
+    else i.value = '';
+  });
   clone.querySelector('.autocomplete-list').classList.add('d-none');
   tbody.appendChild(clone);
   initAutocomplete(clone.querySelector('.part-code'), clone.querySelector('.part-name'));

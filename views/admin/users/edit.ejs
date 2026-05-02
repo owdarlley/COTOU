@@ -1,40 +1,50 @@
-<div class="row justify-content-center">
-  <div class="col-md-6">
-    <div class="d-flex align-items-center mb-4">
-      <a href="/admin/usuarios" class="btn btn-outline-secondary btn-sm me-3"><i class="bi bi-arrow-left"></i></a>
-      <h4 class="fw-bold mb-0">Editar Usuário</h4>
-    </div>
-    <div class="card border-0 shadow-sm">
-      <div class="card-body">
-        <form action="/admin/usuarios/<%= user.id %>" method="POST">
-          <div class="mb-3"><label class="form-label">Nome</label><input type="text" name="name" class="form-control" value="<%= user.name %>" required></div>
-          <div class="mb-3"><label class="form-label">E-mail</label><input type="email" name="email" class="form-control" value="<%= user.email %>" required></div>
-          <div class="mb-3">
-            <label class="form-label">Setor</label>
-            <select name="role" class="form-select">
-              <option value="vendas" <%= user.role === 'vendas' ? 'selected' : '' %>>Vendas</option>
-              <option value="compras" <%= user.role === 'compras' ? 'selected' : '' %>>Compras</option>
-              <option value="admin" <%= user.role === 'admin' ? 'selected' : '' %>>Admin</option>
-            </select>
-          </div>
-          <div class="mb-3"><label class="form-label">WhatsApp</label><input type="text" name="phone_whatsapp" class="form-control" value="<%= user.phone_whatsapp || '' %>"></div>
-          <div class="mb-3">
-            <label class="form-label">Status</label>
-            <select name="active" class="form-select">
-              <option value="1" <%= user.active ? 'selected' : '' %>>Ativo</option>
-              <option value="0" <%= !user.active ? 'selected' : '' %>>Inativo</option>
-            </select>
-          </div>
-          <div class="mb-4">
-            <label class="form-label">Nova Senha (deixe em branco para não alterar)</label>
-            <input type="password" name="new_password" class="form-control" minlength="6" placeholder="••••••">
-          </div>
-          <div class="d-flex gap-2">
-            <a href="/admin/usuarios" class="btn btn-outline-secondary">Cancelar</a>
-            <button type="submit" class="btn btn-primary">Salvar</button>
-          </div>
-        </form>
-      </div>
+<div style="max-width:560px;margin:0 auto">
+  <div style="display:flex;align-items:center;gap:12px;margin-bottom:24px">
+    <a href="/admin/usuarios" class="btn-cancel" style="padding:6px 10px">
+      <i class="bi bi-arrow-left"></i>
+    </a>
+    <h4 style="font-size:18px;font-weight:700;margin:0">Editar Usuário</h4>
+  </div>
+
+  <div class="form-section">
+    <div class="form-section-body">
+      <form action="/admin/usuarios/<%= user.id %>" method="POST">
+        <div style="margin-bottom:16px">
+          <label class="form-label">Nome</label>
+          <input type="text" name="name" class="form-control" value="<%= user.name %>" required>
+        </div>
+        <div style="margin-bottom:16px">
+          <label class="form-label">E-mail</label>
+          <input type="email" name="email" class="form-control" value="<%= user.email %>" required>
+        </div>
+        <div style="margin-bottom:16px">
+          <label class="form-label">Setor</label>
+          <select name="role" class="form-select">
+            <option value="vendas" <%= user.role === 'vendas' ? 'selected' : '' %>>Vendas</option>
+            <option value="compras" <%= user.role === 'compras' ? 'selected' : '' %>>Compras</option>
+            <option value="admin" <%= user.role === 'admin' ? 'selected' : '' %>>Admin</option>
+          </select>
+        </div>
+        <div style="margin-bottom:16px">
+          <label class="form-label">WhatsApp</label>
+          <input type="text" name="phone_whatsapp" class="form-control" value="<%= user.phone_whatsapp || '' %>">
+        </div>
+        <div style="margin-bottom:16px">
+          <label class="form-label">Status</label>
+          <select name="active" class="form-select">
+            <option value="1" <%= user.active ? 'selected' : '' %>>Ativo</option>
+            <option value="0" <%= !user.active ? 'selected' : '' %>>Inativo</option>
+          </select>
+        </div>
+        <div style="margin-bottom:24px">
+          <label class="form-label">Nova Senha (deixe em branco para não alterar)</label>
+          <input type="password" name="new_password" class="form-control" minlength="6" placeholder="••••••">
+        </div>
+        <div style="display:flex;gap:10px">
+          <a href="/admin/usuarios" class="btn-cancel">Cancelar</a>
+          <button type="submit" class="btn-primary">Salvar</button>
+        </div>
+      </form>
     </div>
   </div>
 </div>
