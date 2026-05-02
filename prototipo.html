@@ -1,0 +1,842 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>COTOU — Protótipo</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --sidebar: #0d1b2a;
+  --sidebar-hover: #1a2d42;
+  --sidebar-active: #1d4ed8;
+  --blue: #2563eb;
+  --blue-light: #eff6ff;
+  --green: #16a34a;
+  --green-light: #f0fdf4;
+  --yellow: #ca8a04;
+  --yellow-light: #fefce8;
+  --red: #dc2626;
+  --red-light: #fef2f2;
+  --gray: #64748b;
+  --gray-light: #f8fafc;
+  --border: #e2e8f0;
+  --text: #0f172a;
+  --th-bg: #1e293b;
+  --th-color: #94a3b8;
+}
+
+body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: #f1f5f9;
+  display: flex; min-height: 100vh; font-size: 14px; }
+
+/* ── SIDEBAR ── */
+.sidebar {
+  width: 240px; background: var(--sidebar); min-height: 100vh;
+  position: fixed; top: 0; left: 0; z-index: 200;
+  display: flex; flex-direction: column;
+}
+.sidebar-brand {
+  padding: 22px 20px 20px;
+  border-bottom: 1px solid rgba(255,255,255,.07);
+}
+.sidebar-brand h1 { color: #fff; font-size: 15px; font-weight: 700; line-height: 1.2; }
+.sidebar-brand span { color: #64748b; font-size: 11px; }
+
+.sidebar nav { flex: 1; padding: 16px 12px; }
+.nav-item { list-style: none; margin-bottom: 2px; }
+.nav-link {
+  display: flex; align-items: center; gap: 11px;
+  padding: 9px 12px; border-radius: 8px; color: #94a3b8;
+  font-size: 13.5px; font-weight: 500; text-decoration: none;
+  transition: all .15s; cursor: pointer; border: none; background: none; width: 100%;
+}
+.nav-link:hover { background: var(--sidebar-hover); color: #e2e8f0; }
+.nav-link.active { background: var(--sidebar-active); color: #fff; font-weight: 600; }
+.nav-link i { font-size: 16px; width: 18px; text-align: center; flex-shrink: 0; }
+.nav-badge {
+  margin-left: auto; background: var(--blue); color: #fff;
+  font-size: 10px; font-weight: 700; padding: 1px 7px; border-radius: 20px;
+}
+.nav-badge.orange { background: #ea580c; }
+
+.sidebar-footer {
+  padding: 14px 16px; border-top: 1px solid rgba(255,255,255,.07);
+  display: flex; align-items: center; gap: 10px;
+}
+.user-av {
+  width: 34px; height: 34px; border-radius: 50%; background: var(--blue);
+  color: #fff; font-size: 12px; font-weight: 700; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+}
+.user-av.green { background: #16a34a; }
+.user-info { flex: 1; overflow: hidden; }
+.user-name { color: #e2e8f0; font-size: 12.5px; font-weight: 600;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.user-role { color: #64748b; font-size: 11px; }
+.logout { color: #64748b; font-size: 15px; cursor: pointer; }
+.logout:hover { color: #ef4444; }
+
+/* ── MAIN ── */
+.main { margin-left: 240px; flex: 1; display: flex; flex-direction: column; min-height: 100vh; }
+
+/* TOPBAR */
+.topbar {
+  background: #fff; border-bottom: 1px solid var(--border);
+  padding: 0 28px; height: 60px;
+  display: flex; align-items: center; justify-content: space-between;
+  position: sticky; top: 0; z-index: 100;
+}
+.topbar-left { display: flex; align-items: center; gap: 14px; }
+.hamburger { font-size: 18px; color: var(--gray); cursor: pointer; }
+.topbar-title { font-size: 17px; font-weight: 700; color: var(--text); }
+.topbar-right { display: flex; align-items: center; gap: 10px; }
+.icon-btn {
+  width: 36px; height: 36px; border-radius: 50%;
+  border: 1px solid var(--border); background: #fff;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 15px; color: var(--gray); cursor: pointer; position: relative;
+}
+.icon-btn .dot { position: absolute; top: 6px; right: 6px;
+  width: 8px; height: 8px; background: #ef4444; border-radius: 50%; border: 2px solid #fff; }
+.avatar-top {
+  width: 36px; height: 36px; border-radius: 50%; background: var(--blue);
+  color: #fff; font-size: 13px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center; cursor: pointer;
+}
+
+/* PAGE BODY */
+.page { padding: 28px; display: none; }
+.page.active { display: block; }
+
+/* TOOLBAR */
+.toolbar { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; }
+.filter-tabs { display: flex; background: #fff; border: 1px solid var(--border); border-radius: 8px; padding: 4px; gap: 2px; }
+.ftab {
+  padding: 6px 16px; border-radius: 6px; font-size: 13px; font-weight: 500;
+  color: var(--gray); border: none; background: none; cursor: pointer; transition: all .15s;
+}
+.ftab.active { background: var(--text); color: #fff; }
+.ftab:hover:not(.active) { background: #f1f5f9; }
+
+.search-box {
+  flex: 1; min-width: 200px; max-width: 360px;
+  display: flex; align-items: center; gap: 8px;
+  background: #fff; border: 1px solid var(--border); border-radius: 8px;
+  padding: 7px 14px; color: var(--gray);
+}
+.search-box input { border: none; outline: none; flex: 1; font-size: 13px; color: var(--text); background: none; }
+
+.btn-primary {
+  background: var(--blue); color: #fff; border: none; border-radius: 8px;
+  padding: 8px 18px; font-size: 13px; font-weight: 600; cursor: pointer;
+  display: flex; align-items: center; gap: 7px; white-space: nowrap;
+  transition: background .15s;
+}
+.btn-primary:hover { background: #1d4ed8; }
+
+/* TABLE */
+.table-wrap { background: #fff; border-radius: 12px; border: 1px solid var(--border); overflow: hidden; }
+.data-table { width: 100%; border-collapse: collapse; }
+.data-table thead tr { background: var(--th-bg); }
+.data-table th {
+  padding: 12px 16px; font-size: 11.5px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: .06em; color: var(--th-color);
+  white-space: nowrap;
+}
+.data-table td { padding: 14px 16px; border-bottom: 1px solid #f1f5f9;
+  color: var(--text); vertical-align: middle; }
+.data-table tr:last-child td { border-bottom: none; }
+.data-table tr:hover td { background: #fafbff; }
+
+.qid { color: var(--blue); font-weight: 600; text-decoration: none; }
+.qid:hover { text-decoration: underline; }
+.plate-tag {
+  display: inline-block; background: #f1f5f9; border: 1px solid var(--border);
+  border-radius: 4px; padding: 2px 8px; font-size: 11px; font-weight: 700; letter-spacing: .5px;
+}
+
+/* STATUS BADGES */
+.badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700;
+  letter-spacing: .03em; text-transform: uppercase;
+}
+.badge::before { content:''; width:5px; height:5px; border-radius:50%; background:currentColor; }
+.badge-pending  { background: #f1f5f9; color: #475569; }
+.badge-quotando { background: #eff6ff; color: #2563eb; }
+.badge-cotado   { background: #f0fdf4; color: #16a34a; }
+.badge-chegou   { background: #f5f3ff; color: #7c3aed; }
+.badge-cancel   { background: #fef2f2; color: #dc2626; }
+
+.actions-btn {
+  background: none; border: none; color: var(--gray);
+  font-size: 18px; cursor: pointer; padding: 2px 6px; border-radius: 4px;
+}
+.actions-btn:hover { background: #f1f5f9; }
+
+/* PAGINATION */
+.pagination { display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 16px; border-top: 1px solid #f1f5f9; }
+.pag-info { font-size: 12.5px; color: var(--gray); }
+.pag-buttons { display: flex; gap: 4px; }
+.pag-btn {
+  width: 32px; height: 32px; border-radius: 6px; border: 1px solid var(--border);
+  background: #fff; color: var(--gray); font-size: 13px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; font-weight: 500;
+}
+.pag-btn.active { background: var(--text); color: #fff; border-color: var(--text); }
+.pag-btn:hover:not(.active) { background: #f1f5f9; }
+.pag-btn.text { width: auto; padding: 0 10px; }
+
+/* DASHBOARD */
+.stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+.stat-card {
+  background: #fff; border-radius: 12px; border: 1px solid var(--border);
+  padding: 20px; text-decoration: none; display: block; transition: all .15s;
+}
+.stat-card:hover { border-color: var(--blue); box-shadow: 0 4px 12px rgba(37,99,235,.1); transform: translateY(-1px); }
+.stat-top { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 12px; }
+.stat-label { font-size: 12px; font-weight: 600; color: var(--gray); text-transform: uppercase; letter-spacing: .5px; }
+.stat-icon { width: 38px; height: 38px; border-radius: 8px;
+  display: flex; align-items: center; justify-content: center; font-size: 17px; }
+.si-orange { background: #fff7ed; color: #ea580c; }
+.si-blue   { background: #eff6ff; color: var(--blue); }
+.si-green  { background: #f0fdf4; color: var(--green); }
+.si-purple { background: #faf5ff; color: #7c3aed; }
+.stat-num { font-size: 2.2rem; font-weight: 800; color: var(--text); line-height: 1; }
+.stat-sub { font-size: 11.5px; color: var(--gray); margin-top: 4px; }
+.stat-trend { display: inline-flex; align-items: center; gap: 3px;
+  font-size: 11.5px; font-weight: 600; color: #16a34a; }
+
+/* CARDS GRID */
+.cards-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
+.section-card { background: #fff; border-radius: 12px; border: 1px solid var(--border); overflow: hidden; }
+.section-head {
+  padding: 16px 20px; border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.section-head h6 { font-size: 14px; font-weight: 700; color: var(--text); }
+.section-head a { font-size: 12.5px; color: var(--blue); text-decoration: none; font-weight: 500; }
+.notif-item {
+  display: flex; gap: 12px; padding: 13px 20px; border-bottom: 1px solid #f8fafc;
+  align-items: flex-start;
+}
+.notif-item:last-child { border-bottom: none; }
+.notif-dot-wrap { margin-top: 4px; }
+.ndot { width: 8px; height: 8px; border-radius: 50%; margin-top: 2px; }
+.ndot.blue { background: var(--blue); }
+.ndot.green { background: var(--green); }
+.ndot.orange { background: #ea580c; }
+.ndot.purple { background: #7c3aed; }
+.notif-title { font-size: 13px; font-weight: 600; color: var(--text); }
+.notif-desc { font-size: 12px; color: var(--gray); margin-top: 2px; }
+.notif-time { font-size: 11px; color: #94a3b8; margin-top: 3px; }
+
+/* FORM */
+.form-section { background: #fff; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 16px; overflow: hidden; }
+.form-section-head { padding: 14px 20px; border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 8px; }
+.form-section-head h6 { font-size: 13.5px; font-weight: 700; color: var(--text); margin: 0; }
+.form-section-head i { color: var(--blue); font-size: 15px; }
+.form-body { padding: 20px; }
+.form-grid { display: grid; gap: 16px; }
+.form-grid.cols-2 { grid-template-columns: 1fr 1fr; }
+.form-grid.cols-3 { grid-template-columns: 1fr 1fr 1fr; }
+.form-grid.cols-4 { grid-template-columns: 1fr 1fr 1fr 1fr; }
+.form-group label { display: block; font-size: 12px; font-weight: 600; color: var(--gray);
+  margin-bottom: 6px; text-transform: uppercase; letter-spacing: .04em; }
+.form-group label .req { color: #ef4444; }
+.form-control {
+  width: 100%; padding: 9px 12px; border: 1px solid var(--border); border-radius: 8px;
+  font-size: 13.5px; color: var(--text); outline: none; transition: border-color .15s;
+  background: #fff;
+}
+.form-control:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(37,99,235,.1); }
+.form-control::placeholder { color: #94a3b8; }
+.input-with-btn { display: flex; gap: 8px; }
+.input-with-btn .form-control { flex: 1; }
+.btn-search {
+  background: #f1f5f9; border: 1px solid var(--border); border-radius: 8px;
+  padding: 9px 14px; font-size: 13px; cursor: pointer; color: var(--gray);
+  display: flex; align-items: center; gap: 6px; font-weight: 500; white-space: nowrap;
+}
+.btn-search:hover { background: var(--blue-light); color: var(--blue); border-color: var(--blue); }
+
+/* ITEMS TABLE */
+.items-table-wrap { border: 1px solid var(--border); border-radius: 8px; overflow: hidden; margin-top: 8px; }
+.items-table { width: 100%; border-collapse: collapse; }
+.items-table th { background: #f8fafc; padding: 10px 12px; font-size: 11px;
+  font-weight: 700; color: var(--gray); text-transform: uppercase; letter-spacing: .05em;
+  border-bottom: 1px solid var(--border); }
+.items-table td { padding: 10px 12px; border-bottom: 1px solid #f8fafc; }
+.items-table tr:last-child td { border-bottom: none; }
+.form-control-sm { padding: 7px 10px; font-size: 13px; }
+
+.btn-outline {
+  background: #fff; color: var(--blue); border: 1px solid var(--blue);
+  border-radius: 8px; padding: 7px 16px; font-size: 13px; font-weight: 600;
+  cursor: pointer; display: flex; align-items: center; gap: 6px; transition: all .15s;
+}
+.btn-outline:hover { background: var(--blue-light); }
+
+.form-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 4px; padding: 0 0 4px; }
+.btn-cancel { background: #fff; border: 1px solid var(--border); border-radius: 8px;
+  padding: 9px 20px; font-size: 13px; font-weight: 600; color: var(--gray); cursor: pointer; }
+.btn-cancel:hover { background: #f8fafc; }
+
+/* DETAIL */
+.detail-grid { display: grid; grid-template-columns: 1fr 340px; gap: 16px; }
+.info-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 24px; }
+.info-item label { font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: .04em; display: block; margin-bottom: 3px; }
+.info-item span { font-size: 14px; font-weight: 600; color: var(--text); }
+.info-item .plate-tag { font-size: 13px; }
+
+.action-card { background: #fff; border-radius: 12px; border: 1px solid var(--border); overflow: hidden; margin-bottom: 12px; }
+.action-head { padding: 12px 16px; border-bottom: 1px solid var(--border);
+  font-size: 13px; font-weight: 700; display: flex; align-items: center; gap: 7px; }
+.action-body { padding: 16px; }
+.action-body p { font-size: 12.5px; color: var(--gray); margin-bottom: 12px; line-height: 1.5; }
+
+.btn-blue  { background: var(--blue); color:#fff; border:none; border-radius:8px;
+  padding:9px; width:100%; font-size:13px; font-weight:600; cursor:pointer; }
+.btn-green { background: var(--green); color:#fff; border:none; border-radius:8px;
+  padding:9px; width:100%; font-size:13px; font-weight:600; cursor:pointer; margin-bottom:8px; }
+.btn-wa    { background: #16a34a; color:#fff; border:none; border-radius:8px;
+  padding:9px; width:100%; font-size:13px; font-weight:600; cursor:pointer;
+  display:flex; align-items:center; justify-content:center; gap:7px; }
+.btn-red-outline { background:#fff; color:var(--red); border:1px solid #fca5a5; border-radius:8px;
+  padding:8px; width:100%; font-size:12.5px; font-weight:600; cursor:pointer; }
+
+.totals-box { background: #f8fafc; border-radius: 8px; padding: 12px 16px; margin-top: 12px; }
+.total-row { display: flex; justify-content: space-between; font-size: 13px; padding: 3px 0; }
+.total-row.grand { font-weight: 800; font-size: 15px; border-top: 1px solid var(--border);
+  margin-top: 6px; padding-top: 8px; color: var(--text); }
+
+/* PARTS */
+.parts-toolbar { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
+
+/* NOTIF LIST */
+.notif-list-item {
+  background: #fff; border-radius: 10px; border: 1px solid var(--border);
+  padding: 14px 18px; margin-bottom: 10px; display: flex; gap: 14px; align-items: flex-start;
+}
+.notif-list-item.unread { border-left: 3px solid var(--blue); background: var(--blue-light); }
+.ni-icon { width: 38px; height: 38px; border-radius: 50%; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center; font-size: 16px; }
+.ni-blue   { background: #eff6ff; color: var(--blue); }
+.ni-green  { background: #f0fdf4; color: var(--green); }
+.ni-orange { background: #fff7ed; color: #ea580c; }
+.ni-purple { background: #faf5ff; color: #7c3aed; }
+.ni-title { font-size: 13.5px; font-weight: 700; color: var(--text); }
+.ni-desc  { font-size: 12.5px; color: var(--gray); margin-top: 3px; }
+.ni-time  { font-size: 11px; color: #94a3b8; margin-top: 5px; }
+.ni-badge { margin-left: auto; }
+.unread-pill { background: var(--blue); color:#fff; font-size:10px; font-weight:700;
+  padding: 2px 8px; border-radius: 20px; }
+
+hr.divider { border: none; border-top: 1px solid var(--border); margin: 4px 0 12px; }
+
+/* AVATAR ROW */
+.av-row { display: flex; align-items: center; gap: 6px; }
+.av-xs { width: 24px; height: 24px; border-radius: 50%; background: var(--blue-light);
+  color: var(--blue); font-size: 10px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="sidebar-brand">
+    <h1>COTOU Quoting</h1>
+    <span>Sistema de Cotações</span>
+  </div>
+  <nav>
+    <ul style="list-style:none">
+      <li class="nav-item"><button class="nav-link active" onclick="showPage('dashboard',this)"><i class="bi bi-grid-1x2"></i>Dashboard</button></li>
+      <li class="nav-item"><button class="nav-link" onclick="showPage('quotes',this)"><i class="bi bi-clipboard-list"></i>Cotações<span class="nav-badge">4</span></button></li>
+      <li class="nav-item"><button class="nav-link" onclick="showPage('new-quote',this)"><i class="bi bi-plus-circle"></i>Nova Cotação</button></li>
+      <li class="nav-item"><button class="nav-link" onclick="showPage('detail',this)"><i class="bi bi-file-text"></i>Detalhe da Cot.</button></li>
+      <li class="nav-item" style="margin-top:8px"><button class="nav-link" onclick="showPage('parts',this)"><i class="bi bi-box-seam"></i>Catálogo de Peças</button></li>
+      <li class="nav-item"><button class="nav-link" onclick="showPage('notifs',this)"><i class="bi bi-bell"></i>Notificações<span class="nav-badge orange">5</span></button></li>
+      <li class="nav-item" style="margin-top:8px"><button class="nav-link" onclick="showPage('users',this)"><i class="bi bi-people"></i>Usuários</button></li>
+    </ul>
+  </nav>
+  <div class="sidebar-footer">
+    <div class="user-av">JV</div>
+    <div class="user-info">
+      <div class="user-name">João Vendas</div>
+      <div class="user-role">Setor de Vendas</div>
+    </div>
+    <i class="bi bi-box-arrow-right logout"></i>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<div class="main">
+
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div class="topbar-left">
+      <i class="bi bi-list hamburger"></i>
+      <span class="topbar-title" id="topbar-title">Dashboard</span>
+    </div>
+    <div class="topbar-right">
+      <div class="icon-btn"><i class="bi bi-bell"></i><span class="dot"></span></div>
+      <div class="avatar-top">JV</div>
+    </div>
+  </div>
+
+  <!-- ══ DASHBOARD ══ -->
+  <div class="page active" id="page-dashboard">
+    <div class="stats-grid">
+      <a class="stat-card" onclick="showPage('quotes',null);return false" href="#">
+        <div class="stat-top">
+          <div><div class="stat-label">Aguardando</div></div>
+          <div class="stat-icon si-orange"><i class="bi bi-clock"></i></div>
+        </div>
+        <div class="stat-num">7</div>
+        <div class="stat-sub"><span class="stat-trend"><i class="bi bi-arrow-up-short"></i>+2</span> desde ontem</div>
+      </a>
+      <a class="stat-card" onclick="showPage('quotes',null);return false" href="#">
+        <div class="stat-top">
+          <div><div class="stat-label">Em Cotação</div></div>
+          <div class="stat-icon si-blue"><i class="bi bi-search"></i></div>
+        </div>
+        <div class="stat-num">3</div>
+        <div class="stat-sub" style="color:#94a3b8">Em andamento</div>
+      </a>
+      <a class="stat-card" onclick="showPage('quotes',null);return false" href="#">
+        <div class="stat-top">
+          <div><div class="stat-label">Cotado</div></div>
+          <div class="stat-icon si-green"><i class="bi bi-check-circle"></i></div>
+        </div>
+        <div class="stat-num">12</div>
+        <div class="stat-sub"><span class="stat-trend"><i class="bi bi-arrow-up-short"></i>+4</span> esta semana</div>
+      </a>
+      <a class="stat-card" onclick="showPage('quotes',null);return false" href="#">
+        <div class="stat-top">
+          <div><div class="stat-label">Peça Chegou</div></div>
+          <div class="stat-icon si-purple"><i class="bi bi-box-arrow-in-down"></i></div>
+        </div>
+        <div class="stat-num">5</div>
+        <div class="stat-sub" style="color:#94a3b8">Aguardando cliente</div>
+      </a>
+    </div>
+
+    <div class="cards-row">
+      <div class="section-card">
+        <div class="section-head">
+          <h6>Cotações Recentes</h6>
+          <a href="#" onclick="showPage('quotes',null);return false">Ver todas →</a>
+        </div>
+        <table class="data-table" style="font-size:13px">
+          <thead><tr>
+            <th>Nº</th><th>Cliente</th><th>Status</th><th>Data</th>
+          </tr></thead>
+          <tbody>
+            <tr><td><a class="qid" href="#" onclick="showPage('detail',null);return false">#COT-2025-0012</a></td><td>Marcos Silva</td><td><span class="badge badge-pending">Aguardando</span></td><td style="color:#94a3b8">02/05</td></tr>
+            <tr><td><a class="qid" href="#" onclick="showPage('detail',null);return false">#COT-2025-0011</a></td><td>Ana Costa</td><td><span class="badge badge-quotando">Em Cotação</span></td><td style="color:#94a3b8">01/05</td></tr>
+            <tr><td><a class="qid" href="#" onclick="showPage('detail',null);return false">#COT-2025-0010</a></td><td>Roberto P.</td><td><span class="badge badge-cotado">Cotado</span></td><td style="color:#94a3b8">30/04</td></tr>
+            <tr><td><a class="qid" href="#" onclick="showPage('detail',null);return false">#COT-2025-0009</a></td><td>Luiza F.</td><td><span class="badge badge-chegou">Peça Chegou</span></td><td style="color:#94a3b8">29/04</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="section-card">
+        <div class="section-head">
+          <h6>Notificações Recentes</h6>
+          <a href="#" onclick="showPage('notifs',null);return false">Ver todas →</a>
+        </div>
+        <div class="notif-item"><div class="notif-dot-wrap"><div class="ndot blue"></div></div><div><div class="notif-title">Cotação #COT-2025-0011 respondida</div><div class="notif-desc">Maria Compras preencheu os valores</div><div class="notif-time">Há 15 minutos</div></div></div>
+        <div class="notif-item"><div class="notif-dot-wrap"><div class="ndot green"></div></div><div><div class="notif-title">Peça chegou — #COT-2025-0008</div><div class="notif-desc">Filtro de ar disponível para retirada</div><div class="notif-time">Há 1 hora</div></div></div>
+        <div class="notif-item"><div class="notif-dot-wrap"><div class="ndot orange"></div></div><div><div class="notif-title">Nova cotação #COT-2025-0012</div><div class="notif-desc">João Vendas abriu nova cotação</div><div class="notif-time">Há 2 horas</div></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ QUOTES LIST ══ -->
+  <div class="page" id="page-quotes">
+    <div class="toolbar">
+      <div class="filter-tabs">
+        <button class="ftab active">Todas</button>
+        <button class="ftab">Aguardando</button>
+        <button class="ftab">Em Cotação</button>
+        <button class="ftab">Cotado</button>
+        <button class="ftab">Peça Chegou</button>
+      </div>
+      <div class="search-box"><i class="bi bi-search"></i><input type="text" placeholder="Buscar cotações..."></div>
+      <button class="btn-primary" onclick="showPage('new-quote',null)"><i class="bi bi-plus-lg"></i>Nova Cotação</button>
+    </div>
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead><tr>
+          <th>Data</th><th>Número</th><th>Cliente</th><th>Veículo / Placa</th>
+          <th>Peças</th><th>Status</th><th>Vendedor</th><th>Ações</th>
+        </tr></thead>
+        <tbody>
+          <tr>
+            <td style="color:#64748b">02/05/2025</td>
+            <td><a class="qid" href="#" onclick="showPage('detail',null);return false">#COT-2025-0012</a></td>
+            <td><div class="av-row"><div class="av-xs">MS</div>Marcos Silva</div></td>
+            <td>HB20 2022 <span class="plate-tag">ABC1D23</span></td>
+            <td>2 peças</td>
+            <td><span class="badge badge-pending">Aguardando</span></td>
+            <td style="color:#64748b;font-size:12.5px">João V.</td>
+            <td><button class="actions-btn">⋯</button></td>
+          </tr>
+          <tr>
+            <td style="color:#64748b">01/05/2025</td>
+            <td><a class="qid" href="#" onclick="showPage('detail',null);return false">#COT-2025-0011</a></td>
+            <td><div class="av-row"><div class="av-xs">AC</div>Ana Costa</div></td>
+            <td>Gol 2019 <span class="plate-tag">XYZ9876</span></td>
+            <td>1 peça</td>
+            <td><span class="badge badge-quotando">Em Cotação</span></td>
+            <td style="color:#64748b;font-size:12.5px">João V.</td>
+            <td><button class="actions-btn">⋯</button></td>
+          </tr>
+          <tr>
+            <td style="color:#64748b">30/04/2025</td>
+            <td><a class="qid" href="#" onclick="showPage('detail',null);return false">#COT-2025-0010</a></td>
+            <td><div class="av-row"><div class="av-xs">RP</div>Roberto P.</div></td>
+            <td>Uno 2018 <span class="plate-tag">DEF5G67</span></td>
+            <td>3 peças</td>
+            <td><span class="badge badge-cotado">Cotado</span></td>
+            <td style="color:#64748b;font-size:12.5px">Maria V.</td>
+            <td><button class="actions-btn">⋯</button></td>
+          </tr>
+          <tr>
+            <td style="color:#64748b">29/04/2025</td>
+            <td><a class="qid" href="#" onclick="showPage('detail',null);return false">#COT-2025-0009</a></td>
+            <td><div class="av-row"><div class="av-xs">LF</div>Luiza F.</div></td>
+            <td>Celta 2015 <span class="plate-tag">GHI3456</span></td>
+            <td>1 peça</td>
+            <td><span class="badge badge-chegou">Peça Chegou</span></td>
+            <td style="color:#64748b;font-size:12.5px">João V.</td>
+            <td><button class="actions-btn">⋯</button></td>
+          </tr>
+          <tr>
+            <td style="color:#64748b">28/04/2025</td>
+            <td><a class="qid" href="#" onclick="showPage('detail',null);return false">#COT-2025-0008</a></td>
+            <td><div class="av-row"><div class="av-xs">CF</div>Carlos F.</div></td>
+            <td>Palio 2016 <span class="plate-tag">JKL7890</span></td>
+            <td>2 peças</td>
+            <td><span class="badge badge-cancel">Cancelado</span></td>
+            <td style="color:#64748b;font-size:12.5px">Maria V.</td>
+            <td><button class="actions-btn">⋯</button></td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="pagination">
+        <span class="pag-info">Mostrando 1–5 de 27 cotações</span>
+        <div class="pag-buttons">
+          <button class="pag-btn text">← Anterior</button>
+          <button class="pag-btn active">1</button>
+          <button class="pag-btn">2</button>
+          <button class="pag-btn">3</button>
+          <button class="pag-btn text">Próxima →</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ NEW QUOTE ══ -->
+  <div class="page" id="page-new-quote">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">
+      <button onclick="showPage('quotes',null)" style="background:#fff;border:1px solid var(--border);border-radius:8px;padding:7px 12px;cursor:pointer;font-size:13px;color:var(--gray)">← Voltar</button>
+      <div>
+        <div style="font-size:15px;font-weight:700">Nova Cotação</div>
+        <div style="font-size:12px;color:var(--gray)">Preencha os dados para enviar ao setor de compras</div>
+      </div>
+    </div>
+
+    <div class="form-section">
+      <div class="form-section-head"><i class="bi bi-person-circle"></i><h6>Dados do Cliente</h6></div>
+      <div class="form-body">
+        <div class="form-grid cols-2">
+          <div class="form-group"><label>Nome do Cliente <span class="req">*</span></label><input class="form-control" placeholder="Ex: João da Silva"></div>
+          <div class="form-group"><label>Telefone / WhatsApp <span class="req">*</span></label><input class="form-control" placeholder="(11) 99999-9999"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-section">
+      <div class="form-section-head"><i class="bi bi-car-front"></i><h6>Dados do Veículo</h6></div>
+      <div class="form-body">
+        <div class="form-grid cols-4" style="margin-bottom:16px">
+          <div class="form-group">
+            <label>Placa <span class="req">*</span></label>
+            <div class="input-with-btn">
+              <input class="form-control" placeholder="ABC1D23" style="text-transform:uppercase">
+              <button class="btn-search"><i class="bi bi-search"></i>Buscar</button>
+            </div>
+          </div>
+          <div class="form-group"><label>Marca</label><input class="form-control" placeholder="Ex: FIAT" id="demo-make"></div>
+          <div class="form-group"><label>Modelo</label><input class="form-control" placeholder="Ex: PALIO" id="demo-model"></div>
+          <div class="form-group"><label>Ano</label><input class="form-control" placeholder="2020" id="demo-year"></div>
+        </div>
+        <div class="form-grid cols-2">
+          <div class="form-group"><label>Cor</label><input class="form-control" placeholder="Ex: Prata" id="demo-color"></div>
+          <div class="form-group"><label>Combustível</label><input class="form-control" placeholder="Ex: Flex" id="demo-fuel"></div>
+        </div>
+        <div style="margin-top:10px;padding:10px 12px;background:#eff6ff;border-radius:8px;font-size:12px;color:var(--blue);display:flex;align-items:center;gap:8px" id="plate-hint" style="display:none">
+          <i class="bi bi-info-circle"></i> Digite a placa e clique em <strong>Buscar</strong> para preencher automaticamente
+        </div>
+      </div>
+    </div>
+
+    <div class="form-section">
+      <div class="form-section-head">
+        <i class="bi bi-box-seam"></i><h6>Peças para Cotar</h6>
+        <button class="btn-outline" style="margin-left:auto;padding:5px 12px;font-size:12px"><i class="bi bi-plus-lg"></i>Adicionar Peça</button>
+      </div>
+      <div class="form-body" style="padding-top:12px">
+        <div class="items-table-wrap">
+          <table class="items-table">
+            <thead><tr><th>Código</th><th>Nome da Peça</th><th>Qtd</th><th>Mão de Obra (R$)</th><th></th></tr></thead>
+            <tbody>
+              <tr>
+                <td><input class="form-control form-control-sm" placeholder="Opcional" style="width:110px"></td>
+                <td><input class="form-control form-control-sm" placeholder="Ex: Filtro de Ar" style="width:100%"></td>
+                <td><input class="form-control form-control-sm" type="number" value="1" style="width:70px"></td>
+                <td><input class="form-control form-control-sm" type="number" value="0" style="width:100px"></td>
+                <td><button style="background:none;border:none;color:#ef4444;cursor:pointer;font-size:15px">✕</button></td>
+              </tr>
+              <tr>
+                <td><input class="form-control form-control-sm" placeholder="Opcional" style="width:110px"></td>
+                <td><input class="form-control form-control-sm" placeholder="Ex: Pastilha de Freio" style="width:100%"></td>
+                <td><input class="form-control form-control-sm" type="number" value="1" style="width:70px"></td>
+                <td><input class="form-control form-control-sm" type="number" value="0" style="width:100px"></td>
+                <td><button style="background:none;border:none;color:#ef4444;cursor:pointer;font-size:15px">✕</button></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-section">
+      <div class="form-section-head"><i class="bi bi-chat-text"></i><h6>Observações</h6></div>
+      <div class="form-body">
+        <textarea class="form-control" rows="3" placeholder="Informações adicionais para o setor de compras..."></textarea>
+      </div>
+    </div>
+
+    <div class="form-actions">
+      <button class="btn-cancel" onclick="showPage('quotes',null)">Cancelar</button>
+      <button class="btn-primary"><i class="bi bi-send"></i>Enviar para Compras</button>
+    </div>
+  </div>
+
+  <!-- ══ DETAIL ══ -->
+  <div class="page" id="page-detail">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap">
+      <button onclick="showPage('quotes',null)" style="background:#fff;border:1px solid var(--border);border-radius:8px;padding:7px 12px;cursor:pointer;font-size:13px;color:var(--gray)">← Voltar</button>
+      <div style="flex:1">
+        <div style="display:flex;align-items:center;gap:10px">
+          <span style="font-size:16px;font-weight:800">#COT-2025-0011</span>
+          <span class="badge badge-quotando">Em Cotação</span>
+        </div>
+        <div style="font-size:12px;color:var(--gray);margin-top:2px">Aberta por João Vendas · 01/05/2025 às 09:32</div>
+      </div>
+    </div>
+
+    <div class="detail-grid">
+      <div>
+        <div class="form-section">
+          <div class="form-section-head"><i class="bi bi-person-circle"></i><h6>Cliente</h6></div>
+          <div class="form-body"><div class="info-row">
+            <div class="info-item"><label>Nome</label><span>Ana Costa</span></div>
+            <div class="info-item"><label>Telefone</label><span style="color:#16a34a"><i class="bi bi-whatsapp"></i> (11) 98765-4321</span></div>
+          </div></div>
+        </div>
+        <div class="form-section">
+          <div class="form-section-head"><i class="bi bi-car-front"></i><h6>Veículo</h6></div>
+          <div class="form-body"><div class="info-row">
+            <div class="info-item"><label>Placa</label><span class="plate-tag" style="font-size:14px">XYZ9876</span></div>
+            <div class="info-item"><label>Veículo</label><span>Volkswagen Gol 2019</span></div>
+            <div class="info-item"><label>Cor</label><span>Branco</span></div>
+            <div class="info-item"><label>Combustível</label><span>Flex</span></div>
+          </div></div>
+        </div>
+        <div class="form-section">
+          <div class="form-section-head"><i class="bi bi-box-seam"></i><h6>Peças Solicitadas</h6></div>
+          <div style="overflow-x:auto">
+            <table class="data-table" style="font-size:13px">
+              <thead><tr><th>Código</th><th>Peça</th><th>Qtd</th><th>Vlr Unit.</th><th>Total</th><th>M.O.</th><th>Prazo</th><th>Status</th></tr></thead>
+              <tbody>
+                <tr>
+                  <td style="color:#64748b">FILT-AR-01</td>
+                  <td style="font-weight:600">Filtro de Ar</td>
+                  <td>1</td>
+                  <td>R$ 45,00</td>
+                  <td style="font-weight:700">R$ 45,00</td>
+                  <td>R$ 30,00</td>
+                  <td>3 dias</td>
+                  <td><span class="badge badge-cotado">Cotado</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="totals-box">
+            <div class="total-row"><span style="color:var(--gray)">Subtotal peças</span><span>R$ 45,00</span></div>
+            <div class="total-row"><span style="color:var(--gray)">Mão de obra</span><span>R$ 30,00</span></div>
+            <div class="total-row grand"><span>Total Geral</span><span>R$ 75,00</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="action-card">
+          <div class="action-head" style="color:var(--blue)"><i class="bi bi-currency-dollar"></i>Responder Cotação</div>
+          <div class="action-body">
+            <p>Preencha os valores, prazo de entrega e mão de obra para cada peça.</p>
+            <button class="btn-blue">Salvar e Notificar Vendedor</button>
+          </div>
+        </div>
+        <div class="action-card">
+          <div class="action-head" style="color:#16a34a"><i class="bi bi-whatsapp"></i>Notificar Cliente</div>
+          <div class="action-body">
+            <p>Envie o resultado da cotação por WhatsApp para <strong>Ana Costa</strong>.</p>
+            <button class="btn-wa"><i class="bi bi-whatsapp"></i>Enviar pelo WhatsApp</button>
+          </div>
+        </div>
+        <div class="action-card">
+          <div class="action-head" style="color:#7c3aed"><i class="bi bi-box-arrow-in-down"></i>Peça Chegou</div>
+          <div class="action-body">
+            <p>Confirme a chegada e o vendedor será notificado automaticamente.</p>
+            <button class="btn-green" style="margin-bottom:0">Confirmar Chegada</button>
+          </div>
+        </div>
+        <div class="action-card">
+          <div class="action-head" style="color:var(--gray);font-size:12px">
+            <i class="bi bi-clock-history"></i>Histórico
+          </div>
+          <div class="action-body" style="padding:12px 16px">
+            <div style="font-size:12px;color:var(--gray)">
+              <div style="display:flex;gap:8px;margin-bottom:8px"><i class="bi bi-circle-fill" style="color:#2563eb;font-size:8px;margin-top:4px"></i><div><div style="font-weight:600;color:var(--text)">Status: Em Cotação</div><div>01/05/2025 às 10:15 · Maria Compras</div></div></div>
+              <div style="display:flex;gap:8px"><i class="bi bi-circle-fill" style="color:#94a3b8;font-size:8px;margin-top:4px"></i><div><div style="font-weight:600;color:var(--text)">Cotação aberta</div><div>01/05/2025 às 09:32 · João Vendas</div></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ PARTS ══ -->
+  <div class="page" id="page-parts">
+    <div class="parts-toolbar">
+      <div class="search-box" style="max-width:320px"><i class="bi bi-search"></i><input type="text" placeholder="Buscar por código ou nome..."></div>
+      <button class="btn-primary" style="margin-left:auto"><i class="bi bi-plus-lg"></i>Nova Peça</button>
+    </div>
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead><tr><th>Código</th><th>Nome</th><th>Descrição</th><th>Preço Ref.</th><th>Ações</th></tr></thead>
+        <tbody>
+          <tr><td><span class="plate-tag">FILT-AR-01</span></td><td style="font-weight:600">Filtro de Ar</td><td style="color:#64748b">Filtro de ar motor</td><td>R$ 42,00</td><td><button class="actions-btn">⋯</button></td></tr>
+          <tr><td><span class="plate-tag">PAST-FR-02</span></td><td style="font-weight:600">Pastilha de Freio</td><td style="color:#64748b">Dianteira, par</td><td>R$ 89,00</td><td><button class="actions-btn">⋯</button></td></tr>
+          <tr><td><span class="plate-tag">DISC-FR-03</span></td><td style="font-weight:600">Disco de Freio</td><td style="color:#64748b">Dianteiro unitário</td><td>R$ 145,00</td><td><button class="actions-btn">⋯</button></td></tr>
+          <tr><td><span class="plate-tag">VELA-04</span></td><td style="font-weight:600">Vela de Ignição</td><td style="color:#64748b">Jogo com 4 unidades</td><td>R$ 68,00</td><td><button class="actions-btn">⋯</button></td></tr>
+          <tr><td><span class="plate-tag">CORR-05</span></td><td style="font-weight:600">Correia Dentada</td><td style="color:#64748b">Kit completo</td><td>R$ 220,00</td><td><button class="actions-btn">⋯</button></td></tr>
+        </tbody>
+      </table>
+      <div class="pagination">
+        <span class="pag-info">Mostrando 1–5 de 43 peças</span>
+        <div class="pag-buttons">
+          <button class="pag-btn text">← Anterior</button>
+          <button class="pag-btn active">1</button>
+          <button class="pag-btn">2</button>
+          <button class="pag-btn">3</button>
+          <button class="pag-btn text">Próxima →</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ NOTIFS ══ -->
+  <div class="page" id="page-notifs">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+      <div style="font-size:13px;color:var(--gray)">5 notificações não lidas</div>
+      <button class="btn-outline" style="padding:6px 14px;font-size:12px"><i class="bi bi-check-all"></i>Marcar todas como lidas</button>
+    </div>
+
+    <div class="notif-list-item unread">
+      <div class="ni-icon ni-blue"><i class="bi bi-check-circle-fill"></i></div>
+      <div style="flex:1">
+        <div class="ni-title">Cotação #COT-2025-0011 respondida!</div>
+        <div class="ni-desc">Maria Compras preencheu os valores — Filtro de Ar: R$ 45,00 · Prazo: 3 dias</div>
+        <div class="ni-time">Há 15 minutos</div>
+      </div>
+      <div class="ni-badge"><span class="unread-pill">Nova</span></div>
+    </div>
+    <div class="notif-list-item unread">
+      <div class="ni-icon ni-purple"><i class="bi bi-box-arrow-in-down"></i></div>
+      <div style="flex:1">
+        <div class="ni-title">Peça chegou — #COT-2025-0008</div>
+        <div class="ni-desc">Compras confirmou chegada do Filtro de Óleo · Avise o cliente!</div>
+        <div class="ni-time">Há 1 hora</div>
+      </div>
+      <div class="ni-badge"><span class="unread-pill">Nova</span></div>
+    </div>
+    <div class="notif-list-item">
+      <div class="ni-icon ni-orange"><i class="bi bi-arrow-clockwise"></i></div>
+      <div style="flex:1">
+        <div class="ni-title">Status atualizado — #COT-2025-0011</div>
+        <div class="ni-desc">Alterado para "Em Cotação" por Maria Compras</div>
+        <div class="ni-time">Há 2 horas</div>
+      </div>
+    </div>
+    <div class="notif-list-item">
+      <div class="ni-icon ni-green"><i class="bi bi-check-circle-fill"></i></div>
+      <div style="flex:1">
+        <div class="ni-title">Cotação #COT-2025-0010 respondida!</div>
+        <div class="ni-desc">3 peças cotadas · Total: R$ 487,00</div>
+        <div class="ni-time">Ontem às 16:20</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ USERS ══ -->
+  <div class="page" id="page-users">
+    <div style="display:flex;justify-content:flex-end;margin-bottom:16px">
+      <button class="btn-primary"><i class="bi bi-person-plus"></i>Novo Usuário</button>
+    </div>
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead><tr><th>Nome</th><th>E-mail</th><th>Setor</th><th>Status</th><th>Ações</th></tr></thead>
+        <tbody>
+          <tr><td><div class="av-row"><div class="av-xs" style="background:#fef3c7;color:#ca8a04">AD</div><strong>Administrador</strong></div></td><td style="color:#64748b">admin@cotou.com.br</td><td><span class="badge" style="background:#fef3c7;color:#ca8a04">Admin</span></td><td><span class="badge badge-cotado">Ativo</span></td><td><button class="actions-btn">⋯</button></td></tr>
+          <tr><td><div class="av-row"><div class="av-xs">JV</div><strong>João Vendas</strong></div></td><td style="color:#64748b">vendas@cotou.com.br</td><td><span class="badge badge-quotando">Vendas</span></td><td><span class="badge badge-cotado">Ativo</span></td><td><button class="actions-btn">⋯</button></td></tr>
+          <tr><td><div class="av-row"><div class="av-xs" style="background:#f0fdf4;color:#16a34a">MC</div><strong>Maria Compras</strong></div></td><td style="color:#64748b">compras@cotou.com.br</td><td><span class="badge badge-cotado">Compras</span></td><td><span class="badge badge-cotado">Ativo</span></td><td><button class="actions-btn">⋯</button></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div><!-- /main -->
+
+<script>
+const titles = {
+  dashboard: 'Dashboard', quotes: 'Cotações', 'new-quote': 'Nova Cotação',
+  detail: 'Detalhe da Cotação', parts: 'Catálogo de Peças',
+  notifs: 'Notificações', users: 'Usuários'
+};
+function showPage(id, btn) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
+  document.getElementById('topbar-title').textContent = titles[id] || id;
+  if (btn) {
+    document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+    btn.classList.add('active');
+  }
+}
+document.querySelectorAll('.ftab').forEach(tab => {
+  tab.addEventListener('click', function() {
+    this.closest('.filter-tabs').querySelectorAll('.ftab').forEach(t => t.classList.remove('active'));
+    this.classList.add('active');
+  });
+});
+</script>
+</body>
+</html>
