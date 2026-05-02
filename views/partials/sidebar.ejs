@@ -1,24 +1,21 @@
 <% if (currentUser) {
   const p = locals.currentPath || '';
   const initials = currentUser.name.split(' ').slice(0,2).map(w => w[0]).join('').toUpperCase();
-  const avatarClass = currentUser.role === 'compras' ? 'green' : currentUser.role === 'admin' ? 'orange' : '';
-  const roleLabel = currentUser.role === 'vendas' ? 'Setor de Vendas' : currentUser.role === 'compras' ? 'Setor de Compras' : 'Administrador';
 %>
 <aside class="sidebar" id="sidebar">
   <div class="sidebar-brand">
-    <h1>COTOU</h1>
-    <span>Sistema de Cotações</span>
+    <h1>COTOU <span style="font-weight:400;opacity:.55">Quoting</span></h1>
   </div>
   <nav>
     <ul>
       <li class="nav-item">
         <a href="/" class="nav-link <%= p === '/' ? 'active' : '' %>">
-          <i class="bi bi-grid-1x2"></i>Dashboard
+          <i class="bi bi-grid-1x2-fill"></i>Dashboard
         </a>
       </li>
       <li class="nav-item">
         <a href="/cotacoes" class="nav-link <%= p.startsWith('/cotacoes') && !p.startsWith('/cotacoes/nova') ? 'active' : '' %>">
-          <i class="bi bi-clipboard-list"></i>Cotações
+          <i class="bi bi-list-ul"></i>Cotações
           <% if (unreadCount > 0) { %><span class="nav-badge orange"><%= unreadCount %></span><% } %>
         </a>
       </li>
@@ -29,9 +26,9 @@
         </a>
       </li>
       <% } %>
-      <li class="nav-item" style="margin-top:8px">
+      <li class="nav-item">
         <a href="/pecas" class="nav-link <%= p.startsWith('/pecas') ? 'active' : '' %>">
-          <i class="bi bi-box-seam"></i>Catálogo de Peças
+          <i class="bi bi-box-seam"></i>Catálogo
         </a>
       </li>
       <li class="nav-item">
@@ -41,23 +38,18 @@
         </a>
       </li>
       <% if (currentUser.role === 'admin') { %>
-      <li class="nav-item" style="margin-top:8px">
+      <li class="nav-item">
         <a href="/admin/usuarios" class="nav-link <%= p.startsWith('/admin') ? 'active' : '' %>">
           <i class="bi bi-people"></i>Usuários
         </a>
       </li>
       <% } %>
+      <li class="nav-item nav-item-bottom">
+        <a href="#" class="nav-link" style="margin-top:0">
+          <i class="bi bi-gear"></i>Configurações
+        </a>
+      </li>
     </ul>
   </nav>
-  <div class="sidebar-footer">
-    <div class="user-av <%= avatarClass %>"><%= initials %></div>
-    <div class="user-info">
-      <div class="user-name"><%= currentUser.name %></div>
-      <div class="user-role"><%= roleLabel %></div>
-    </div>
-    <form action="/logout" method="POST" style="margin:0">
-      <button type="submit" class="logout" title="Sair"><i class="bi bi-box-arrow-right"></i></button>
-    </form>
-  </div>
 </aside>
 <% } %>

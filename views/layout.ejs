@@ -26,7 +26,21 @@
         <% if (unreadCount > 0) { %><span class="dot"></span><% } %>
       </a>
       <% const topInitials = currentUser.name.split(' ').slice(0,2).map(w=>w[0]).join('').toUpperCase(); %>
-      <div class="avatar-top"><%= topInitials %></div>
+      <div class="avatar-top" id="avatar-btn" onclick="toggleUserMenu()" title="<%= currentUser.name %>">
+        <%= topInitials %>
+      </div>
+      <div class="user-dropdown" id="user-dropdown">
+        <div class="user-dropdown-info">
+          <div class="user-dropdown-name"><%= currentUser.name %></div>
+          <div class="user-dropdown-role"><%= currentUser.email %></div>
+        </div>
+        <div class="user-dropdown-divider"></div>
+        <form action="/logout" method="POST">
+          <button type="submit" class="user-dropdown-item">
+            <i class="bi bi-box-arrow-right"></i>Sair
+          </button>
+        </form>
+      </div>
       <% } %>
     </div>
   </div>
@@ -46,10 +60,21 @@
   function toggleSidebar() {
     document.getElementById('sidebar').classList.toggle('open');
   }
+
+  function toggleUserMenu() {
+    document.getElementById('user-dropdown').classList.toggle('open');
+  }
+
   document.addEventListener('click', function(e) {
     const sidebar = document.getElementById('sidebar');
-    if (sidebar && !sidebar.contains(e.target) && !document.getElementById('hamburger').contains(e.target)) {
+    const hamburger = document.getElementById('hamburger');
+    if (sidebar && hamburger && !sidebar.contains(e.target) && !hamburger.contains(e.target)) {
       sidebar.classList.remove('open');
+    }
+    const dropdown = document.getElementById('user-dropdown');
+    const avatarBtn = document.getElementById('avatar-btn');
+    if (dropdown && avatarBtn && !avatarBtn.contains(e.target) && !dropdown.contains(e.target)) {
+      dropdown.classList.remove('open');
     }
   });
 </script>
