@@ -5,62 +5,56 @@
 %>
 <aside class="sidebar" id="sidebar">
   <div class="sidebar-brand">
-    <div style="display:flex;align-items:center;gap:10px">
-      <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
-        <rect width="28" height="28" rx="7" fill="var(--accent)"/>
-        <path d="M7 14h6M15 10l4 4-4 4" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
-      </svg>
-      <span style="font-size:17px;font-weight:800;color:#fff;letter-spacing:-.3px">COTOU</span>
-    </div>
-    <div style="font-size:11px;color:var(--sidebar-text);margin-top:4px;margin-left:38px;opacity:.6">Sistema de Cotações</div>
+    <h1 class="sidebar-logo">COTOU</h1>
+    <p class="sidebar-tagline">Enterprise Resource Planning</p>
   </div>
   <nav>
     <ul>
       <li class="nav-item">
         <a href="/" class="nav-link <%= p === '/' ? 'active' : '' %>">
-          <i class="bi bi-grid-1x2-fill"></i>Dashboard
+          <span class="material-symbols-outlined">dashboard</span>Dashboard
         </a>
       </li>
       <li class="nav-item">
         <a href="/cotacoes" class="nav-link <%= p.startsWith('/cotacoes') && !p.startsWith('/cotacoes/nova') ? 'active' : '' %>">
-          <i class="bi bi-list-ul"></i>Cotações
+          <span class="material-symbols-outlined">request_quote</span>Cotações
           <% if (unreadCount > 0) { %><span class="nav-badge orange"><%= unreadCount %></span><% } %>
         </a>
       </li>
       <% if (currentUser.role === 'vendas' || currentUser.role === 'admin') { %>
       <li class="nav-item">
         <a href="/cotacoes/nova" class="nav-link <%= p === '/cotacoes/nova' ? 'active' : '' %>">
-          <i class="bi bi-plus-circle"></i>Nova Cotação
+          <span class="material-symbols-outlined">add_box</span>Nova Cotação
         </a>
       </li>
       <% } %>
       <li class="nav-item">
         <a href="/pecas" class="nav-link <%= p.startsWith('/pecas') ? 'active' : '' %>">
-          <i class="bi bi-box-seam"></i>Catálogo
+          <span class="material-symbols-outlined">inventory_2</span>Catálogo
         </a>
       </li>
       <li class="nav-item">
         <a href="/notificacoes" class="nav-link <%= p.startsWith('/notificacoes') ? 'active' : '' %>">
-          <i class="bi bi-bell"></i>Notificações
+          <span class="material-symbols-outlined">notifications</span>Notificações
           <% if (unreadCount > 0) { %><span class="nav-badge"><%= unreadCount %></span><% } %>
         </a>
       </li>
       <% if (currentUser.role === 'admin') { %>
       <li class="nav-item">
         <a href="/admin/usuarios" class="nav-link <%= p.startsWith('/admin') ? 'active' : '' %>">
-          <i class="bi bi-people"></i>Usuários
+          <span class="material-symbols-outlined">group</span>Usuários
         </a>
       </li>
       <% } %>
       <li class="nav-item nav-item-bottom">
         <a href="#" class="nav-link">
-          <i class="bi bi-gear"></i>Configurações
+          <span class="material-symbols-outlined">settings</span>Configurações
         </a>
       </li>
     </ul>
   </nav>
   <div class="sidebar-footer">
-    <div class="av" style="width:32px;height:32px;font-size:11px;background:var(--sidebar-active);flex-shrink:0"><%= initials %></div>
+    <div class="av" style="width:32px;height:32px;font-size:11px;background:var(--accent);flex-shrink:0"><%= initials %></div>
     <div style="flex:1;min-width:0">
       <div class="sidebar-footer-name"><%= currentUser.name %></div>
       <div class="sidebar-footer-role"><%= roleLabel %></div>
