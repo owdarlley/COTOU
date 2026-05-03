@@ -889,64 +889,18 @@ textarea.form-control { resize: vertical; }
   35% { transform: rotate(16deg); }
   45% { transform: rotate(-8deg); }
 }
-@keyframes pulse-ring {
-  0%   { transform: scale(1);   opacity: .7; }
-  100% { transform: scale(2.2); opacity: 0;  }
-}
-@keyframes float-bob {
-  0%,100% { transform: translateY(0); }
-  50%      { transform: translateY(-6px); }
-}
 .bell-ringing {
   animation: bell-shake 1.6s ease-in-out infinite;
   display: inline-block;
   transform-origin: top center;
 }
-.notif-float {
-  position: fixed;
-  bottom: 28px;
-  right: 28px;
-  z-index: 1050;
-  width: 54px;
-  height: 54px;
-  border-radius: 50%;
-  background: var(--accent);
-  color: #fff;
-  border: none;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 4px 18px rgba(30,64,175,.45);
-  text-decoration: none;
-  animation: float-bob 2.4s ease-in-out infinite;
-  font-size: 22px;
-  transition: background .15s;
+.nav-link-alert {
+  background: rgba(37,99,235,.1) !important;
+  color: var(--accent) !important;
+  border-radius: 6px;
 }
-.notif-float:hover { background: #1e3a8a; color: #fff; }
-.notif-float::before {
-  content: '';
-  position: absolute;
-  inset: -5px;
-  border-radius: 50%;
-  border: 2px solid var(--accent);
-  animation: pulse-ring 1.8s ease-out infinite;
-  pointer-events: none;
-}
-.notif-float-badge {
-  position: absolute;
-  top: 4px; right: 4px;
-  width: 18px; height: 18px;
-  border-radius: 50%;
+.nav-link-alert .nav-badge {
   background: #ef4444;
-  color: #fff;
-  font-size: 10px;
-  font-weight: 700;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 2px solid #fff;
-  line-height: 1;
 }
 
 .text-muted  { color: var(--text-muted) !important; }

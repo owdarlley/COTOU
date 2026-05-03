@@ -34,8 +34,9 @@
         </a>
       </li>
       <li class="nav-item">
-        <a href="/notificacoes" class="nav-link <%= p.startsWith('/notificacoes') ? 'active' : '' %>">
-          <span class="material-symbols-outlined">notifications</span>Notificações
+        <a href="/notificacoes" id="nav-notif-link"
+           class="nav-link <%= p.startsWith('/notificacoes') ? 'active' : (locals.hasRespondida ? 'nav-link-alert' : '') %>">
+          <span class="material-symbols-outlined<%= locals.hasRespondida && !p.startsWith('/notificacoes') ? ' bell-ringing' : '' %>">notifications</span>Notificações
           <% if (unreadCount > 0) { %><span class="nav-badge"><%= unreadCount %></span><% } %>
         </a>
       </li>

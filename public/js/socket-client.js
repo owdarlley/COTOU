@@ -10,7 +10,7 @@ if (socket && userId) {
     updateBadge(data.unreadCount);
     showToast(data.title, data.message, 'primary');
     if (data.type === 'cotacao_respondida') {
-      showFloatBell(data.unreadCount);
+      highlightNotifLink();
     }
   });
 
@@ -45,20 +45,14 @@ function updateBadge(count) {
   }
 }
 
-function showFloatBell(count) {
-  const btn = document.getElementById('notif-float');
-  if (!btn) return;
-  btn.style.display = 'flex';
-  const badge = btn.querySelector('.notif-float-badge') || document.getElementById('notif-float-badge');
-  if (badge) {
-    badge.textContent = count > 9 ? '9+' : count;
-    badge.style.display = 'flex';
-  }
-  // Reinicia animação do sino para chamar atenção imediata
-  const icon = btn.querySelector('.bi-bell-fill');
+function highlightNotifLink() {
+  const link = document.getElementById('nav-notif-link');
+  if (!link) return;
+  link.classList.add('nav-link-alert');
+  const icon = link.querySelector('.material-symbols-outlined');
   if (icon) {
     icon.classList.remove('bell-ringing');
-    void icon.offsetWidth; // força reflow para reiniciar animação
+    void icon.offsetWidth;
     icon.classList.add('bell-ringing');
   }
 }
