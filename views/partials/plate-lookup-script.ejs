@@ -11,12 +11,9 @@ document.getElementById('btn-buscar-placa').addEventListener('click', async () =
     const json = await r.json();
     if (json.ok && json.data) {
       const d = json.data;
-      if (d.make) document.getElementById('vehicle_make').value = d.make;
       if (d.model) document.getElementById('vehicle_model').value = d.model;
       if (d.year_model) document.getElementById('vehicle_year_model').value = d.year_model;
       if (d.year_manuf) document.getElementById('vehicle_year_manuf').value = d.year_manuf;
-      if (d.color) document.getElementById('vehicle_color').value = d.color;
-      if (d.fuel) document.getElementById('vehicle_fuel').value = d.fuel;
       if (d.chassis) document.getElementById('vehicle_chassis').value = d.chassis;
       status.textContent = '✓ Dados preenchidos automaticamente';
       status.className = 'form-text text-success';

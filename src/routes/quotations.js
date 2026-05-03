@@ -38,8 +38,8 @@ router.get('/nova', requireRole('vendas', 'admin'), (req, res) => {
 router.post('/', requireRole('vendas', 'admin'), async (req, res) => {
   const {
     customer_name, customer_phone,
-    vehicle_plate, vehicle_make, vehicle_model, vehicle_year_model,
-    vehicle_year_manuf, vehicle_color, vehicle_fuel, vehicle_chassis,
+    vehicle_plate, vehicle_model, vehicle_year_model,
+    vehicle_year_manuf, vehicle_chassis,
     notes_vendas,
     parts = [], part_names = [], part_codes = [], quantities = [],
     labor_costs = []
@@ -70,10 +70,10 @@ router.post('/', requireRole('vendas', 'admin'), async (req, res) => {
   const customer = Customer.findOrCreate({ name: customer_name.trim(), phone: customer_phone.trim() });
   const vehicleId = Vehicle.upsert({
     license_plate: vehicle_plate,
-    make: vehicle_make || '', model: vehicle_model || '',
+    make: '', model: vehicle_model || '',
     year_model: parseInt(vehicle_year_model) || null,
     year_manuf: parseInt(vehicle_year_manuf) || null,
-    color: vehicle_color || '', fuel: vehicle_fuel || '', chassis: vehicle_chassis || '',
+    color: '', fuel: '', chassis: vehicle_chassis || '',
     plate_data_json: null
   });
 
@@ -105,7 +105,7 @@ router.post('/', requireRole('vendas', 'admin'), async (req, res) => {
     quotationId,
     type: 'nova_cotacao',
     title: `Nova cotação #${quoteNumber}`,
-    message: `${quotation.creator_name} abriu cotação para ${customer_name} — ${vehicle_make || ''} ${vehicle_model || ''} ${vehicle_plate}`
+    message: `${quotation.creator_name} abriu cotação para ${customer_name} — ${vehicle_model || ''} ${vehicle_plate}`
   });
 
   req.session.flash = { success: `Cotação #${quoteNumber} criada com sucesso!` };
