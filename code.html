@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+
+<html class="light" lang="pt-BR"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>COTOU ERP</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "on-primary": "#ffffff",
+                    "secondary-fixed-dim": "#b7c8e1",
+                    "on-primary-fixed": "#001453",
+                    "on-tertiary": "#ffffff",
+                    "outline": "#757684",
+                    "surface-tint": "#3755c3",
+                    "on-surface-variant": "#444653",
+                    "tertiary": "#003853",
+                    "primary-fixed-dim": "#b8c4ff",
+                    "tertiary-container": "#005074",
+                    "tertiary-fixed-dim": "#89ceff",
+                    "surface-container-high": "#e7e8ea",
+                    "surface-variant": "#e1e2e4",
+                    "inverse-surface": "#2e3132",
+                    "outline-variant": "#c4c5d5",
+                    "surface-container-lowest": "#ffffff",
+                    "secondary-container": "#d0e1fb",
+                    "on-tertiary-fixed": "#001e2f",
+                    "on-primary-container": "#a8b8ff",
+                    "on-error": "#ffffff",
+                    "on-tertiary-container": "#68c4ff",
+                    "on-tertiary-fixed-variant": "#004c6e",
+                    "surface-container-highest": "#e1e2e4",
+                    "on-secondary": "#ffffff",
+                    "on-error-container": "#93000a",
+                    "surface-bright": "#f8f9fb",
+                    "on-background": "#191c1e",
+                    "secondary": "#505f76",
+                    "secondary-fixed": "#d3e4fe",
+                    "primary-fixed": "#dde1ff",
+                    "tertiary-fixed": "#c9e6ff",
+                    "on-secondary-container": "#54647a",
+                    "error": "#ba1a1a",
+                    "surface": "#f8f9fb",
+                    "error-container": "#ffdad6",
+                    "inverse-primary": "#b8c4ff",
+                    "surface-container": "#edeef0",
+                    "surface-container-low": "#f3f4f6",
+                    "on-primary-fixed-variant": "#173bab",
+                    "surface-dim": "#d9dadc",
+                    "on-secondary-fixed-variant": "#38485d",
+                    "on-secondary-fixed": "#0b1c30",
+                    "primary": "#00288e",
+                    "on-surface": "#191c1e",
+                    "inverse-on-surface": "#f0f1f3",
+                    "primary-container": "#1e40af",
+                    "background": "#f8f9fb"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.125rem",
+                    "lg": "0.25rem",
+                    "xl": "0.5rem",
+                    "full": "0.75rem"
+            },
+            "spacing": {
+                    "stack-md": "16px",
+                    "stack-lg": "24px",
+                    "container-margin": "24px",
+                    "unit": "4px",
+                    "stack-sm": "8px",
+                    "gutter": "16px",
+                    "table-cell-padding": "12px 16px"
+            },
+            "fontFamily": {
+                    "body-lg": ["Inter"],
+                    "display-lg": ["Inter"],
+                    "label-md": ["Inter"],
+                    "headline-sm": ["Inter"],
+                    "label-sm": ["Inter"],
+                    "display-md": ["Inter"],
+                    "body-md": ["Inter"]
+            },
+            "fontSize": {
+                    "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "display-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "label-md": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                    "headline-sm": ["18px", {"lineHeight": "26px", "fontWeight": "600"}],
+                    "label-sm": ["11px", {"lineHeight": "14px", "fontWeight": "500"}],
+                    "display-md": ["24px", {"lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                    "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}]
+            }
+          }
+        }
+      }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; background-color: #f8f9fb; }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+        .active-nav { @apply bg-primary-container text-white rounded-[4px] shadow-sm; }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 10px; }
+    </style>
+</head>
+<body class="bg-background text-on-surface">
+<!-- SideNavBar -->
+<aside class="fixed left-0 top-0 h-full w-[280px] border-r border-slate-200 bg-white z-50 flex flex-col gap-1 px-4 py-6">
+<div class="mb-10 px-2">
+<h1 class="text-2xl font-black tracking-tighter text-blue-800">COTOU</h1>
+<p class="text-[10px] font-medium tracking-widest uppercase text-slate-400">Enterprise Resource Planning</p>
+</div>
+<nav class="flex flex-col gap-1 flex-1" id="main-nav">
+<button class="nav-item flex items-center gap-3 px-3 py-2.5 transition-all bg-primary-container text-white rounded-[4px] shadow-sm font-inter text-sm font-medium" data-nav="Dashboard" onclick="navigate('Dashboard')">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span>Dashboard</span>
+</button>
+<button class="nav-item flex items-center gap-3 px-3 py-2.5 transition-all text-slate-600 hover:bg-slate-50 font-inter text-sm font-medium" data-nav="Cotações" onclick="navigate('Cotações')">
+<span class="material-symbols-outlined" data-icon="request_quote">request_quote</span>
+<span>Cotações</span>
+</button>
+<button class="nav-item flex items-center gap-3 px-3 py-2.5 transition-all text-slate-600 hover:bg-slate-50 font-inter text-sm font-medium" data-nav="Novo Orçamento" onclick="navigate('Novo Orçamento')">
+<span class="material-symbols-outlined" data-icon="add_box">add_box</span>
+<span>Novo Orçamento</span>
+</button>
+<button class="nav-item flex items-center gap-3 px-3 py-2.5 transition-all text-slate-600 hover:bg-slate-50 font-inter text-sm font-medium" data-nav="Clientes/Fornecedores" onclick="navigate('Clientes/Fornecedores')">
+<span class="material-symbols-outlined" data-icon="group">group</span>
+<span>Clientes/Fornecedores</span>
+</button>
+<button class="nav-item flex items-center gap-3 px-3 py-2.5 transition-all text-slate-600 hover:bg-slate-50 font-inter text-sm font-medium mt-auto" data-nav="Configurações" onclick="navigate('Configurações')">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+<span>Configurações</span>
+</button>
+</nav>
+</aside>
+<!-- TopAppBar -->
+<header class="sticky top-0 z-40 w-full border-b border-slate-200 bg-white ml-[280px] w-[calc(100%-280px)] flex justify-between items-center h-16 px-8">
+<div class="flex items-center gap-4">
+<span class="text-lg font-bold text-slate-900" id="current-view-title">Dashboard</span>
+</div>
+<div class="flex items-center gap-6">
+<div class="relative hidden lg:block">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-lg">search</span>
+<input class="pl-10 pr-4 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-800 outline-none w-64 transition-all" placeholder="Pesquisar..." type="text"/>
+</div>
+<div class="flex items-center gap-4">
+<button class="text-slate-500 hover:text-blue-700 relative">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+<span class="absolute top-0 right-0 w-2 h-2 bg-error rounded-full"></span>
+</button>
+<div class="flex items-center gap-3 pl-4 border-l border-slate-200">
+<div class="text-right hidden sm:block">
+<p class="text-xs font-bold text-slate-900">Admin Cotou</p>
+<p class="text-[10px] text-slate-500">Gestor de Operações</p>
+</div>
+<img alt="User profile avatar" class="w-10 h-10 rounded-full border border-slate-200 object-cover" data-alt="A professional corporate headshot of a middle-aged male executive with a confident smile, wearing a sharp navy blue tailored suit. The background is a blurred high-end office environment with soft window light, maintaining a clean and authoritative professional aesthetic consistent with a corporate ERP interface." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDelppOBYYZ9A5fB0UF1jdm4qUV6VF5TFIrnVmAK2jO6eHARrNMgMGk6bNzDG24ySlkGSFt6fDjBx2-bWGQt7tT983SWNhXVwN9DpP0jHoa3YpWiOYdz7W1J9iifRW4-JNyhMdjdM8YYe4IhlCbojd4YIil1WT2KdqmuI5rI4LEvEURPftOGLws7_m1VxbC9vdAdq19Wo-ppcGc1okhqTrZjmbk8nS5cnrSn75wxbTxFeSxwYHLmseDX9kTAj_svCVeOCXZsLSuPg4"/>
+</div>
+</div>
+</div>
+</header>
+<!-- Main Content -->
+<main class="ml-[280px] p-8 min-h-[calc(100vh-64px)]" id="app-content">
+<!-- Default: Dashboard -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+<div class="bg-white p-6 rounded-lg border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+<div class="flex justify-between items-start mb-4">
+<div class="p-2 bg-blue-50 text-blue-800 rounded-lg">
+<span class="material-symbols-outlined">request_quote</span>
+</div>
+<span class="text-green-600 text-xs font-bold font-label-md">+8%</span>
+</div>
+<p class="text-slate-500 font-label-sm uppercase tracking-wider mb-1">Cotações Ativas</p>
+<h3 class="font-display-md text-slate-900">24</h3>
+</div>
+<div class="bg-white p-6 rounded-lg border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+<div class="flex justify-between items-start mb-4">
+<div class="p-2 bg-slate-100 text-slate-600 rounded-lg">
+<span class="material-symbols-outlined">shopping_cart</span>
+</div>
+<span class="text-slate-400 text-xs font-bold font-label-md">Estável</span>
+</div>
+<p class="text-slate-500 font-label-sm uppercase tracking-wider mb-1">Pedidos Feitos</p>
+<h3 class="font-display-md text-slate-900">12</h3>
+</div>
+<div class="bg-white p-6 rounded-lg border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+<div class="flex justify-between items-start mb-4">
+<div class="p-2 bg-blue-50 text-blue-800 rounded-lg">
+<span class="material-symbols-outlined">payments</span>
+</div>
+<span class="text-green-600 text-xs font-bold font-label-md">+15%</span>
+</div>
+<p class="text-slate-500 font-label-sm uppercase tracking-wider mb-1">Valor Total</p>
+<h3 class="font-display-md text-slate-900">R$ 45.200</h3>
+</div>
+<div class="bg-white p-6 rounded-lg border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+<div class="flex justify-between items-start mb-4">
+<div class="p-2 bg-red-50 text-red-600 rounded-lg">
+<span class="material-symbols-outlined">warning</span>
+</div>
+<span class="text-red-600 text-xs font-bold font-label-md">Crítico</span>
+</div>
+<p class="text-slate-500 font-label-sm uppercase tracking-wider mb-1">Alertas</p>
+<h3 class="font-display-md text-slate-900">3</h3>
+</div>
+</div>
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+<div class="lg:col-span-2 bg-white rounded-lg border border-slate-200 overflow-hidden">
+<div class="px-6 py-4 border-b border-slate-200 flex justify-between items-center">
+<h4 class="font-headline-sm text-slate-900">Atividades Recentes</h4>
+<button class="text-blue-800 text-sm font-semibold hover:underline">Ver tudo</button>
+</div>
+<table class="w-full text-left">
+<thead class="bg-slate-50 border-b border-slate-200">
+<tr>
+<th class="px-6 py-3 font-label-md text-slate-500">Data</th>
+<th class="px-6 py-3 font-label-md text-slate-500">Descrição</th>
+<th class="px-6 py-3 font-label-md text-slate-500">Status</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-slate-100">
+<tr class="hover:bg-slate-50 transition-colors">
+<td class="px-6 py-4 font-body-md text-slate-600">12/10/2023</td>
+<td class="px-6 py-4 font-body-md font-semibold text-slate-900">Cotação #4052 aprovada por Alimentos S.A.</td>
+<td class="px-6 py-4">
+<span class="px-2 py-1 bg-green-100 text-green-700 rounded-full text-[10px] font-bold uppercase">Concluído</span>
+</td>
+</tr>
+<tr class="hover:bg-slate-50 transition-colors">
+<td class="px-6 py-4 font-body-md text-slate-600">11/10/2023</td>
+<td class="px-6 py-4 font-body-md font-semibold text-slate-900">Novo fornecedor: Tech Solutions LTDA</td>
+<td class="px-6 py-4">
+<span class="px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-[10px] font-bold uppercase">Pendente</span>
+</td>
+</tr>
+<tr class="hover:bg-slate-50 transition-colors">
+<td class="px-6 py-4 font-body-md text-slate-600">10/10/2023</td>
+<td class="px-6 py-4 font-body-md font-semibold text-slate-900">Orçamento #3988 recusado por valor alto</td>
+<td class="px-6 py-4">
+<span class="px-2 py-1 bg-red-100 text-red-700 rounded-full text-[10px] font-bold uppercase">Cancelado</span>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="bg-white rounded-lg border border-slate-200 p-6">
+<h4 class="font-headline-sm text-slate-900 mb-6">Próximos Prazos</h4>
+<div class="space-y-6">
+<div class="flex gap-4">
+<div class="w-1 bg-blue-800 rounded-full"></div>
+<div>
+<p class="font-body-md font-bold text-slate-900">Entrega Material Gráfico</p>
+<p class="text-xs text-slate-500">Expira em 2 dias</p>
+</div>
+</div>
+<div class="flex gap-4">
+<div class="w-1 bg-secondary rounded-full"></div>
+<div>
+<p class="font-body-md font-bold text-slate-900">Renovação de Contrato: LogisBr</p>
+<p class="text-xs text-slate-500">Expira em 5 dias</p>
+</div>
+</div>
+<div class="flex gap-4">
+<div class="w-1 bg-error rounded-full"></div>
+<div>
+<p class="font-body-md font-bold text-slate-900">Pagamento Fornecedor ACME</p>
+<p class="text-xs text-slate-500">Vencido ontem</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+<script>
+        const views = {
+            'Dashboard': `
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                    <div class="bg-white p-6 rounded-lg border border-slate-200 shadow-sm">
+                        <div class="flex justify-between items-start mb-4">
+                            <div class="p-2 bg-blue-50 text-blue-800 rounded-lg"><span class="material-symbols-outlined">request_quote</span></div>
+                            <span class="text-green-600 text-xs font-bold">+8%</span>
+                        </div>
+                        <p class="text-slate-500 font-label-sm uppercase tracking-wider mb-1">Cotações Ativas</p>
+                        <h3 class="font-display-md text-slate-900">24</h3>
+                    </div>
+                    <div class="bg-white p-6 rounded-lg border border-slate-200 shadow-sm">
+                        <div class="flex justify-between items-start mb-4">
+                            <div class="p-2 bg-slate-100 text-slate-600 rounded-lg"><span class="material-symbols-outlined">shopping_cart</span></div>
+                            <span class="text-slate-400 text-xs font-bold">Estável</span>
+                        </div>
+                        <p class="text-slate-500 font-label-sm uppercase tracking-wider mb-1">Pedidos Feitos</p>
+                        <h3 class="font-display-md text-slate-900">12</h3>
+                    </div>
+                    <div class="bg-white p-6 rounded-lg border border-slate-200 shadow-sm">
+                        <div class="flex justify-between items-start mb-4">
+                            <div class="p-2 bg-blue-50 text-blue-800 rounded-lg"><span class="material-symbols-outlined">payments</span></div>
+                            <span class="text-green-600 text-xs font-bold">+15%</span>
+                        </div>
+                        <p class="text-slate-500 font-label-sm uppercase tracking-wider mb-1">Valor Total</p>
+                        <h3 class="font-display-md text-slate-900">R$ 45.200</h3>
+                    </div>
+                    <div class="bg-white p-6 rounded-lg border border-slate-200 shadow-sm">
+                        <div class="flex justify-between items-start mb-4">
+                            <div class="p-2 bg-red-50 text-red-600 rounded-lg"><span class="material-symbols-outlined">warning</span></div>
+                            <span class="text-red-600 text-xs font-bold">Crítico</span>
+                        </div>
+                        <p class="text-slate-500 font-label-sm uppercase tracking-wider mb-1">Alertas</p>
+                        <h3 class="font-display-md text-slate-900">3</h3>
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div class="lg:col-span-2 bg-white rounded-lg border border-slate-200">
+                        <div class="px-6 py-4 border-b border-slate-200 flex justify-between items-center">
+                            <h4 class="font-headline-sm text-slate-900">Atividades Recentes</h4>
+                        </div>
+                        <table class="w-full text-left">
+                            <thead class="bg-slate-50"><tr><th class="px-6 py-3 font-label-md text-slate-500">Data</th><th class="px-6 py-3 font-label-md text-slate-500">Descrição</th><th class="px-6 py-3 font-label-md text-slate-500">Status</th></tr></thead>
+                            <tbody class="divide-y divide-slate-100">
+                                <tr><td class="px-6 py-4 text-slate-600">12/10/2023</td><td class="px-6 py-4 font-bold">Cotação #4052 aprovada</td><td><span class="px-2 py-1 bg-green-100 text-green-700 rounded-full text-[10px] font-bold">Concluído</span></td></tr>
+                                <tr><td class="px-6 py-4 text-slate-600">11/10/2023</td><td class="px-6 py-4 font-bold">Novo fornecedor cadastrado</td><td><span class="px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-[10px] font-bold">Pendente</span></td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            `,
+            'Cotações': `
+                <div class="bg-white rounded-lg border border-slate-200 overflow-hidden">
+                    <div class="p-6 border-b border-slate-200 flex flex-col sm:flex-row gap-4 justify-between items-center">
+                        <div class="flex gap-2 w-full sm:w-auto">
+                            <div class="relative flex-1 sm:w-64">
+                                <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">search</span>
+                                <input type="text" placeholder="Filtrar cotações..." class="w-full pl-10 pr-4 py-2 border border-slate-200 rounded text-sm focus:ring-1 focus:ring-blue-800 outline-none">
+                            </div>
+                            <button class="px-4 py-2 bg-slate-50 border border-slate-200 rounded text-sm font-semibold flex items-center gap-2">
+                                <span class="material-symbols-outlined text-sm">filter_list</span> Filtros
+                            </button>
+                        </div>
+                        <button class="w-full sm:w-auto px-4 py-2 bg-blue-800 text-white rounded text-sm font-bold flex items-center justify-center gap-2">
+                            <span class="material-symbols-outlined text-sm">add</span> Nova Cotação
+                        </button>
+                    </div>
+                    <table class="w-full text-left">
+                        <thead class="bg-slate-50 text-slate-500 font-label-md">
+                            <tr>
+                                <th class="px-6 py-3">ID</th>
+                                <th class="px-6 py-3">Fornecedor</th>
+                                <th class="px-6 py-3">Valor</th>
+                                <th class="px-6 py-3">Data Limite</th>
+                                <th class="px-6 py-3">Status</th>
+                                <th class="px-6 py-3 text-right">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100 text-sm">
+                            <tr class="hover:bg-slate-50">
+                                <td class="px-6 py-4 font-semibold">#QT-2023-091</td>
+                                <td class="px-6 py-4">Global Parts Indústria</td>
+                                <td class="px-6 py-4 font-bold text-slate-900">R$ 12.450,00</td>
+                                <td class="px-6 py-4">25 Out 2023</td>
+                                <td class="px-6 py-4"><span class="px-2 py-0.5 bg-yellow-100 text-yellow-700 rounded-full text-[10px] font-bold">AGUARDANDO</span></td>
+                                <td class="px-6 py-4 text-right"><span class="material-symbols-outlined text-slate-400 cursor-pointer">more_vert</span></td>
+                            </tr>
+                            <tr class="hover:bg-slate-50">
+                                <td class="px-6 py-4 font-semibold">#QT-2023-090</td>
+                                <td class="px-6 py-4">FastLog Brasil</td>
+                                <td class="px-6 py-4 font-bold text-slate-900">R$ 3.200,00</td>
+                                <td class="px-6 py-4">22 Out 2023</td>
+                                <td class="px-6 py-4"><span class="px-2 py-0.5 bg-green-100 text-green-700 rounded-full text-[10px] font-bold">APROVADA</span></td>
+                                <td class="px-6 py-4 text-right"><span class="material-symbols-outlined text-slate-400 cursor-pointer">more_vert</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <div class="px-6 py-4 bg-slate-50 border-t border-slate-200 flex justify-between items-center">
+                        <p class="text-xs text-slate-500">Mostrando 1-10 de 48 resultados</p>
+                        <div class="flex gap-1">
+                            <button class="w-8 h-8 flex items-center justify-center border border-slate-200 rounded bg-white text-slate-400"><span class="material-symbols-outlined text-sm">chevron_left</span></button>
+                            <button class="w-8 h-8 flex items-center justify-center border border-blue-800 rounded bg-blue-800 text-white text-xs font-bold">1</button>
+                            <button class="w-8 h-8 flex items-center justify-center border border-slate-200 rounded bg-white text-xs font-bold text-slate-600">2</button>
+                            <button class="w-8 h-8 flex items-center justify-center border border-slate-200 rounded bg-white text-slate-400"><span class="material-symbols-outlined text-sm">chevron_right</span></button>
+                        </div>
+                    </div>
+                </div>
+            `,
+            'Novo Orçamento': `
+                <div class="max-w-4xl mx-auto bg-white rounded-lg border border-slate-200 shadow-sm">
+                    <div class="p-6 border-b border-slate-200">
+                        <h4 class="font-headline-sm text-slate-900">Criar Novo Orçamento</h4>
+                        <p class="text-sm text-slate-500">Preencha os dados abaixo para gerar um novo pedido de cotação.</p>
+                    </div>
+                    <div class="p-8 space-y-8">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div class="space-y-2">
+                                <label class="text-xs font-bold text-slate-700 uppercase tracking-wider">Cliente / Solicitante</label>
+                                <select class="w-full border-slate-200 rounded focus:ring-blue-800 text-sm">
+                                    <option>Selecione um cliente...</option>
+                                    <option>Alimentos S.A.</option>
+                                    <option>Varejo Global</option>
+                                </select>
+                            </div>
+                            <div class="space-y-2">
+                                <label class="text-xs font-bold text-slate-700 uppercase tracking-wider">Prazo de Entrega</label>
+                                <input type="date" class="w-full border-slate-200 rounded focus:ring-blue-800 text-sm">
+                            </div>
+                        </div>
+                        <div class="space-y-4">
+                            <div class="flex justify-between items-center">
+                                <label class="text-xs font-bold text-slate-700 uppercase tracking-wider">Itens do Orçamento</label>
+                                <button class="text-blue-800 text-xs font-bold flex items-center gap-1"><span class="material-symbols-outlined text-sm">add_circle</span> Adicionar Item</button>
+                            </div>
+                            <div class="border border-slate-100 rounded-lg p-4 bg-slate-50 space-y-4">
+                                <div class="grid grid-cols-12 gap-4 items-end">
+                                    <div class="col-span-6 space-y-1">
+                                        <label class="text-[10px] text-slate-500 font-bold uppercase">Descrição</label>
+                                        <input type="text" placeholder="Ex: Monitor Dell 24" class="w-full border-slate-200 rounded text-sm">
+                                    </div>
+                                    <div class="col-span-2 space-y-1">
+                                        <label class="text-[10px] text-slate-500 font-bold uppercase">Qtd</label>
+                                        <input type="number" value="1" class="w-full border-slate-200 rounded text-sm">
+                                    </div>
+                                    <div class="col-span-3 space-y-1">
+                                        <label class="text-[10px] text-slate-500 font-bold uppercase">Preço Est. (R$)</label>
+                                        <input type="text" placeholder="0,00" class="w-full border-slate-200 rounded text-sm">
+                                    </div>
+                                    <div class="col-span-1 pb-2">
+                                        <button class="text-slate-300 hover:text-red-500"><span class="material-symbols-outlined">delete</span></button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="space-y-2">
+                            <label class="text-xs font-bold text-slate-700 uppercase tracking-wider">Observações Internas</label>
+                            <textarea rows="3" class="w-full border-slate-200 rounded focus:ring-blue-800 text-sm" placeholder="Instruções para o comprador..."></textarea>
+                        </div>
+                    </div>
+                    <div class="p-6 bg-slate-50 border-t border-slate-200 flex justify-end gap-3">
+                        <button class="px-6 py-2 bg-white border border-slate-200 rounded text-sm font-bold text-slate-600">Salvar Rascunho</button>
+                        <button class="px-6 py-2 bg-blue-800 text-white rounded text-sm font-bold">Enviar Orçamento</button>
+                    </div>
+                </div>
+            `,
+            'Clientes/Fornecedores': `
+                <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                    <div class="bg-white border border-slate-200 rounded-lg p-6 flex flex-col shadow-sm hover:shadow-md transition-all">
+                        <div class="flex items-center gap-4 mb-4">
+                            <div class="w-12 h-12 bg-blue-100 text-blue-800 rounded-full flex items-center justify-center font-bold text-xl">AS</div>
+                            <div>
+                                <h5 class="font-bold text-slate-900">Alimentos S.A.</h5>
+                                <p class="text-xs text-slate-500">Cliente • Desde 2021</p>
+                            </div>
+                        </div>
+                        <div class="space-y-2 text-sm text-slate-600 flex-1">
+                            <p class="flex items-center gap-2"><span class="material-symbols-outlined text-xs">mail</span> contato@alimentos.com.br</p>
+                            <p class="flex items-center gap-2"><span class="material-symbols-outlined text-xs">phone</span> (11) 4002-8922</p>
+                        </div>
+                        <div class="mt-4 pt-4 border-t border-slate-100 flex justify-between items-center">
+                            <span class="px-2 py-0.5 bg-green-50 text-green-700 text-[10px] font-bold rounded uppercase">Ativo</span>
+                            <button class="text-blue-800 text-xs font-bold">Ver perfil</button>
+                        </div>
+                    </div>
+                    <div class="bg-white border border-slate-200 rounded-lg p-6 flex flex-col shadow-sm hover:shadow-md transition-all">
+                        <div class="flex items-center gap-4 mb-4">
+                            <div class="w-12 h-12 bg-slate-100 text-slate-600 rounded-full flex items-center justify-center font-bold text-xl">TL</div>
+                            <div>
+                                <h5 class="font-bold text-slate-900">Tech Solutions LTDA</h5>
+                                <p class="text-xs text-slate-500">Fornecedor • Desde 2023</p>
+                            </div>
+                        </div>
+                        <div class="space-y-2 text-sm text-slate-600 flex-1">
+                            <p class="flex items-center gap-2"><span class="material-symbols-outlined text-xs">mail</span> vendas@techsol.io</p>
+                            <p class="flex items-center gap-2"><span class="material-symbols-outlined text-xs">phone</span> (21) 3344-5566</p>
+                        </div>
+                        <div class="mt-4 pt-4 border-t border-slate-100 flex justify-between items-center">
+                            <span class="px-2 py-0.5 bg-green-50 text-green-700 text-[10px] font-bold rounded uppercase">Ativo</span>
+                            <button class="text-blue-800 text-xs font-bold">Ver perfil</button>
+                        </div>
+                    </div>
+                </div>
+            `,
+            'Configurações': `
+                <div class="max-w-4xl mx-auto space-y-6">
+                    <div class="bg-white rounded-lg border border-slate-200">
+                        <div class="p-6 border-b border-slate-200"><h4 class="font-bold text-slate-900">Configurações de Perfil</h4></div>
+                        <div class="p-6 space-y-6">
+                            <div class="flex items-center gap-8 pb-6 border-b border-slate-50">
+                                <div class="relative">
+                                    <img src="https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&q=80&w=200" 
+                                         data-alt="A focused high-detail photograph of a male corporate executive's face. The lighting is dramatic but professional, highlighting high-quality texture. He has a determined expression suited for an ERP manager. The background is a minimalist studio gray, maintaining visual consistency with a premium enterprise resource planning system's dark-on-white aesthetic." 
+                                         class="w-24 h-24 rounded-full border-4 border-white shadow-sm object-cover">
+                                    <button class="absolute bottom-0 right-0 p-1.5 bg-blue-800 text-white rounded-full border-2 border-white"><span class="material-symbols-outlined text-sm">photo_camera</span></button>
+                                </div>
+                                <div class="space-y-1">
+                                    <h5 class="font-bold text-lg text-slate-900">Admin Cotou</h5>
+                                    <p class="text-sm text-slate-500">admin@cotouerp.com.br</p>
+                                    <span class="inline-block px-2 py-1 bg-blue-50 text-blue-700 text-[10px] font-bold rounded mt-2">ADMINISTRADOR</span>
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div class="space-y-2">
+                                    <label class="text-xs font-bold text-slate-500 uppercase">Nome Completo</label>
+                                    <input type="text" value="Administrador Cotou" class="w-full border-slate-200 rounded text-sm px-4 py-2">
+                                </div>
+                                <div class="space-y-2">
+                                    <label class="text-xs font-bold text-slate-500 uppercase">Cargo</label>
+                                    <input type="text" value="Gestor de Operações" class="w-full border-slate-200 rounded text-sm px-4 py-2">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="p-6 bg-slate-50 rounded-b-lg border-t border-slate-200 flex justify-end">
+                            <button class="px-6 py-2 bg-blue-800 text-white rounded text-sm font-bold">Salvar Alterações</button>
+                        </div>
+                    </div>
+                    <div class="bg-white rounded-lg border border-slate-200 p-6">
+                        <h4 class="font-bold text-slate-900 mb-4">Segurança</h4>
+                        <div class="flex items-center justify-between py-4 border-b border-slate-50">
+                            <div>
+                                <p class="text-sm font-bold text-slate-900">Autenticação de Dois Fatores</p>
+                                <p class="text-xs text-slate-500">Proteja sua conta com um código adicional</p>
+                            </div>
+                            <div class="w-10 h-5 bg-blue-800 rounded-full relative"><div class="absolute right-1 top-1 w-3 h-3 bg-white rounded-full"></div></div>
+                        </div>
+                        <div class="flex items-center justify-between py-4">
+                            <div>
+                                <p class="text-sm font-bold text-slate-900">Alterar Senha</p>
+                                <p class="text-xs text-slate-500">Última alteração há 3 meses</p>
+                            </div>
+                            <button class="text-blue-800 text-xs font-bold px-3 py-1 border border-blue-800 rounded">Atualizar</button>
+                        </div>
+                    </div>
+                </div>
+            `
+        };
+
+        function navigate(viewName) {
+            // Update Title
+            document.getElementById('current-view-title').innerText = viewName;
+            
+            // Update Content
+            document.getElementById('app-content').innerHTML = views[viewName];
+            
+            // Update Sidebar State
+            const items = document.querySelectorAll('.nav-item');
+            items.forEach(item => {
+                if (item.getAttribute('data-nav') === viewName) {
+                    item.classList.add('bg-primary-container', 'text-white', 'shadow-sm');
+                    item.classList.remove('text-slate-600', 'hover:bg-slate-50');
+                } else {
+                    item.classList.remove('bg-primary-container', 'text-white', 'shadow-sm');
+                    item.classList.add('text-slate-600', 'hover:bg-slate-50');
+                }
+            });
+
+            // Scroll to top
+            window.scrollTo(0, 0);
+        }
+    </script>
+</body></html>
