@@ -1,9 +1,26 @@
 <div style="max-width:900px;margin:0 auto">
-  <div style="display:flex;align-items:center;gap:12px;margin-bottom:24px">
+  <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">
     <a href="/cotacoes" class="btn-cancel" style="padding:6px 10px">
       <i class="bi bi-arrow-left"></i>
     </a>
-    <h4 style="font-size:18px;font-weight:700;margin:0">Nova Cotação</h4>
+    <div>
+      <h4 style="font-size:18px;font-weight:800;margin:0;letter-spacing:-.3px">Nova Cotação</h4>
+      <p style="font-size:12px;color:var(--text-muted);margin:2px 0 0">Preencha os dados para enviar ao setor de compras</p>
+    </div>
+  </div>
+
+  <!-- Wizard bar -->
+  <div class="wizard-bar">
+    <% const steps = ['Cliente','Veículo','Peças','Envio']; %>
+    <% steps.forEach((s, i) => { %>
+    <div class="wizard-step active" style="color:<%= i < 3 ? 'var(--accent)' : 'var(--text-muted)' %>">
+      <div class="wizard-step-num" style="<%= i < 3 ? 'background:var(--accent);color:#fff;border-color:var(--accent)' : '' %>">
+        <%= i + 1 %>
+      </div>
+      <span><%= s %></span>
+    </div>
+    <% if (i < steps.length - 1) { %><div class="wizard-connector<%= i < 2 ? ' done' : '' %>"></div><% } %>
+    <% }) %>
   </div>
 
   <% if (typeof errors !== 'undefined' && errors.length) { %>
@@ -89,6 +106,9 @@
           </div>
         </div>
         <input type="hidden" name="vehicle_chassis" id="vehicle_chassis">
+        <div style="margin-top:12px;padding:10px 14px;background:var(--accent-light);border-radius:8px;font-size:12.5px;color:var(--accent);display:flex;align-items:center;gap:8px">
+          <i class="bi bi-info-circle"></i> Digite a placa e clique em <strong>buscar</strong> para preenchimento automático
+        </div>
       </div>
     </div>
 

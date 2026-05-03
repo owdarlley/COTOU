@@ -1,12 +1,8 @@
-<div class="toolbar">
-  <div class="toolbar-left">
-    <span style="font-size:16px;font-weight:700">Gestão de Usuários</span>
-  </div>
-  <div class="toolbar-right">
-    <a href="/admin/usuarios/novo" class="btn-primary">
-      <i class="bi bi-person-plus"></i>Novo Usuário
-    </a>
-  </div>
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:10px">
+  <div></div>
+  <a href="/admin/usuarios/novo" class="btn-primary">
+    <i class="bi bi-person-plus"></i>Novo Usuário
+  </a>
 </div>
 
 <div class="table-wrap">
@@ -17,7 +13,14 @@
     <tbody>
       <% users.forEach(u => { %>
       <tr>
-        <td style="font-weight:600"><%= u.name %></td>
+        <td>
+          <div style="display:flex;align-items:center;gap:10px">
+            <div class="av" style="width:30px;height:30px;font-size:11px;background:var(--accent);flex-shrink:0">
+              <%= u.name.split(' ').slice(0,2).map(w=>w[0]).join('').toUpperCase() %>
+            </div>
+            <strong><%= u.name %></strong>
+          </div>
+        </td>
         <td style="color:var(--gray);font-size:13px"><%= u.email %></td>
         <td>
           <span class="role-badge <%= u.role === 'vendas' ? 'role-vendas' : u.role === 'compras' ? 'role-compras' : 'role-admin' %>">
@@ -32,13 +35,13 @@
         </td>
         <td>
           <div style="display:flex;gap:6px">
-            <a href="/admin/usuarios/<%= u.id %>/editar" class="btn-sm-icon blue" title="Editar">
+            <a href="/admin/usuarios/<%= u.id %>/editar" class="btn-icon blue" title="Editar">
               <i class="bi bi-pencil"></i>
             </a>
             <% if (u.id !== currentUser.id) { %>
             <form action="/admin/usuarios/<%= u.id %>/desativar" method="POST" style="display:inline"
               onsubmit="return confirm('Desativar usuário <%= u.name %>?')">
-              <button type="submit" class="btn-sm-icon red" title="Desativar"><i class="bi bi-person-x"></i></button>
+              <button type="submit" class="btn-icon red" title="Desativar"><i class="bi bi-person-x"></i></button>
             </form>
             <% } %>
           </div>

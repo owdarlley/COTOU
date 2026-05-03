@@ -1,18 +1,14 @@
-<div class="toolbar">
-  <div class="toolbar-left">
-    <form method="GET" class="search-box">
-      <i class="bi bi-search"></i>
-      <input type="text" name="q" placeholder="Buscar por código ou nome..." value="<%= q %>">
-    </form>
-    <% if (q) { %>
-    <a href="/pecas" class="btn-cancel" style="padding:7px 12px;font-size:13px">Limpar</a>
-    <% } %>
-  </div>
-  <div class="toolbar-right">
-    <button class="btn-primary" data-bs-toggle="modal" data-bs-target="#modalNovaPeca">
-      <i class="bi bi-plus-lg"></i>Nova Peça
-    </button>
-  </div>
+<div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap">
+  <form method="GET" class="search-box">
+    <i class="bi bi-search"></i>
+    <input type="text" name="q" placeholder="Buscar por código ou nome..." value="<%= q %>">
+  </form>
+  <% if (q) { %>
+  <a href="/pecas" class="btn-cancel" style="padding:7px 12px;font-size:13px"><i class="bi bi-x"></i>Limpar</a>
+  <% } %>
+  <button class="btn-primary" style="margin-left:auto" data-bs-toggle="modal" data-bs-target="#modalNovaPeca">
+    <i class="bi bi-plus-lg"></i>Nova Peça
+  </button>
 </div>
 
 <div class="table-wrap">
@@ -36,12 +32,12 @@
         <td><%= p.default_price ? 'R$ ' + parseFloat(p.default_price).toFixed(2) : '—' %></td>
         <td>
           <div style="display:flex;gap:6px">
-            <button class="btn-sm-icon blue" data-bs-toggle="modal" data-bs-target="#modalEditar-<%= p.id %>" title="Editar">
+            <button class="btn-icon blue" data-bs-toggle="modal" data-bs-target="#modalEditar-<%= p.id %>" title="Editar">
               <i class="bi bi-pencil"></i>
             </button>
             <form action="/pecas/<%= p.id %>/excluir" method="POST" style="display:inline"
               onsubmit="return confirm('Excluir esta peça do catálogo?')">
-              <button type="submit" class="btn-sm-icon red" title="Excluir"><i class="bi bi-trash"></i></button>
+              <button type="submit" class="btn-icon red" title="Excluir"><i class="bi bi-trash"></i></button>
             </form>
           </div>
         </td>
@@ -68,14 +64,13 @@
     </tbody>
   </table>
   <% if (pages > 1) { %>
-  <div class="pagination-wrap">
-    <ul class="pagination">
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-top:1px solid var(--border)">
+    <span style="color:var(--text-muted);font-size:13px">Página <%= page %> de <%= pages %></span>
+    <div style="display:flex;gap:4px">
       <% for (let p2 = 1; p2 <= pages; p2++) { %>
-      <li class="page-item <%= p2 === page ? 'active' : '' %>">
-        <a class="page-link" href="?q=<%= q %>&page=<%= p2 %>"><%= p2 %></a>
-      </li>
+      <a href="?q=<%= q %>&page=<%= p2 %>" class="pag-btn <%= p2 === page ? 'active' : '' %>"><%= p2 %></a>
       <% } %>
-    </ul>
+    </div>
   </div>
   <% } %>
   <% } %>

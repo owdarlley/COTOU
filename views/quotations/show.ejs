@@ -1,157 +1,163 @@
 <!-- Header -->
-<div style="display:flex;align-items:center;gap:12px;margin-bottom:6px;flex-wrap:wrap">
-  <a href="/cotacoes" class="btn-cancel" style="padding:6px 10px;flex-shrink:0">
+<div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap">
+  <a href="/cotacoes" class="btn-cancel" style="padding:7px 10px;flex-shrink:0">
     <i class="bi bi-arrow-left"></i>
   </a>
-  <h4 style="font-size:18px;font-weight:700;margin:0">Cotação #<%= quotation.quote_number %></h4>
-  <%- include('../partials/status-badge', { status: quotation.status }) %>
-  <% if (quotation.whatsapp_sent_at) { %>
-  <span class="badge badge-cotado"><i class="bi bi-whatsapp"></i>WhatsApp Enviado</span>
-  <% } %>
+  <div>
+    <h4 style="font-size:18px;font-weight:800;margin:0;letter-spacing:-.3px">#<%= quotation.quote_number %></h4>
+    <p style="font-size:12px;color:var(--text-muted);margin:2px 0 0">
+      Aberta por <strong><%= quotation.creator_name %></strong> em <%= new Date(quotation.created_at).toLocaleString('pt-BR') %>
+    </p>
+  </div>
 </div>
-<p style="color:var(--gray);font-size:13px;margin-bottom:24px">
-  Aberta por <strong><%= quotation.creator_name %></strong> em <%= new Date(quotation.created_at).toLocaleString('pt-BR') %>
-  <% if (quotation.buyer_name) { %> · Comprador: <strong><%= quotation.buyer_name %></strong><% } %>
-</p>
 
-<div style="display:grid;grid-template-columns:1fr 320px;gap:20px;align-items:start">
+<div style="display:grid;grid-template-columns:1fr 292px;gap:16px;align-items:start">
 
   <!-- Left column -->
   <div>
 
-    <!-- Cliente -->
-    <div class="form-section">
-      <div class="form-section-header"><span><i class="bi bi-person"></i> Cliente</span></div>
-      <div class="form-section-body">
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
-          <div>
-            <div class="form-label">Nome</div>
-            <div style="font-weight:600"><%= quotation.customer_name %></div>
-          </div>
-          <div>
-            <div class="form-label">Telefone</div>
-            <div style="font-weight:600">
-              <a href="https://wa.me/<%= quotation.customer_phone.replace(/\D/g,'') %>" target="_blank"
-                style="text-decoration:none;color:var(--green)">
-                <i class="bi bi-whatsapp"></i> <%= quotation.customer_phone %>
-              </a>
-            </div>
-          </div>
-        </div>
+    <!-- Status strip -->
+    <div class="status-strip">
+      <%- include('../partials/status-badge', { status: quotation.status }) %>
+      <% if (quotation.whatsapp_sent_at) { %>
+      <span class="badge badge-green"><i class="bi bi-whatsapp"></i> WhatsApp Enviado</span>
+      <% } %>
+      <div class="status-strip-meta">
+        <span><i class="bi bi-calendar3"></i><%= new Date(quotation.created_at).toLocaleDateString('pt-BR') %></span>
+        <span><i class="bi bi-person"></i><%= quotation.creator_name %></span>
+        <% if (quotation.buyer_name) { %>
+        <span><i class="bi bi-bag"></i><%= quotation.buyer_name %></span>
+        <% } %>
+        <span><i class="bi bi-clock"></i><%= new Date(quotation.updated_at).toLocaleDateString('pt-BR') %></span>
       </div>
     </div>
 
-    <!-- Veículo -->
-    <div class="form-section">
-      <div class="form-section-header"><span><i class="bi bi-car-front"></i> Veículo</span></div>
-      <div class="form-section-body">
-        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px">
-          <div>
-            <div class="form-label">Placa</div>
-            <div style="font-size:18px;font-weight:800"><%= quotation.license_plate %></div>
+    <!-- Cliente + Veículo em grid 2 colunas -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">
+      <div class="info-card">
+        <div class="info-card-header"><i class="bi bi-person-circle"></i>Cliente</div>
+        <div class="info-card-body">
+          <div class="info-row">
+            <span class="info-row-label">Nome</span>
+            <span class="info-row-value"><%= quotation.customer_name %></span>
           </div>
-          <div style="grid-column:span 2">
-            <div class="form-label">Marca / Modelo</div>
-            <div style="font-weight:600"><%= quotation.make || '—' %> <%= quotation.model || '' %></div>
+          <div class="info-row">
+            <span class="info-row-label">Telefone</span>
+            <a href="https://wa.me/<%= quotation.customer_phone.replace(/\D/g,'') %>" target="_blank"
+               style="font-size:13.5px;font-weight:600;text-decoration:none;color:var(--green)">
+              <i class="bi bi-whatsapp"></i> <%= quotation.customer_phone %>
+            </a>
           </div>
-          <div>
-            <div class="form-label">Ano</div>
-            <div><%= quotation.year_model || '—' %></div>
+        </div>
+      </div>
+      <div class="info-card">
+        <div class="info-card-header"><i class="bi bi-car-front"></i>Veículo</div>
+        <div class="info-card-body">
+          <div class="info-row">
+            <span class="info-row-label">Placa</span>
+            <span class="plate-tag" style="font-size:13px"><%= quotation.license_plate %></span>
           </div>
+          <div class="info-row">
+            <span class="info-row-label">Veículo</span>
+            <span class="info-row-value"><%= quotation.make || '—' %> <%= quotation.model || '' %></span>
+          </div>
+          <% if (quotation.year_model) { %>
+          <div class="info-row">
+            <span class="info-row-label">Ano</span>
+            <span class="info-row-value"><%= quotation.year_model %></span>
+          </div>
+          <% } %>
+          <% if (quotation.color) { %>
+          <div class="info-row">
+            <span class="info-row-label">Cor</span>
+            <span class="info-row-value"><%= quotation.color %></span>
+          </div>
+          <% } %>
         </div>
       </div>
     </div>
 
     <!-- Peças -->
-    <div class="form-section">
-      <div class="form-section-header"><span><i class="bi bi-box-seam"></i> Peças Solicitadas</span></div>
-      <div class="table-wrap" style="border:none;border-radius:0">
-        <table class="data-table">
-          <thead>
-            <tr>
-              <th>Código</th><th>Peça</th><th>Qtd</th>
-              <th>Vlr Unit.</th><th>Total</th><th>M.O. Compras</th>
-              <th>M.O. Vendas</th><th>Prazo</th><th>Status</th>
-              <% if (currentUser.role === 'compras' || currentUser.role === 'admin') { %><th>Chegou</th><% } %>
-            </tr>
-          </thead>
-          <tbody>
-            <% items.forEach(item => { %>
-            <tr>
-              <td style="color:var(--gray);font-size:13px"><%= item.part_code || '—' %></td>
-              <td>
-                <span style="font-weight:600"><%= item.part_name %></span>
-                <% if (item.supplier_name) { %><br><small style="color:var(--gray)">Fornecedor: <%= item.supplier_name %></small><% } %>
-                <% if (item.notes) { %><br><small style="color:var(--gray);font-style:italic"><%= item.notes %></small><% } %>
-              </td>
-              <td><%= item.quantity %></td>
-              <td><%= item.unit_price ? 'R$ ' + item.unit_price.toFixed(2) : '—' %></td>
-              <td><strong><%= item.total_price ? 'R$ ' + item.total_price.toFixed(2) : '—' %></strong></td>
-              <td><%= item.labor_cost_compras ? 'R$ ' + item.labor_cost_compras.toFixed(2) : '—' %></td>
-              <td><%= item.labor_cost_vendas ? 'R$ ' + item.labor_cost_vendas.toFixed(2) : '—' %></td>
-              <td style="font-size:13px">
-                <% if (item.delivery_deadline) { %>
-                  <%= new Date(item.delivery_deadline).toLocaleDateString('pt-BR') %>
-                  <% if (item.delivery_days) { %><br><small style="color:var(--gray)"><%= item.delivery_days %> dias</small><% } %>
-                <% } else if (item.delivery_days) { %>
-                  <%= item.delivery_days %> dias
-                <% } else { %>—<% } %>
-              </td>
-              <td>
-                <% const iCfg = {
-                  aguardando: { l:'Aguardando', c:'badge-pending'  },
-                  em_cotacao: { l:'Em Cotação', c:'badge-quotando' },
-                  cotado:     { l:'Cotado',      c:'badge-cotado'   },
-                  peca_chegou:{ l:'Chegou',      c:'badge-chegou'   }
-                }[item.item_status] || { l: item.item_status, c: 'badge-pending' }; %>
-                <span class="badge <%= iCfg.c %>"><%= iCfg.l %></span>
-                <% if (item.arrived_at) { %><br><small style="color:var(--gray)"><%= new Date(item.arrived_at).toLocaleDateString('pt-BR') %></small><% } %>
-              </td>
-              <% if (currentUser.role === 'compras' || currentUser.role === 'admin') { %>
-              <td>
-                <% if (item.item_status !== 'peca_chegou' && quotation.status !== 'cancelado') { %>
-                <form action="/cotacoes/<%= quotation.id %>/peca-chegou" method="POST" style="display:inline">
-                  <input type="hidden" name="item_id" value="<%= item.id %>">
-                  <button type="submit" class="btn-sm-icon blue" title="Marcar como chegou"
-                    onclick="return confirm('Confirma que a peça chegou?')">
-                    <i class="bi bi-box-arrow-in-down"></i>
-                  </button>
-                </form>
-                <% } else { %>
-                <i class="bi bi-check-circle-fill" style="color:var(--green);font-size:18px"></i>
-                <% } %>
-              </td>
+    <div class="section-card" style="margin-bottom:0">
+      <div class="section-head">
+        <span class="section-title"><i class="bi bi-box-seam"></i> Peças Solicitadas</span>
+      </div>
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Código</th><th>Peça</th><th>Qtd</th>
+            <th>Vlr Unit.</th><th>Total</th><th>M.O.</th>
+            <th>Prazo</th><th>Status</th>
+            <% if (currentUser.role === 'compras' || currentUser.role === 'admin') { %><th>Chegou</th><% } %>
+          </tr>
+        </thead>
+        <tbody>
+          <% items.forEach(item => { %>
+          <tr>
+            <td style="color:var(--text-muted);font-size:13px"><%= item.part_code || '—' %></td>
+            <td>
+              <span style="font-weight:600"><%= item.part_name %></span>
+              <% if (item.supplier_name) { %><br><small style="color:var(--text-muted)">Fornecedor: <%= item.supplier_name %></small><% } %>
+              <% if (item.notes) { %><br><small style="color:var(--text-muted);font-style:italic"><%= item.notes %></small><% } %>
+            </td>
+            <td><%= item.quantity %></td>
+            <td><%= item.unit_price ? 'R$ ' + item.unit_price.toFixed(2) : '—' %></td>
+            <td><strong><%= item.total_price ? 'R$ ' + item.total_price.toFixed(2) : '—' %></strong></td>
+            <td><%= item.labor_cost_compras ? 'R$ ' + item.labor_cost_compras.toFixed(2) : '—' %></td>
+            <td style="font-size:13px">
+              <% if (item.delivery_deadline) { %>
+                <%= new Date(item.delivery_deadline).toLocaleDateString('pt-BR') %>
+                <% if (item.delivery_days) { %><br><small style="color:var(--text-muted)"><%= item.delivery_days %> dias</small><% } %>
+              <% } else if (item.delivery_days) { %><%= item.delivery_days %> dias
+              <% } else { %>—<% } %>
+            </td>
+            <td>
+              <% const iCfg = {
+                aguardando: { l:'Aguardando', c:'badge-amber'  },
+                em_cotacao: { l:'Em Cotação', c:'badge-blue'   },
+                cotado:     { l:'Cotado',     c:'badge-green'  },
+                peca_chegou:{ l:'Chegou',     c:'badge-purple' }
+              }[item.item_status] || { l: item.item_status, c: 'badge-gray' }; %>
+              <span class="badge <%= iCfg.c %>"><%= iCfg.l %></span>
+            </td>
+            <% if (currentUser.role === 'compras' || currentUser.role === 'admin') { %>
+            <td>
+              <% if (item.item_status !== 'peca_chegou' && quotation.status !== 'cancelado') { %>
+              <form action="/cotacoes/<%= quotation.id %>/peca-chegou" method="POST" style="display:inline">
+                <input type="hidden" name="item_id" value="<%= item.id %>">
+                <button type="submit" class="btn-icon blue" title="Marcar como chegou"
+                  onclick="return confirm('Confirma que a peça chegou?')">
+                  <i class="bi bi-box-arrow-in-down"></i>
+                </button>
+              </form>
+              <% } else { %>
+              <i class="bi bi-check-circle-fill" style="color:var(--green);font-size:18px"></i>
               <% } %>
-            </tr>
-            <% }) %>
-          </tbody>
-          <tfoot>
-            <tr style="background:#f8fafc">
-              <td colspan="4" style="text-align:right;font-weight:600;padding:12px 16px">Subtotal Peças:</td>
-              <td style="font-weight:600;padding:12px 16px">R$ <%= partsTotal.toFixed(2) %></td>
-              <td colspan="5"></td>
-            </tr>
-            <% if (laborTotal > 0) { %>
-            <tr style="background:#f8fafc">
-              <td colspan="4" style="text-align:right;font-weight:600;padding:8px 16px">Total Mão de Obra:</td>
-              <td style="font-weight:600;padding:8px 16px">R$ <%= laborTotal.toFixed(2) %></td>
-              <td colspan="5"></td>
-            </tr>
+            </td>
             <% } %>
-            <tr style="background:var(--green-light)">
-              <td colspan="4" style="text-align:right;font-weight:800;padding:12px 16px;color:var(--green)">TOTAL GERAL:</td>
-              <td style="font-weight:800;padding:12px 16px;color:var(--green)">R$ <%= grandTotal.toFixed(2) %></td>
-              <td colspan="5"></td>
-            </tr>
-          </tfoot>
-        </table>
+          </tr>
+          <% }) %>
+        </tbody>
+      </table>
+      <div style="background:var(--bg);border-top:1px solid var(--border);padding:14px 16px">
+        <div style="display:flex;justify-content:space-between;font-size:13px;color:var(--text-muted);padding:3px 0">
+          <span>Subtotal peças</span><span>R$ <%= partsTotal.toFixed(2) %></span>
+        </div>
+        <% if (laborTotal > 0) { %>
+        <div style="display:flex;justify-content:space-between;font-size:13px;color:var(--text-muted);padding:3px 0">
+          <span>Mão de obra</span><span>R$ <%= laborTotal.toFixed(2) %></span>
+        </div>
+        <% } %>
+        <div style="display:flex;justify-content:space-between;font-weight:800;font-size:15px;color:var(--text);border-top:1px solid var(--border);margin-top:6px;padding-top:10px">
+          <span>Total Geral</span><span>R$ <%= grandTotal.toFixed(2) %></span>
+        </div>
       </div>
     </div>
 
     <!-- Observações -->
     <% if (quotation.notes_vendas || quotation.notes_compras) { %>
-    <div class="form-section">
-      <div class="form-section-header"><span><i class="bi bi-chat-text"></i> Observações</span></div>
+    <div class="form-section" style="margin-top:14px">
+      <div class="form-section-header"><i class="bi bi-chat-text"></i> Observações</div>
       <div class="form-section-body">
         <% if (quotation.notes_vendas) { %>
         <div style="margin-bottom:10px">
@@ -181,12 +187,10 @@
     <div class="action-card">
       <div class="action-card-header blue"><i class="bi bi-search"></i>Iniciar Cotação</div>
       <div class="action-card-body">
-        <p style="font-size:13px;color:var(--gray);margin-bottom:12px">Clique para assumir esta cotação e iniciar a busca de preços.</p>
+        <p style="font-size:12.5px;color:var(--text-muted);margin-bottom:12px;line-height:1.5">Clique para assumir esta cotação e iniciar a busca de preços.</p>
         <form action="/cotacoes/<%= quotation.id %>/status" method="POST">
           <input type="hidden" name="status" value="em_cotacao">
-          <button type="submit" class="btn-blue">
-            <i class="bi bi-search"></i>Em Cotação
-          </button>
+          <button type="submit" class="btn-blue"><i class="bi bi-search"></i>Em Cotação</button>
         </form>
       </div>
     </div>
@@ -194,68 +198,61 @@
 
     <% if (quotation.status === 'em_cotacao' || quotation.status === 'cotado') { %>
     <div class="action-card">
-      <div class="action-card-header green"><i class="bi bi-currency-dollar"></i>Preencher Valores</div>
+      <div class="action-card-header blue"><i class="bi bi-currency-dollar"></i>Responder Cotação</div>
       <div class="action-card-body">
         <form action="/cotacoes/<%= quotation.id %>/responder" method="POST">
           <% items.forEach((item, idx) => { %>
-          <div style="background:#f8fafc;border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:12px">
+          <div style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:12px">
             <div style="font-size:13px;font-weight:600;margin-bottom:10px">
               <%= item.part_name %><% if (item.part_code) { %> (<%= item.part_code %>)<% } %> — Qtd: <%= item.quantity %>
             </div>
             <input type="hidden" name="item_ids[]" value="<%= item.id %>">
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
               <div>
-                <label class="form-label" style="font-size:11px">Vlr Unit. (R$)</label>
-                <input type="number" name="unit_prices[]" class="form-control unit-price"
-                  style="font-size:13px;padding:6px 10px"
+                <label class="form-label" style="font-size:10px">Vlr Unit. (R$)</label>
+                <input type="number" name="unit_prices[]" class="form-control form-control-sm"
                   value="<%= item.unit_price || '' %>" step="0.01" min="0"
-                  data-qty="<%= item.quantity %>" data-idx="<%= idx %>">
+                  data-qty="<%= item.quantity %>" data-idx="<%= idx %>" class="unit-price">
               </div>
               <div>
-                <label class="form-label" style="font-size:11px">Vlr Total (R$)</label>
-                <input type="number" name="total_prices[]" class="form-control total-price"
-                  style="font-size:13px;padding:6px 10px"
+                <label class="form-label" style="font-size:10px">Vlr Total (R$)</label>
+                <input type="number" name="total_prices[]" class="form-control form-control-sm"
                   value="<%= item.total_price || '' %>" step="0.01" min="0" data-idx="<%= idx %>">
               </div>
               <div>
-                <label class="form-label" style="font-size:11px">Mão de Obra (R$)</label>
-                <input type="number" name="labor_costs_compras[]" class="form-control"
-                  style="font-size:13px;padding:6px 10px"
+                <label class="form-label" style="font-size:10px">Mão de Obra (R$)</label>
+                <input type="number" name="labor_costs_compras[]" class="form-control form-control-sm"
                   value="<%= item.labor_cost_compras || 0 %>" step="0.01" min="0">
               </div>
               <div>
-                <label class="form-label" style="font-size:11px">Prazo (dias)</label>
-                <input type="number" name="delivery_days[]" class="form-control"
-                  style="font-size:13px;padding:6px 10px"
+                <label class="form-label" style="font-size:10px">Prazo (dias)</label>
+                <input type="number" name="delivery_days[]" class="form-control form-control-sm"
                   value="<%= item.delivery_days || '' %>" min="0">
               </div>
               <div>
-                <label class="form-label" style="font-size:11px">Data Entrega</label>
-                <input type="date" name="delivery_deadlines[]" class="form-control"
-                  style="font-size:13px;padding:6px 10px"
+                <label class="form-label" style="font-size:10px">Data Entrega</label>
+                <input type="date" name="delivery_deadlines[]" class="form-control form-control-sm"
                   value="<%= item.delivery_deadline ? item.delivery_deadline.substring(0,10) : '' %>">
               </div>
               <div>
-                <label class="form-label" style="font-size:11px">Fornecedor</label>
-                <input type="text" name="supplier_names[]" class="form-control"
-                  style="font-size:13px;padding:6px 10px"
+                <label class="form-label" style="font-size:10px">Fornecedor</label>
+                <input type="text" name="supplier_names[]" class="form-control form-control-sm"
                   value="<%= item.supplier_name || '' %>">
               </div>
               <div style="grid-column:span 2">
-                <label class="form-label" style="font-size:11px">Obs. do item</label>
-                <input type="text" name="item_notes[]" class="form-control"
-                  style="font-size:13px;padding:6px 10px"
+                <label class="form-label" style="font-size:10px">Obs. do item</label>
+                <input type="text" name="item_notes[]" class="form-control form-control-sm"
                   value="<%= item.notes || '' %>">
               </div>
             </div>
           </div>
           <% }) %>
           <div style="margin-bottom:12px">
-            <label class="form-label">Observações Compras</label>
-            <textarea name="notes_compras" class="form-control" rows="2" style="font-size:13px"><%= quotation.notes_compras || '' %></textarea>
+            <label class="form-label">Obs. Compras</label>
+            <textarea name="notes_compras" class="form-control form-control-sm" rows="2"><%= quotation.notes_compras || '' %></textarea>
           </div>
           <button type="submit" class="btn-green">
-            <i class="bi bi-check-circle"></i>Salvar e Notificar Vendedor
+            <i class="bi bi-check-circle"></i>Salvar e Notificar
           </button>
         </form>
       </div>
@@ -264,14 +261,12 @@
 
     <% if (quotation.status === 'cotado') { %>
     <div class="action-card">
-      <div class="action-card-header purple"><i class="bi bi-box-arrow-in-down"></i>Registrar Chegada</div>
+      <div class="action-card-header purple"><i class="bi bi-box-arrow-in-down"></i>Peça Chegou</div>
       <div class="action-card-body">
-        <p style="font-size:13px;color:var(--gray);margin-bottom:12px">Marque quando TODAS as peças chegarem. O vendedor será notificado.</p>
+        <p style="font-size:12.5px;color:var(--text-muted);margin-bottom:12px;line-height:1.5">Confirme a chegada e o vendedor será notificado.</p>
         <form action="/cotacoes/<%= quotation.id %>/peca-chegou" method="POST"
           onsubmit="return confirm('Confirma que todas as peças chegaram?')">
-          <button type="submit" class="btn-blue">
-            <i class="bi bi-box-arrow-in-down"></i>Todas as Peças Chegaram
-          </button>
+          <button type="submit" class="btn-blue"><i class="bi bi-box-arrow-in-down"></i>Confirmar Chegada</button>
         </form>
       </div>
     </div>
@@ -282,9 +277,7 @@
         <form action="/cotacoes/<%= quotation.id %>/status" method="POST"
           onsubmit="return confirm('Cancelar esta cotação?')">
           <input type="hidden" name="status" value="cancelado">
-          <button type="submit" class="btn-red-outline" style="font-size:13px;padding:8px 16px">
-            <i class="bi bi-x-circle"></i>Cancelar Cotação
-          </button>
+          <button type="submit" class="btn-red-outline"><i class="bi bi-x-circle"></i>Cancelar Cotação</button>
         </form>
       </div>
     </div>
@@ -296,7 +289,7 @@
     <div class="action-card">
       <div class="action-card-header green"><i class="bi bi-whatsapp"></i>Notificar Cliente</div>
       <div class="action-card-body">
-        <p style="font-size:13px;color:var(--gray);margin-bottom:12px">
+        <p style="font-size:12.5px;color:var(--text-muted);margin-bottom:12px;line-height:1.5">
           Envie o resultado por WhatsApp para <strong><%= quotation.customer_name %></strong>.
         </p>
         <button class="btn-wa" id="btn-whatsapp" <%= quotation.whatsapp_sent_at ? 'disabled' : '' %>>
@@ -304,7 +297,7 @@
           <%= quotation.whatsapp_sent_at ? 'WhatsApp já enviado' : 'Enviar pelo WhatsApp' %>
         </button>
         <% if (quotation.whatsapp_sent_at) { %>
-        <p style="font-size:12px;color:var(--gray);text-align:center;margin-top:8px">
+        <p style="font-size:12px;color:var(--text-muted);text-align:center;margin-top:8px">
           Enviado em <%= new Date(quotation.whatsapp_sent_at).toLocaleString('pt-BR') %>
         </p>
         <% } %>
@@ -315,27 +308,27 @@
     <!-- Resposta do Cliente -->
     <% if (quotation.status === 'cotado' || quotation.status === 'peca_chegou') { %>
     <div class="action-card">
-      <div class="action-card-header" style="background:#334155;color:#fff"><i class="bi bi-person-check"></i>Resposta do Cliente</div>
+      <div class="action-card-header" style="background:#f1f5f9;color:var(--text)"><i class="bi bi-person-check"></i>Resposta do Cliente</div>
       <div class="action-card-body">
         <% if (quotation.customer_approved === null || quotation.customer_approved === undefined) { %>
           <% if (currentUser.role === 'vendas' || currentUser.role === 'admin') { %>
-          <p style="font-size:13px;color:var(--gray);margin-bottom:12px">O cliente aprovou ou recusou a cotação?</p>
+          <p style="font-size:12.5px;color:var(--text-muted);margin-bottom:12px;line-height:1.5">O cliente aprovou ou recusou?</p>
           <form action="/cotacoes/<%= quotation.id %>/resposta-cliente" method="POST">
             <input type="hidden" name="approved" value="1">
-            <button type="submit" class="btn-green" style="width:100%;justify-content:center;margin-bottom:8px"
+            <button type="submit" class="btn-green" style="margin-bottom:8px"
               onclick="return confirm('Confirmar que o cliente APROVOU?')">
               <i class="bi bi-check-circle"></i>Cliente Aprovou
             </button>
           </form>
           <form action="/cotacoes/<%= quotation.id %>/resposta-cliente" method="POST">
             <input type="hidden" name="approved" value="0">
-            <button type="submit" class="btn-red-outline" style="width:100%;justify-content:center"
+            <button type="submit" class="btn-red-outline"
               onclick="return confirm('Confirmar que o cliente RECUSOU?')">
               <i class="bi bi-x-circle"></i>Cliente Recusou
             </button>
           </form>
           <% } else { %>
-          <div style="text-align:center;padding:12px;color:var(--gray)">
+          <div style="text-align:center;padding:12px;color:var(--text-muted)">
             <i class="bi bi-hourglass-split" style="font-size:24px;display:block;margin-bottom:8px"></i>
             <span style="font-size:13px">Aguardando resposta do cliente</span>
           </div>
@@ -344,42 +337,22 @@
           <div style="display:flex;align-items:center;gap:10px;padding:12px;background:var(--green-light);border-radius:8px">
             <i class="bi bi-check-circle-fill" style="color:var(--green);font-size:24px;flex-shrink:0"></i>
             <div>
-              <div style="font-weight:700;color:var(--green);font-size:14px">Aprovado — Pode encomendar</div>
-              <% if (quotation.customer_approved_at) { %><div style="font-size:12px;color:var(--gray)"><%= new Date(quotation.customer_approved_at).toLocaleString('pt-BR') %></div><% } %>
+              <div style="font-weight:700;color:var(--green)">Aprovado — Pode encomendar</div>
+              <% if (quotation.customer_approved_at) { %><div style="font-size:12px;color:var(--text-muted)"><%= new Date(quotation.customer_approved_at).toLocaleString('pt-BR') %></div><% } %>
             </div>
           </div>
         <% } else { %>
           <div style="display:flex;align-items:center;gap:10px;padding:12px;background:var(--red-light);border-radius:8px">
             <i class="bi bi-x-circle-fill" style="color:var(--red);font-size:24px;flex-shrink:0"></i>
             <div>
-              <div style="font-weight:700;color:var(--red);font-size:14px">Recusado — Não encomendar</div>
-              <% if (quotation.customer_approved_at) { %><div style="font-size:12px;color:var(--gray)"><%= new Date(quotation.customer_approved_at).toLocaleString('pt-BR') %></div><% } %>
+              <div style="font-weight:700;color:var(--red)">Recusado — Não encomendar</div>
+              <% if (quotation.customer_approved_at) { %><div style="font-size:12px;color:var(--text-muted)"><%= new Date(quotation.customer_approved_at).toLocaleString('pt-BR') %></div><% } %>
             </div>
           </div>
         <% } %>
       </div>
     </div>
     <% } %>
-
-    <!-- Info geral -->
-    <div class="form-section">
-      <div class="form-section-body" style="font-size:13px;color:var(--gray)">
-        <div style="display:flex;justify-content:space-between;margin-bottom:8px">
-          <span>Vendedor:</span><strong style="color:var(--text)"><%= quotation.creator_name %></strong>
-        </div>
-        <% if (quotation.buyer_name) { %>
-        <div style="display:flex;justify-content:space-between;margin-bottom:8px">
-          <span>Comprador:</span><strong style="color:var(--text)"><%= quotation.buyer_name %></strong>
-        </div>
-        <% } %>
-        <div style="display:flex;justify-content:space-between;margin-bottom:8px">
-          <span>Abertura:</span><strong style="color:var(--text)"><%= new Date(quotation.created_at).toLocaleString('pt-BR') %></strong>
-        </div>
-        <div style="display:flex;justify-content:space-between">
-          <span>Atualização:</span><strong style="color:var(--text)"><%= new Date(quotation.updated_at).toLocaleString('pt-BR') %></strong>
-        </div>
-      </div>
-    </div>
 
   </div>
 </div>
@@ -395,9 +368,9 @@ if (btn && !btn.disabled) {
       const r = await fetch('/api/whatsapp/enviar/<%= quotation.id %>', { method: 'POST' });
       const json = await r.json();
       if (json.ok) {
-        btn.innerHTML = '<i class="bi bi-check-circle me-1"></i>Enviado com sucesso!';
+        btn.innerHTML = '<i class="bi bi-check-circle me-1"></i>Enviado!';
         btn.style.background = '#15803d';
-        showToast('WhatsApp', 'Mensagem enviada para o cliente!', 'success');
+        showToast('WhatsApp', 'Mensagem enviada!', 'success');
       } else {
         btn.disabled = false;
         btn.innerHTML = '<i class="bi bi-whatsapp me-1"></i>Enviar pelo WhatsApp';
@@ -415,13 +388,11 @@ document.querySelectorAll('.unit-price').forEach(input => {
   input.addEventListener('input', () => {
     const idx = input.dataset.idx;
     const qty = parseFloat(input.dataset.qty) || 1;
-    const total = document.querySelector(`.total-price[data-idx="${idx}"]`);
-    if (total && !total._touched) {
-      total.value = (parseFloat(input.value || 0) * qty).toFixed(2);
-    }
+    const total = document.querySelector(`[name="total_prices[]"][data-idx="${idx}"]`);
+    if (total && !total._touched) total.value = (parseFloat(input.value || 0) * qty).toFixed(2);
   });
 });
-document.querySelectorAll('.total-price').forEach(input => {
+document.querySelectorAll('[name="total_prices[]"]').forEach(input => {
   input.addEventListener('input', () => { input._touched = parseFloat(input.value) > 0; });
 });
 </script>

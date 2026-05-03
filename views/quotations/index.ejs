@@ -1,88 +1,90 @@
-<div class="toolbar">
-  <div class="toolbar-left">
-    <form method="GET" class="search-box">
-      <i class="bi bi-search"></i>
-      <input type="text" name="q" placeholder="Buscar cliente, veículo..." value="<%= typeof q !== 'undefined' ? q : '' %>">
-      <% if (typeof currentStatus !== 'undefined' && currentStatus !== 'todos') { %>
-      <input type="hidden" name="status" value="<%= currentStatus %>">
-      <% } %>
-    </form>
-  </div>
-  <div class="toolbar-right">
-    <% if (currentUser.role === 'vendas' || currentUser.role === 'admin') { %>
-    <a href="/cotacoes/nova" class="btn-primary">
-      <i class="bi bi-plus-circle"></i>Nova Cotação
+<div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap">
+  <div class="filter-tabs" style="margin-bottom:0">
+    <% const filters = [
+      { val: 'todos',      label: 'Todas'       },
+      { val: 'pendente',   label: 'Aguardando'  },
+      { val: 'em_cotacao', label: 'Em Cotação'  },
+      { val: 'cotado',     label: 'Cotado'      },
+      { val: 'peca_chegou',label: 'Peça Chegou' },
+      { val: 'cancelado',  label: 'Cancelado'   }
+    ]; %>
+    <% filters.forEach(f => { %>
+    <a href="/cotacoes?status=<%= f.val %>" class="ftab <%= currentStatus === f.val ? 'active' : '' %>">
+      <%= f.label %>
     </a>
-    <% } %>
+    <% }) %>
   </div>
-</div>
 
-<div class="filter-tabs">
-  <% const filters = [
-    { val: 'todos',      label: 'Todas'       },
-    { val: 'pendente',   label: 'Aguardando'  },
-    { val: 'em_cotacao', label: 'Em Cotação'  },
-    { val: 'cotado',     label: 'Cotado'      },
-    { val: 'peca_chegou',label: 'Peça Chegou' },
-    { val: 'cancelado',  label: 'Cancelado'   }
-  ]; %>
-  <% filters.forEach(f => { %>
-  <a href="/cotacoes?status=<%= f.val %>" class="ftab <%= currentStatus === f.val ? 'active' : '' %>">
-    <%= f.label %>
+  <form method="GET" class="search-box" style="margin-left:auto">
+    <i class="bi bi-search"></i>
+    <input type="text" name="q" placeholder="Buscar cotações..." value="<%= typeof q !== 'undefined' ? q : '' %>">
+    <% if (typeof currentStatus !== 'undefined' && currentStatus !== 'todos') { %>
+    <input type="hidden" name="status" value="<%= currentStatus %>">
+    <% } %>
+  </form>
+
+  <% if (currentUser.role === 'vendas' || currentUser.role === 'admin') { %>
+  <a href="/cotacoes/nova" class="btn-primary">
+    <i class="bi bi-plus-lg"></i>Nova Cotação
   </a>
-  <% }) %>
+  <% } %>
 </div>
 
 <div class="table-wrap">
   <% if (items.length === 0) { %>
-  <div style="text-align:center;padding:48px 16px;color:var(--gray)">
+  <div style="text-align:center;padding:48px 16px;color:var(--text-muted)">
     <i class="bi bi-inbox" style="font-size:40px;display:block;margin-bottom:8px"></i>Nenhuma cotação encontrada.
   </div>
   <% } else { %>
   <table class="data-table">
     <thead>
       <tr>
-        <th>Nº</th>
+        <th>Data</th>
+        <th>Número</th>
         <th>Cliente</th>
-        <th>Telefone</th>
-        <th>Veículo / Placa</th>
+        <th>Veículo</th>
         <th>Status</th>
         <% if (currentUser.role !== 'vendas') { %><th>Vendedor</th><% } %>
-        <th>Data</th>
         <th></th>
       </tr>
     </thead>
     <tbody>
       <% items.forEach(q => { %>
       <tr>
+        <td style="color:var(--text-muted);font-size:13px"><%= new Date(q.created_at).toLocaleDateString('pt-BR') %></td>
         <td><a href="/cotacoes/<%= q.id %>" class="qid">#<%= q.quote_number %></a></td>
-        <td style="font-weight:600"><%= q.customer_name %></td>
-        <td style="color:var(--gray);font-size:13px">
-          <a href="tel:<%= q.customer_phone %>" style="text-decoration:none;color:inherit"><%= q.customer_phone %></a>
+        <td>
+          <div style="display:flex;align-items:center;gap:8px">
+            <div class="av" style="width:28px;height:28px;font-size:10px;background:var(--accent);flex-shrink:0">
+              <%= q.customer_name.split(' ').slice(0,2).map(w=>w[0]).join('').toUpperCase() %>
+            </div>
+            <div>
+              <div style="font-weight:600"><%= q.customer_name %></div>
+              <div style="font-size:12px;color:var(--text-muted)"><%= q.customer_phone %></div>
+            </div>
+          </div>
         </td>
         <td>
-          <span style="font-weight:600;font-size:13px"><%= q.make || '' %> <%= q.model || '' %></span>
-          <% if (q.license_plate) { %><br><span class="plate-tag"><%= q.license_plate %></span><% } %>
+          <div style="font-weight:500;font-size:13px"><%= q.make || '' %> <%= q.model || '' %></div>
+          <% if (q.license_plate) { %><span class="plate-tag"><%= q.license_plate %></span><% } %>
         </td>
         <td><%- include('../partials/status-badge', { status: q.status }) %></td>
         <% if (currentUser.role !== 'vendas') { %>
-        <td style="color:var(--gray);font-size:13px"><%= q.creator_name %></td>
+        <td style="color:var(--text-muted);font-size:12.5px"><%= q.creator_name %></td>
         <% } %>
-        <td style="color:var(--gray);font-size:13px"><%= new Date(q.created_at).toLocaleDateString('pt-BR') %></td>
-        <td><a href="/cotacoes/<%= q.id %>" class="actions-btn" title="Ver detalhes">⋯</a></td>
+        <td><a href="/cotacoes/<%= q.id %>" class="btn-icon" title="Ver detalhes"><i class="bi bi-eye"></i></a></td>
       </tr>
       <% }) %>
     </tbody>
   </table>
   <% if (pages > 1) { %>
-  <div class="pagination-wrap">
-    <ul class="pagination">
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-top:1px solid var(--border)">
+    <span style="color:var(--text-muted);font-size:13px">Mostrando página <%= page %> de <%= pages %></span>
+    <div style="display:flex;gap:4px">
       <% for (let p = 1; p <= pages; p++) { %>
-      <li class="page-item <%= p === page ? 'active' : '' %>">
-        <a class="page-link" href="?status=<%= currentStatus %>&page=<%= p %>"><%= p %></a>
-      </li>
+      <a href="?status=<%= currentStatus %>&page=<%= p %>" class="pag-btn <%= p === page ? 'active' : '' %>"><%= p %></a>
       <% } %>
-    </ul>
+    </div>
   </div>
   <% } %>
   <% } %>
