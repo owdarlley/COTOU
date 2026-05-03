@@ -21,15 +21,15 @@
             <strong><%= u.name %></strong>
           </div>
         </td>
-        <td style="color:var(--gray);font-size:13px"><%= u.email %></td>
+        <td style="color:var(--text-muted);font-size:13px"><%= u.email %></td>
         <td>
-          <span class="role-badge <%= u.role === 'vendas' ? 'role-vendas' : u.role === 'compras' ? 'role-compras' : 'role-admin' %>">
-            <%= u.role %>
-          </span>
+          <% const roleMap = { admin: { l: 'Admin', c: 'badge-amber' }, vendas: { l: 'Vendas', c: 'badge-blue' }, compras: { l: 'Compras', c: 'badge-green' } }; %>
+          <% const rc = roleMap[u.role] || { l: u.role, c: 'badge-gray' }; %>
+          <span class="badge <%= rc.c %>"><%= rc.l %></span>
         </td>
-        <td style="color:var(--gray);font-size:13px"><%= u.phone_whatsapp || '—' %></td>
+        <td style="color:var(--text-muted);font-size:13px"><%= u.phone_whatsapp || '—' %></td>
         <td>
-          <span class="role-badge <%= u.active ? 'role-ativo' : 'role-inativo' %>">
+          <span class="badge <%= u.active ? 'badge-green' : 'badge-gray' %>">
             <%= u.active ? 'Ativo' : 'Inativo' %>
           </span>
         </td>

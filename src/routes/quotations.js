@@ -23,6 +23,7 @@ router.get('/', (req, res) => {
   });
   res.render('quotations/index', {
     title: 'Cotações',
+    topbarSubtitle: 'Gerencie todas as solicitações',
     ...result,
     currentStatus: status
   });

@@ -71,8 +71,10 @@ app.get('/', requireAuth, (req, res) => {
     limit: 5
   });
 
+  const name = (req.session.userName || '').split(' ')[0];
   res.render('dashboard/index', {
     title: 'Painel — COTOU',
+    topbarSubtitle: `Bem-vindo de volta${name ? ', ' + name : ''}!`,
     statusMap,
     recentQuotations: recent.items
   });
