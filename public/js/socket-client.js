@@ -9,6 +9,9 @@ if (socket && userId) {
   socket.on('nova_notificacao', (data) => {
     updateBadge(data.unreadCount);
     showToast(data.title, data.message, 'primary');
+    if (data.type === 'cotacao_respondida') {
+      showFloatBell(data.unreadCount);
+    }
   });
 
   socket.on('connect_error', () => {});
@@ -39,6 +42,24 @@ function updateBadge(count) {
     } else {
       navNotifBadge.style.display = 'none';
     }
+  }
+}
+
+function showFloatBell(count) {
+  const btn = document.getElementById('notif-float');
+  if (!btn) return;
+  btn.style.display = 'flex';
+  const badge = btn.querySelector('.notif-float-badge') || document.getElementById('notif-float-badge');
+  if (badge) {
+    badge.textContent = count > 9 ? '9+' : count;
+    badge.style.display = 'flex';
+  }
+  // Reinicia animação do sino para chamar atenção imediata
+  const icon = btn.querySelector('.bi-bell-fill');
+  if (icon) {
+    icon.classList.remove('bell-ringing');
+    void icon.offsetWidth; // força reflow para reiniciar animação
+    icon.classList.add('bell-ringing');
   }
 }
 

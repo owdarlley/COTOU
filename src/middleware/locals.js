@@ -11,6 +11,7 @@ module.exports = function injectLocals(req, res, next) {
       res.locals.currentUser = User.findById(req.session.userId);
       res.locals.unreadCount = Notification.countUnread(req.session.userId);
       res.locals.recentNotifications = Notification.findRecent(req.session.userId, 5);
+      res.locals.hasRespondida = Notification.hasUnreadOfType(req.session.userId, 'cotacao_respondida');
     } catch (err) {
       console.error('[locals] Erro ao carregar dados do usuário:', err.message);
       res.locals.currentUser = null;
