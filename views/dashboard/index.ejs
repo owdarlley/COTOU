@@ -1,41 +1,49 @@
-<div class="stats-grid">
-  <a href="/cotacoes?status=pendente" class="stat-card">
-    <div class="stat-icon si-orange"><i class="bi bi-clock"></i></div>
-    <div>
-      <div class="stat-num"><%= statusMap.pendente || 0 %></div>
-      <div class="stat-label">Aguardando</div>
+<!-- KPI Grid -->
+<div class="kpi-grid">
+  <a href="/cotacoes?status=pendente" class="kpi-card kpi-amber">
+    <div class="kpi-top">
+      <div class="kpi-icon icon-amber"><i class="bi bi-clock"></i></div>
+      <div class="kpi-num"><%= statusMap.pendente || 0 %></div>
+    </div>
+    <div class="kpi-label">Aguardando</div>
+    <div class="kpi-trend">em aberto</div>
+  </a>
+  <a href="/cotacoes?status=em_cotacao" class="kpi-card kpi-blue">
+    <div class="kpi-top">
+      <div class="kpi-icon icon-blue"><i class="bi bi-search"></i></div>
+      <div class="kpi-num"><%= statusMap.em_cotacao || 0 %></div>
+    </div>
+    <div class="kpi-label">Em Cotação</div>
+    <div class="kpi-trend">em andamento</div>
+  </a>
+  <a href="/cotacoes?status=cotado" class="kpi-card kpi-green">
+    <div class="kpi-top">
+      <div class="kpi-icon icon-green"><i class="bi bi-check-circle"></i></div>
+      <div class="kpi-num"><%= statusMap.cotado || 0 %></div>
+    </div>
+    <div class="kpi-label">Cotado</div>
+    <div class="kpi-trend<% if ((statusMap.cotado||0) > 0) { %> up<% } %>">
+      <% if ((statusMap.cotado||0) > 0) { %><i class="bi bi-arrow-up-short"></i><% } %>aguardando cliente
     </div>
   </a>
-  <a href="/cotacoes?status=em_cotacao" class="stat-card">
-    <div class="stat-icon si-blue"><i class="bi bi-search"></i></div>
-    <div>
-      <div class="stat-num"><%= statusMap.em_cotacao || 0 %></div>
-      <div class="stat-label">Em Cotação</div>
+  <a href="/cotacoes?status=peca_chegou" class="kpi-card kpi-purple">
+    <div class="kpi-top">
+      <div class="kpi-icon icon-purple"><i class="bi bi-box-arrow-in-down"></i></div>
+      <div class="kpi-num"><%= statusMap.peca_chegou || 0 %></div>
     </div>
-  </a>
-  <a href="/cotacoes?status=cotado" class="stat-card">
-    <div class="stat-icon si-green"><i class="bi bi-check-circle"></i></div>
-    <div>
-      <div class="stat-num"><%= statusMap.cotado || 0 %></div>
-      <div class="stat-label">Cotado</div>
-    </div>
-  </a>
-  <a href="/cotacoes?status=peca_chegou" class="stat-card">
-    <div class="stat-icon si-purple"><i class="bi bi-box-arrow-in-down"></i></div>
-    <div>
-      <div class="stat-num"><%= statusMap.peca_chegou || 0 %></div>
-      <div class="stat-label">Peça Chegou</div>
-    </div>
+    <div class="kpi-label">Peça Chegou</div>
+    <div class="kpi-trend">aguardando retirada</div>
   </a>
 </div>
 
-<div class="table-wrap">
-  <div class="form-section-header">
-    <span><i class="bi bi-clock-history"></i> Cotações Recentes</span>
-    <a href="/cotacoes" class="btn-outline" style="padding:5px 12px;font-size:12px">Ver todas</a>
+<!-- Recent quotations -->
+<div class="section-card">
+  <div class="section-head">
+    <span class="section-title"><i class="bi bi-clock-history"></i> Cotações Recentes</span>
+    <a href="/cotacoes" class="btn-link">Ver todas →</a>
   </div>
   <% if (recentQuotations.length === 0) { %>
-  <div style="text-align:center;padding:48px 16px;color:var(--gray)">
+  <div style="text-align:center;padding:48px 16px;color:var(--text-muted)">
     <i class="bi bi-inbox" style="font-size:40px;display:block;margin-bottom:8px"></i>
     Nenhuma cotação ainda.
     <% if (currentUser.role === 'vendas' || currentUser.role === 'admin') { %>
@@ -48,21 +56,28 @@
   <table class="data-table">
     <thead>
       <tr>
-        <th>Nº</th><th>Cliente</th><th>Veículo</th><th>Status</th><th>Data</th><th></th>
+        <th>Número</th><th>Cliente</th><th>Veículo</th><th>Status</th><th>Data</th><th></th>
       </tr>
     </thead>
     <tbody>
       <% recentQuotations.forEach(q => { %>
       <tr>
         <td><a href="/cotacoes/<%= q.id %>" class="qid">#<%= q.quote_number %></a></td>
-        <td><span style="font-weight:600"><%= q.customer_name %></span></td>
+        <td>
+          <div style="display:flex;align-items:center;gap:8px">
+            <div class="av" style="width:28px;height:28px;font-size:10px;background:var(--accent)">
+              <%= q.customer_name.split(' ').slice(0,2).map(w=>w[0]).join('').toUpperCase() %>
+            </div>
+            <span style="font-weight:600"><%= q.customer_name %></span>
+          </div>
+        </td>
         <td>
           <span style="font-size:13px"><%= q.make || '' %> <%= q.model || '' %></span>
           <% if (q.license_plate) { %><br><span class="plate-tag"><%= q.license_plate %></span><% } %>
         </td>
         <td><%- include('../partials/status-badge', { status: q.status }) %></td>
-        <td style="color:var(--gray);font-size:13px"><%= new Date(q.created_at).toLocaleDateString('pt-BR') %></td>
-        <td><a href="/cotacoes/<%= q.id %>" class="actions-btn" title="Ver">⋯</a></td>
+        <td style="color:var(--text-muted);font-size:13px"><%= new Date(q.created_at).toLocaleDateString('pt-BR') %></td>
+        <td><a href="/cotacoes/<%= q.id %>" class="btn-icon" title="Ver"><i class="bi bi-eye"></i></a></td>
       </tr>
       <% }) %>
     </tbody>

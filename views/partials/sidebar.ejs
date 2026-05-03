@@ -1,10 +1,18 @@
 <% if (currentUser) {
   const p = locals.currentPath || '';
   const initials = currentUser.name.split(' ').slice(0,2).map(w => w[0]).join('').toUpperCase();
+  const roleLabel = { admin: 'Administrador', vendas: 'Setor de Vendas', compras: 'Setor de Compras' }[currentUser.role] || currentUser.role;
 %>
 <aside class="sidebar" id="sidebar">
   <div class="sidebar-brand">
-    <h1>COTOU <span style="font-weight:400;opacity:.55">Quoting</span></h1>
+    <div style="display:flex;align-items:center;gap:10px">
+      <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+        <rect width="28" height="28" rx="7" fill="var(--accent)"/>
+        <path d="M7 14h6M15 10l4 4-4 4" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <span style="font-size:17px;font-weight:800;color:#fff;letter-spacing:-.3px">COTOU</span>
+    </div>
+    <div style="font-size:11px;color:var(--sidebar-text);margin-top:4px;margin-left:38px;opacity:.6">Sistema de Cotações</div>
   </div>
   <nav>
     <ul>
@@ -45,11 +53,23 @@
       </li>
       <% } %>
       <li class="nav-item nav-item-bottom">
-        <a href="#" class="nav-link" style="margin-top:0">
+        <a href="#" class="nav-link">
           <i class="bi bi-gear"></i>Configurações
         </a>
       </li>
     </ul>
   </nav>
+  <div class="sidebar-footer">
+    <div class="av" style="width:32px;height:32px;font-size:11px;background:var(--sidebar-active);flex-shrink:0"><%= initials %></div>
+    <div style="flex:1;min-width:0">
+      <div class="sidebar-footer-name"><%= currentUser.name %></div>
+      <div class="sidebar-footer-role"><%= roleLabel %></div>
+    </div>
+    <form action="/logout" method="POST">
+      <button type="submit" class="sidebar-footer-logout" title="Sair">
+        <i class="bi bi-box-arrow-right"></i>
+      </button>
+    </form>
+  </div>
 </aside>
 <% } %>

@@ -17,7 +17,10 @@
   <div class="topbar">
     <div class="topbar-left">
       <i class="bi bi-list hamburger" id="hamburger" onclick="toggleSidebar()"></i>
-      <span class="topbar-title"><%= title.replace(' — COTOU','').replace(' | COTOU','') %></span>
+      <div class="topbar-title-wrap">
+        <span class="topbar-title"><%= title.replace(' — COTOU','').replace(' | COTOU','') %></span>
+        <% if (locals.topbarSubtitle) { %><span class="topbar-subtitle"><%= topbarSubtitle %></span><% } %>
+      </div>
     </div>
     <div class="topbar-right">
       <% if (currentUser) { %>
