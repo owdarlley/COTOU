@@ -43,8 +43,7 @@ router.post('/', requireRole('vendas', 'admin'), async (req, res) => {
     vehicle_plate, vehicle_model, vehicle_year_model,
     vehicle_year_manuf, vehicle_chassis,
     notes_vendas,
-    parts = [], part_names = [], part_codes = [], quantities = [],
-    labor_costs = []
+    parts = [], part_names = [], part_codes = [], quantities = []
   } = req.body;
 
   if (!customer_name || !customer_phone || !vehicle_plate) {
@@ -58,7 +57,6 @@ router.post('/', requireRole('vendas', 'admin'), async (req, res) => {
   const itemNames = Array.isArray(part_names) ? part_names : [part_names];
   const itemCodes = Array.isArray(part_codes) ? part_codes : [part_codes];
   const itemQtds  = Array.isArray(quantities) ? quantities : [quantities];
-  const itemLabors = Array.isArray(labor_costs) ? labor_costs : [labor_costs];
 
   const validItems = itemNames.filter(n => n && n.trim());
   if (validItems.length === 0) {
@@ -115,7 +113,7 @@ router.post('/', requireRole('vendas', 'admin'), async (req, res) => {
       partCode: code,
       partCatalogId: catalog ? catalog.id : null,
       quantity: parseInt(itemQtds[i]) || 1,
-      laborCostVendas: parseFloat(itemLabors[i]) || 0
+      laborCostVendas: 0
     });
   }
 
