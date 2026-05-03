@@ -13,17 +13,14 @@ async function lookupPlate(plate) {
       headers: { 'Accept': 'application/json', 'User-Agent': 'COTOU/1.0' }
     });
 
-    console.log('[PlateService] Resposta bruta:', JSON.stringify(data).substring(0, 300));
+    // Resposta inválida
+    if (!data || typeof data !== 'object') return null;
 
-    // API retornou erro ou texto
-    if (!data || typeof data !== 'object') {
-      console.warn('[PlateService] Resposta inválida:', data);
-      return null;
-    }
-
-    // wdapi2 às vezes retorna { mensagem: "..." } em caso de erro
-    if (data.mensagem || data.message || data.erro || data.error) {
-      console.warn('[PlateService] Erro da API:', data.mensagem || data.message || data.erro || data.error);
+    // A API retorna { mensagemRetorno: "Sem erros." quando OK
+    // e pode retornar { mensagem: "..." } sem outros campos quando falha
+    const hasVehicleData = data.MARCA || data.marca || data.MODELO || data.modelo;
+    if (!hasVehicleData) {
+      console.warn('[PlateService] Sem dados do veículo:', JSON.stringify(data).substring(0, 200));
       return null;
     }
 
@@ -31,7 +28,7 @@ async function lookupPlate(plate) {
   } catch (err) {
     console.warn('[PlateService] Erro na consulta:', err.message);
     if (err.response) {
-      console.warn('[PlateService] Status HTTP:', err.response.status, '| Body:', JSON.stringify(err.response.data).substring(0, 200));
+      console.warn('[PlateService] Status HTTP:', err.response.status);
     }
     return null;
   }
@@ -40,23 +37,31 @@ async function lookupPlate(plate) {
 function normalize(data) {
   if (!data) return null;
 
-  // wdapi2.com.br retorna campos em maiúsculo ou minúsculo dependendo do plano
-  const make  = data.MARCA        || data.marca        || data.Marca        || '';
-  const model = data.MODELO       || data.modelo       || data.Modelo       || '';
-  const sub   = data.SUBMODELO    || data.submodelo    || '';
-  const fullModel = sub ? `${model} ${sub}`.trim() : model;
+  // Campos raiz
+  const make  = data.MARCA  || data.marca  || '';
+  const model = data.MODELO || data.modelo || '';
+  const sub   = data.SUBMODELO || data.submodelo || '';
+  const fullModel = (sub && sub !== model) ? `${model} ${sub}`.trim() : model;
 
-  const anoModelo = data.anoModelo    || data.ANO_MODELO   || data.ano_modelo   || data.ano || '';
-  const anoFab    = data.anoFabricacao|| data.ANO_FAB      || data.ano_fabricacao|| '';
+  // Ano: raiz
+  const anoModelo = data.anoModelo || data.ano || '';
+
+  // Campos dentro de "extra" (plano completo da wdapi2)
+  const extra = data.extra || {};
+  const anoFab    = extra.ano_fabricacao || anoModelo;
+  const combustivel = extra.combustivel || data.combustivel || '';
 
   return {
     make:       make,
     model:      fullModel,
     year_model: parseInt(anoModelo) || null,
     year_manuf: parseInt(anoFab)    || null,
-    color:      data.cor       || data.COR       || data.Cor       || '',
-    fuel:       data.combustivel|| data.COMBUSTIVEL|| data.Combustivel|| '',
-    chassis:    data.chassi    || data.CHASSI    || data.Chassi    || '',
+    color:      data.cor      || '',
+    fuel:       combustivel,
+    chassis:    data.chassi   || '',
+    city:       data.municipio || extra.municipio || '',
+    uf:         data.uf        || extra.uf        || '',
+    situation:  data.situacao  || '',
     raw:        JSON.stringify(data)
   };
 }
