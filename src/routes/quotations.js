@@ -199,6 +199,32 @@ router.post('/:id/responder', requireRole('compras', 'admin'), async (req, res) 
   res.redirect(`/cotacoes/${quotation.id}`);
 });
 
+// Vendas registra resposta do cliente
+router.post('/:id/resposta-cliente', requireRole('vendas', 'admin'), async (req, res) => {
+  const quotation = Quotation.findById(parseInt(req.params.id));
+  if (!quotation) return res.status(404).render('errors/404', { title: 'Não encontrado' });
+
+  const approved = req.body.approved === '1';
+  Quotation.setCustomerApproval(quotation.id, approved);
+
+  const verb = approved ? 'APROVOU' : 'RECUSOU';
+  await notifyAllByRole('compras', {
+    quotationId: quotation.id,
+    type: 'cotacao_atualizada',
+    title: `Cliente ${verb} — Cotação #${quotation.quote_number}`,
+    message: approved
+      ? `${req.session.userName} informou que o cliente aprovou. Pode encomendar!`
+      : `${req.session.userName} informou que o cliente recusou a cotação.`
+  });
+
+  req.session.flash = {
+    success: approved
+      ? 'Aprovação registrada! O setor de compras foi notificado.'
+      : 'Recusa registrada. O setor de compras foi notificado.'
+  };
+  res.redirect(`/cotacoes/${quotation.id}`);
+});
+
 // Marcar peça chegou
 router.post('/:id/peca-chegou', requireRole('compras', 'admin'), async (req, res) => {
   const quotation = Quotation.findById(parseInt(req.params.id));

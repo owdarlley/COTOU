@@ -62,6 +62,14 @@ class Quotation {
       .run(notesVendas !== undefined ? notesVendas : null, notesCompras !== undefined ? notesCompras : null, id);
   }
 
+  static setCustomerApproval(id, approved) {
+    db.prepare(`
+      UPDATE quotations
+      SET customer_approved = ?, customer_approved_at = datetime('now'), updated_at = datetime('now')
+      WHERE id = ?
+    `).run(approved ? 1 : 0, id);
+  }
+
   static countByStatus(userId, role) {
     const where = role === 'vendas' ? 'WHERE created_by_user_id = ?' : 'WHERE 1=1';
     const param = role === 'vendas' ? [userId] : [];
