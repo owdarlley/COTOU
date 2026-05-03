@@ -31,10 +31,10 @@ class Quotation {
     return { items, total, page, pages: Math.ceil(total / limit) };
   }
 
-  static create({ quoteNumber, customerId, vehicleId, createdByUserId, notesVendas }) {
+  static create({ quoteNumber, customerId, vehicleId, createdByUserId, notesVendas, photoPath }) {
     const result = db.prepare(
-      'INSERT INTO quotations (quote_number, customer_id, vehicle_id, created_by_user_id, notes_vendas) VALUES (?,?,?,?,?)'
-    ).run(quoteNumber, customerId, vehicleId, createdByUserId, notesVendas || null);
+      'INSERT INTO quotations (quote_number, customer_id, vehicle_id, created_by_user_id, notes_vendas, photo_path) VALUES (?,?,?,?,?,?)'
+    ).run(quoteNumber, customerId, vehicleId, createdByUserId, notesVendas || null, photoPath || null);
     return Number(result.lastInsertRowid);
   }
 

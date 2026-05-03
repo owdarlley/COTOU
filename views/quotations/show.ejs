@@ -169,6 +169,22 @@
     </div>
     <% } %>
 
+    <!-- Relatório Técnico (foto) -->
+    <% if (quotation.photo_path) { %>
+    <div class="form-section" style="margin-top:14px">
+      <div class="form-section-header"><i class="bi bi-camera"></i> Relatório Técnico</div>
+      <div class="form-section-body" style="padding:12px">
+        <a href="<%= quotation.photo_path %>" target="_blank" rel="noopener">
+          <img src="<%= quotation.photo_path %>" alt="Foto da peça"
+            style="max-width:100%;border-radius:8px;border:1px solid var(--border);cursor:zoom-in;display:block">
+        </a>
+        <p style="font-size:11px;color:var(--text-muted);margin-top:8px;text-align:center">
+          Clique na imagem para ampliar
+        </p>
+      </div>
+    </div>
+    <% } %>
+
   </div>
 
   <!-- Right column: actions -->

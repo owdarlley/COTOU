@@ -1,5 +1,7 @@
 const express = require('express');
 const router = express.Router();
+const path = require('path');
+const fs = require('fs');
 const { requireAuth, requireRole } = require('../middleware/auth');
 const Quotation = require('../models/Quotation');
 const QuotationItem = require('../models/QuotationItem');
@@ -78,12 +80,29 @@ router.post('/', requireRole('vendas', 'admin'), async (req, res) => {
   });
 
   const quoteNumber = generateQuoteNumber();
+
+  let photoPath = null;
+  const photoBase64 = req.body.photo_base64;
+  if (photoBase64 && photoBase64.startsWith('data:image')) {
+    const matches = photoBase64.match(/^data:image\/(\w+);base64,(.+)$/);
+    if (matches) {
+      const ext = matches[1];
+      const data = Buffer.from(matches[2], 'base64');
+      const uploadDir = path.join(__dirname, '../../public/uploads/quotations');
+      if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
+      const filename = `${quoteNumber}.${ext}`;
+      fs.writeFileSync(path.join(uploadDir, filename), data);
+      photoPath = `/uploads/quotations/${filename}`;
+    }
+  }
+
   const quotationId = Quotation.create({
     quoteNumber,
     customerId: customer.id,
     vehicleId,
     createdByUserId: req.session.userId,
-    notesVendas: notes_vendas || null
+    notesVendas: notes_vendas || null,
+    photoPath
   });
 
   for (let i = 0; i < itemNames.length; i++) {
