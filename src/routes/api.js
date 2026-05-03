@@ -14,7 +14,11 @@ router.use(requireAuth);
 router.get('/placa/:plate', async (req, res) => {
   try {
     const data = await lookupPlate(req.params.plate);
-    if (!data) return res.json({ ok: false, message: 'Placa não encontrada ou API não configurada.' });
+    if (!data) {
+      const token = process.env.PLATE_API_TOKEN;
+      if (!token) return res.json({ ok: false, message: 'Token da API de placa não configurado no .env' });
+      return res.json({ ok: false, message: 'Placa não encontrada ou sem dados disponíveis.' });
+    }
     res.json({ ok: true, data });
   } catch (err) {
     res.json({ ok: false, message: err.message });
