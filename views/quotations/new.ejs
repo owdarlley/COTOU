@@ -219,6 +219,30 @@ document.getElementById('items-body').addEventListener('click', e => {
 
 initAutocomplete(document.querySelector('.part-code'), document.querySelector('.part-name'));
 
+// Nome do cliente — capitaliza primeira letra de cada palavra
+const nameInput = document.querySelector('[name="customer_name"]');
+nameInput.setAttribute('autocapitalize', 'words');
+nameInput.addEventListener('input', function() {
+  const pos = this.selectionStart;
+  const titled = this.value.replace(/(?:^|\s)\S/g, c => c.toUpperCase());
+  if (titled !== this.value) {
+    this.value = titled;
+    this.setSelectionRange(pos, pos);
+  }
+});
+
+// Telefone — máscara (XX)XXXXX-XXXX
+const phoneInput = document.querySelector('[name="customer_phone"]');
+phoneInput.addEventListener('input', function() {
+  const digits = this.value.replace(/\D/g, '').slice(0, 11);
+  let masked = '';
+  if (digits.length === 0)      masked = '';
+  else if (digits.length <= 2)  masked = `(${digits}`;
+  else if (digits.length <= 7)  masked = `(${digits.slice(0,2)})${digits.slice(2)}`;
+  else                           masked = `(${digits.slice(0,2)})${digits.slice(2,7)}-${digits.slice(7)}`;
+  this.value = masked;
+});
+
 // Foto
 document.getElementById('photo-input').addEventListener('change', function() {
   const file = this.files[0];
