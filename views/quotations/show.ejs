@@ -4,329 +4,293 @@
                   quotation.status !== 'cancelado';
   const canAct  = (currentUser.role === 'compras' || currentUser.role === 'admin') &&
                   quotation.status !== 'cancelado';
+  const isVendas = currentUser.role === 'vendas' || currentUser.role === 'admin';
+  const showClientActions = isVendas && (quotation.status === 'cotado' || quotation.status === 'peca_chegou');
 %>
 
-<!-- ── HEADER ─────────────────────────────────────────────────── -->
-<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:20px;flex-wrap:wrap">
-  <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
-    <a href="/cotacoes" class="nc-btn-cancel" style="padding:7px 14px;font-size:12px;letter-spacing:0;text-transform:none">
-      <i class="bi bi-arrow-left"></i> Voltar
-    </a>
-    <div>
-      <div style="display:flex;align-items:center;gap:10px">
-        <h1 style="font-size:20px;font-weight:800;color:#0f172a;margin:0">Cotação #<%= quotation.quote_number %></h1>
-        <%- include('../partials/status-badge', { status: quotation.status }) %>
-        <% if (quotation.whatsapp_sent_at) { %>
-        <span class="badge badge-green"><i class="bi bi-whatsapp"></i> Enviado</span>
-        <% } %>
-      </div>
-      <div style="font-size:12px;color:#94a3b8;margin-top:3px">
-        Aberta em <strong style="color:#64748b"><%= new Date(quotation.created_at).toLocaleDateString('pt-BR') %></strong>
-        &nbsp;•&nbsp; Vendedor: <strong style="color:#64748b"><%= quotation.creator_name %></strong>
-        <% if (quotation.buyer_name) { %>&nbsp;•&nbsp; Compras: <strong style="color:#64748b"><%= quotation.buyer_name %></strong><% } %>
-      </div>
+<!-- HEADER -->
+<div style="display:flex;align-items:center;gap:14px;margin-bottom:20px;flex-wrap:wrap">
+  <a href="/cotacoes" class="nc-btn-cancel" style="padding:7px 14px;font-size:12px;letter-spacing:0;text-transform:none;flex-shrink:0">
+    <i class="bi bi-arrow-left"></i> Voltar
+  </a>
+  <div>
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+      <h1 style="font-size:19px;font-weight:800;color:#0f172a;margin:0">Cotação #<%= quotation.quote_number %></h1>
+      <%- include('../partials/status-badge', { status: quotation.status }) %>
+      <% if (quotation.whatsapp_sent_at) { %><span class="badge badge-green"><i class="bi bi-whatsapp"></i> Enviado</span><% } %>
     </div>
+    <p style="font-size:12px;color:#94a3b8;margin:3px 0 0">
+      Aberta em <strong style="color:#64748b"><%= new Date(quotation.created_at).toLocaleDateString('pt-BR') %></strong>
+      &nbsp;•&nbsp; Vendedor: <strong style="color:#64748b"><%= quotation.creator_name %></strong>
+      <% if (quotation.buyer_name) { %>&nbsp;•&nbsp; Compras: <strong style="color:#64748b"><%= quotation.buyer_name %></strong><% } %>
+    </p>
   </div>
 </div>
 
-<!-- ── ZONA 1: INFO STRIP (3 colunas) ─────────────────────────── -->
-<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:16px">
+<!-- LAYOUT 2 COLUNAS -->
+<div style="display:grid;grid-template-columns:1fr 300px;gap:20px;align-items:start">
 
-  <!-- Cliente -->
-  <div class="nc-card" style="padding:18px">
-    <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
-      <div style="background:#eff6ff;padding:6px;border-radius:8px;display:flex;flex-shrink:0">
-        <svg width="15" height="15" fill="none" stroke="#2563eb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+  <!-- COLUNA PRINCIPAL (esquerda) -->
+  <div style="display:flex;flex-direction:column;gap:16px;min-width:0">
+
+    <!-- TABELA DE PEÇAS -->
+    <div class="nc-card" style="padding:0;overflow:hidden">
+      <div style="padding:14px 20px;background:#f8fafc;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;gap:8px">
+        <svg width="15" height="15" fill="none" stroke="#2563eb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+        <span style="font-size:13px;font-weight:700;color:#334155">Peças Solicitadas</span>
+        <span style="font-size:11px;color:#94a3b8">(<%= items.length %> <%= items.length === 1 ? 'item' : 'itens' %>)</span>
       </div>
-      <span style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.06em">Cliente</span>
-    </div>
-    <p style="font-size:15px;font-weight:800;color:#0f172a;margin:0 0 8px"><%= quotation.customer_name %></p>
-    <a href="https://wa.me/<%= quotation.customer_phone.replace(/\D/g,'') %>" target="_blank"
-       style="display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:#16a34a;text-decoration:none">
-      <i class="bi bi-whatsapp"></i><%= quotation.customer_phone %>
-    </a>
-  </div>
-
-  <!-- Veículo -->
-  <div class="nc-card" style="padding:18px">
-    <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
-      <div style="background:#f0fdf4;padding:6px;border-radius:8px;display:flex;flex-shrink:0">
-        <svg width="15" height="15" fill="none" stroke="#16a34a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
+      <div style="overflow-x:auto">
+        <table style="width:100%;border-collapse:collapse;font-size:13px">
+          <thead>
+            <tr style="border-bottom:1px solid #f1f5f9">
+              <th style="padding:9px 16px;text-align:left;font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.05em">Peça</th>
+              <th style="padding:9px 16px;text-align:center;font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.05em">Qtd</th>
+              <th style="padding:9px 16px;text-align:right;font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.05em;white-space:nowrap">Vlr Unit.</th>
+              <th style="padding:9px 16px;text-align:right;font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.05em">Total</th>
+              <th style="padding:9px 16px;text-align:left;font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.05em">Prazo</th>
+              <th style="padding:9px 16px;text-align:left;font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.05em">Status</th>
+              <% if (currentUser.role === 'compras' || currentUser.role === 'admin') { %>
+              <th style="padding:9px 16px;text-align:center;font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.05em">Chegou</th>
+              <% } %>
+            </tr>
+          </thead>
+          <tbody>
+            <% items.forEach(item => { %>
+            <tr style="border-bottom:1px solid #f8fafc" onmouseover="this.style.background='#fafbff'" onmouseout="this.style.background=''">
+              <td style="padding:12px 16px;max-width:240px">
+                <div style="font-weight:700;color:#0f172a"><%= item.part_name %></div>
+                <% if (item.part_code) { %><div style="font-size:11px;color:#94a3b8;margin-top:1px"><%= item.part_code %></div><% } %>
+                <% if (item.supplier_name) { %><div style="font-size:11px;color:#64748b;margin-top:1px">Forn: <%= item.supplier_name %></div><% } %>
+                <% if (item.notes) { %><div style="font-size:11px;color:#94a3b8;font-style:italic;margin-top:1px"><%= item.notes %></div><% } %>
+              </td>
+              <td style="padding:12px 16px;text-align:center;color:#475569"><%= item.quantity %></td>
+              <td style="padding:12px 16px;text-align:right;color:#475569"><%= item.unit_price ? 'R$ ' + item.unit_price.toFixed(2) : '—' %></td>
+              <td style="padding:12px 16px;text-align:right;font-weight:700;color:#0f172a"><%= item.total_price ? 'R$ ' + item.total_price.toFixed(2) : '—' %></td>
+              <td style="padding:12px 16px;font-size:12px;color:#64748b;white-space:nowrap">
+                <% if (item.delivery_deadline) { %>
+                  <%= new Date(item.delivery_deadline).toLocaleDateString('pt-BR') %>
+                  <% if (item.delivery_days) { %><br><span style="color:#94a3b8"><%= item.delivery_days %>d</span><% } %>
+                <% } else if (item.delivery_days) { %><%= item.delivery_days %> dias
+                <% } else { %>—<% } %>
+              </td>
+              <td style="padding:12px 16px">
+                <% const iCfg = {
+                  aguardando:  { l:'Aguardando', c:'badge-amber'  },
+                  em_cotacao:  { l:'Em Cotação', c:'badge-blue'   },
+                  cotado:      { l:'Cotado',     c:'badge-green'  },
+                  peca_chegou: { l:'Chegou',     c:'badge-purple' }
+                }[item.item_status] || { l: item.item_status, c: 'badge-gray' }; %>
+                <span class="badge <%= iCfg.c %>"><%= iCfg.l %></span>
+              </td>
+              <% if (currentUser.role === 'compras' || currentUser.role === 'admin') { %>
+              <td style="padding:12px 16px;text-align:center">
+                <% if (item.item_status !== 'peca_chegou' && quotation.status !== 'cancelado') { %>
+                <form action="/cotacoes/<%= quotation.id %>/peca-chegou" method="POST" style="display:inline">
+                  <input type="hidden" name="item_id" value="<%= item.id %>">
+                  <button type="submit" class="btn-icon blue" title="Marcar chegada" onclick="return confirm('Confirma chegada desta peça?')">
+                    <i class="bi bi-box-arrow-in-down"></i>
+                  </button>
+                </form>
+                <% } else { %>
+                <i class="bi bi-check-circle-fill" style="color:var(--green);font-size:16px"></i>
+                <% } %>
+              </td>
+              <% } %>
+            </tr>
+            <% }) %>
+          </tbody>
+        </table>
       </div>
-      <span style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.06em">Veículo</span>
     </div>
-    <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;flex-wrap:wrap">
-      <span class="plate-tag" style="font-size:13px"><%= quotation.license_plate %></span>
-      <span style="font-size:14px;font-weight:700;color:#0f172a"><%= quotation.model || '—' %></span>
-      <% if (quotation.year_model) { %><span style="font-size:13px;color:#64748b"><%= quotation.year_model %></span><% } %>
-    </div>
-    <% if (quotation.photo_path) { %>
-    <a href="<%= quotation.photo_path %>" target="_blank" rel="noopener">
-      <img src="<%= quotation.photo_path %>" alt="Relatório Técnico"
-        style="width:100%;height:72px;object-fit:cover;border-radius:8px;border:1px solid #e2e8f0;display:block;margin-top:10px;cursor:zoom-in">
-    </a>
-    <% } %>
-  </div>
 
-  <!-- Resumo + Ação principal -->
-  <div class="nc-card" style="padding:18px;display:flex;flex-direction:column;justify-content:space-between">
-    <div>
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
-        <div style="background:#eff6ff;padding:6px;border-radius:8px;display:flex;flex-shrink:0">
-          <svg width="15" height="15" fill="none" stroke="#2563eb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M9 14l2 2 4-4M7 3H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2V5a2 2 0 00-2-2h-2"/></svg>
+    <!-- FORMULÁRIO DE PREÇOS (compras, em_cotacao/cotado) -->
+    <% if (canEdit) { %>
+    <div class="nc-card">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+        <h2 style="font-size:13px;font-weight:700;color:#334155;margin:0">Preencher Valores</h2>
+        <span style="font-size:11px;color:#2563eb;background:#eff6ff;padding:3px 10px;border-radius:99px;font-weight:600">Modo edição</span>
+      </div>
+      <form action="/cotacoes/<%= quotation.id %>/responder" method="POST" id="form-responder">
+        <% items.forEach((item, idx) => { %>
+        <div style="border:1px solid #e2e8f0;border-radius:10px;padding:14px;margin-bottom:12px;background:#fafbff">
+          <div style="font-size:13px;font-weight:700;color:#0f172a;margin-bottom:10px">
+            <%= item.part_name %>
+            <% if (item.part_code) { %><span style="font-weight:400;color:#94a3b8;font-size:12px"> <%= item.part_code %></span><% } %>
+            <span style="font-weight:400;color:#64748b;font-size:12px"> — Qtd: <%= item.quantity %></span>
+          </div>
+          <input type="hidden" name="item_ids[]" value="<%= item.id %>">
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;margin-bottom:8px">
+            <div>
+              <label class="nc-label">Vlr Unit. (R$)</label>
+              <input type="number" name="unit_prices[]" class="nc-input" style="font-size:13px;padding:7px 10px"
+                value="<%= item.unit_price || '' %>" step="0.01" min="0"
+                data-qty="<%= item.quantity %>" data-idx="<%= idx %>">
+            </div>
+            <div>
+              <label class="nc-label">Total (R$)</label>
+              <input type="number" name="total_prices[]" class="nc-input" style="font-size:13px;padding:7px 10px"
+                value="<%= item.total_price || '' %>" step="0.01" min="0" data-idx="<%= idx %>">
+            </div>
+            <div>
+              <label class="nc-label">M.O. (R$)</label>
+              <input type="number" name="labor_costs_compras[]" class="nc-input" style="font-size:13px;padding:7px 10px"
+                value="<%= item.labor_cost_compras || 0 %>" step="0.01" min="0">
+            </div>
+            <div>
+              <label class="nc-label">Prazo (dias)</label>
+              <input type="number" name="delivery_days[]" class="nc-input" style="font-size:13px;padding:7px 10px"
+                value="<%= item.delivery_days || '' %>" min="0">
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
+            <div>
+              <label class="nc-label">Data Entrega</label>
+              <input type="date" name="delivery_deadlines[]" class="nc-input" style="font-size:13px;padding:7px 10px"
+                value="<%= item.delivery_deadline ? item.delivery_deadline.substring(0,10) : '' %>">
+            </div>
+            <div>
+              <label class="nc-label">Fornecedor</label>
+              <input type="text" name="supplier_names[]" class="nc-input" style="font-size:13px;padding:7px 10px"
+                value="<%= item.supplier_name || '' %>" placeholder="Nome do fornecedor">
+            </div>
+            <div>
+              <label class="nc-label">Obs. do item</label>
+              <input type="text" name="item_notes[]" class="nc-input" style="font-size:13px;padding:7px 10px"
+                value="<%= item.notes || '' %>" placeholder="Observação">
+            </div>
+          </div>
         </div>
-        <span style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.06em">Resumo</span>
+        <% }) %>
+        <div style="margin-bottom:14px">
+          <label class="nc-label">Observação de Compras</label>
+          <textarea name="notes_compras" class="nc-input" rows="2" style="resize:none;font-size:13px"><%= quotation.notes_compras || '' %></textarea>
+        </div>
+        <button type="submit" class="nc-btn-send" style="width:100%;justify-content:center">
+          <i class="bi bi-check-circle"></i> Salvar e Notificar Vendedor
+        </button>
+      </form>
+    </div>
+    <% } %>
+
+    <!-- OBSERVAÇÕES -->
+    <% if (quotation.notes_vendas || quotation.notes_compras) { %>
+    <div class="nc-card">
+      <h2 style="font-size:13px;font-weight:700;color:#334155;margin:0 0 14px">Observações</h2>
+      <% if (quotation.notes_vendas) { %>
+      <div style="background:#eff6ff;border:1px solid #bfdbfe;padding:12px;border-radius:8px;<%= quotation.notes_compras ? 'margin-bottom:10px' : '' %>">
+        <p style="font-size:9px;font-weight:700;color:#1d4ed8;text-transform:uppercase;letter-spacing:.05em;margin:0 0 5px">Vendedor</p>
+        <p style="font-size:13px;color:#334155;margin:0"><%= quotation.notes_vendas %></p>
       </div>
-      <div style="display:flex;flex-direction:column;gap:6px;font-size:13px;margin-bottom:14px">
+      <% } %>
+      <% if (quotation.notes_compras) { %>
+      <div style="background:#f0fdf4;border:1px solid #bbf7d0;padding:12px;border-radius:8px">
+        <p style="font-size:9px;font-weight:700;color:#15803d;text-transform:uppercase;letter-spacing:.05em;margin:0 0 5px">Compras</p>
+        <p style="font-size:13px;color:#334155;margin:0"><%= quotation.notes_compras %></p>
+      </div>
+      <% } %>
+    </div>
+    <% } %>
+
+  </div>
+
+  <!-- SIDEBAR DIREITA (30%) -->
+  <div style="display:flex;flex-direction:column;gap:14px;position:sticky;top:80px">
+
+    <!-- Cliente -->
+    <div class="nc-card" style="padding:18px">
+      <p style="font-size:9px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.07em;margin:0 0 10px">Cliente</p>
+      <p style="font-size:14px;font-weight:800;color:#0f172a;margin:0 0 8px"><%= quotation.customer_name %></p>
+      <a href="https://wa.me/<%= quotation.customer_phone.replace(/\D/g,'') %>" target="_blank"
+         style="display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:#16a34a;text-decoration:none">
+        <i class="bi bi-whatsapp"></i> <%= quotation.customer_phone %>
+      </a>
+    </div>
+
+    <!-- Veículo -->
+    <div class="nc-card" style="padding:18px">
+      <p style="font-size:9px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.07em;margin:0 0 10px">Veículo</p>
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px">
+        <span class="plate-tag" style="font-size:13px"><%= quotation.license_plate %></span>
+        <span style="font-size:13px;font-weight:700;color:#0f172a"><%= quotation.model || '—' %></span>
+      </div>
+      <% if (quotation.year_model) { %><p style="font-size:12px;color:#64748b;margin:4px 0 0">Ano <%= quotation.year_model %></p><% } %>
+      <% if (quotation.photo_path) { %>
+      <a href="<%= quotation.photo_path %>" target="_blank" rel="noopener" style="display:block;margin-top:12px">
+        <img src="<%= quotation.photo_path %>" alt="Relatório Técnico"
+          style="width:100%;height:80px;object-fit:cover;border-radius:8px;border:1px solid #e2e8f0;cursor:zoom-in">
+      </a>
+      <p style="font-size:10px;color:#94a3b8;text-align:center;margin:4px 0 0">Relatório técnico</p>
+      <% } %>
+    </div>
+
+    <!-- Resumo de Valores -->
+    <div class="nc-card" style="padding:18px">
+      <p style="font-size:9px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.07em;margin:0 0 12px">Resumo</p>
+      <div style="display:flex;flex-direction:column;gap:8px;font-size:13px">
         <div style="display:flex;justify-content:space-between;color:#64748b">
-          <span>Subtotal peças</span><span style="font-weight:600;color:#334155">R$ <%= partsTotal.toFixed(2) %></span>
+          <span>Subtotal peças</span>
+          <span style="font-weight:600;color:#334155">R$ <%= partsTotal.toFixed(2) %></span>
         </div>
         <% if (laborTotal > 0) { %>
         <div style="display:flex;justify-content:space-between;color:#64748b">
-          <span>Mão de obra</span><span style="font-weight:600;color:#334155">R$ <%= laborTotal.toFixed(2) %></span>
+          <span>Mão de obra</span>
+          <span style="font-weight:600;color:#334155">R$ <%= laborTotal.toFixed(2) %></span>
         </div>
         <% } %>
-        <div style="display:flex;justify-content:space-between;border-top:1px solid #e2e8f0;padding-top:8px;margin-top:2px">
-          <span style="font-weight:700;color:#1e3a8a">Total geral</span>
-          <span style="font-weight:900;font-size:15px;color:#1e3a8a">R$ <%= grandTotal.toFixed(2) %></span>
+        <div style="display:flex;justify-content:space-between;border-top:1px solid #e2e8f0;padding-top:10px;margin-top:2px">
+          <span style="font-weight:700;color:#1e3a8a;font-size:14px">Total</span>
+          <span style="font-weight:900;font-size:18px;color:#1e3a8a">R$ <%= grandTotal.toFixed(2) %></span>
         </div>
       </div>
     </div>
 
-    <!-- Ação principal por role+status -->
-    <div style="display:flex;flex-direction:column;gap:8px">
-
-      <% if (canAct && quotation.status === 'pendente') { %>
-      <form action="/cotacoes/<%= quotation.id %>/status" method="POST">
-        <input type="hidden" name="status" value="em_cotacao">
-        <button type="submit" class="nc-btn-send" style="width:100%;justify-content:center;padding:9px 16px">
-          <i class="bi bi-search"></i> Iniciar Cotação
-        </button>
-      </form>
-
-      <% } else if (canAct && quotation.status === 'cotado') { %>
-      <form action="/cotacoes/<%= quotation.id %>/peca-chegou" method="POST"
-        onsubmit="return confirm('Confirma chegada de todas as peças?')">
-        <button type="submit" class="nc-btn-send" style="width:100%;justify-content:center;padding:9px 16px">
-          <i class="bi bi-box-arrow-in-down"></i> Confirmar Chegada
-        </button>
-      </form>
-
-      <% } else if ((currentUser.role === 'vendas' || currentUser.role === 'admin') && (quotation.status === 'cotado' || quotation.status === 'peca_chegou')) { %>
-      <button class="nc-btn-send" id="btn-whatsapp" style="width:100%;justify-content:center;padding:9px 16px;background:#16a34a"
-        <%= quotation.whatsapp_sent_at ? 'disabled' : '' %>>
-        <i class="bi bi-whatsapp"></i>
-        <%= quotation.whatsapp_sent_at ? 'WhatsApp enviado' : 'Enviar pelo WhatsApp' %>
+    <!-- Ação Principal -->
+    <% if (canAct && quotation.status === 'pendente') { %>
+    <form action="/cotacoes/<%= quotation.id %>/status" method="POST">
+      <input type="hidden" name="status" value="em_cotacao">
+      <button type="submit" class="nc-btn-send" style="width:100%;justify-content:center;padding:11px">
+        <i class="bi bi-search"></i> Iniciar Cotação
       </button>
-      <% } %>
+    </form>
 
-      <!-- Badge aprovação do cliente -->
-      <% if (quotation.customer_approved === 1) { %>
-      <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:#f0fdf4;border-radius:8px;font-size:12px">
-        <i class="bi bi-check-circle-fill" style="color:#16a34a"></i>
-        <span style="font-weight:700;color:#16a34a">Cliente aprovou</span>
-      </div>
-      <% } else if (quotation.customer_approved === 0) { %>
-      <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:#fef2f2;border-radius:8px;font-size:12px">
-        <i class="bi bi-x-circle-fill" style="color:#dc2626"></i>
-        <span style="font-weight:700;color:#dc2626">Cliente recusou</span>
-      </div>
-      <% } %>
+    <% } else if (canAct && quotation.status === 'cotado') { %>
+    <form action="/cotacoes/<%= quotation.id %>/peca-chegou" method="POST"
+      onsubmit="return confirm('Confirma chegada de todas as peças?')">
+      <button type="submit" class="nc-btn-send" style="width:100%;justify-content:center;padding:11px">
+        <i class="bi bi-box-arrow-in-down"></i> Confirmar Chegada
+      </button>
+    </form>
 
-    </div>
-  </div>
-</div>
-
-<!-- ── ZONA 2: TABELA DE PEÇAS ─────────────────────────────────── -->
-<% if (canEdit) { %>
-<form action="/cotacoes/<%= quotation.id %>/responder" method="POST" id="form-responder">
-<% } %>
-
-<div class="nc-card" style="padding:0;margin-bottom:16px;overflow:hidden">
-  <div style="padding:14px 20px;display:flex;align-items:center;gap:8px;background:#f8fafc;border-bottom:1px solid #f1f5f9">
-    <svg width="16" height="16" fill="none" stroke="#2563eb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
-    <h2 style="font-size:13px;font-weight:700;color:#334155;margin:0">Peças Solicitadas</h2>
-    <span style="font-size:11px;color:#94a3b8;margin-left:4px">(<%= items.length %> <%= items.length === 1 ? 'item' : 'itens' %>)</span>
-    <% if (canEdit) { %>
-    <span style="margin-left:auto;font-size:11px;font-weight:600;color:#2563eb;background:#eff6ff;padding:3px 10px;border-radius:99px">Modo edição</span>
-    <% } %>
-  </div>
-  <div style="overflow-x:auto">
-    <table style="width:100%;border-collapse:collapse;font-size:13px">
-      <thead>
-        <tr style="background:#fff;border-bottom:1px solid #f1f5f9">
-          <th style="padding:9px 16px;text-align:left;font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.05em;white-space:nowrap">Código</th>
-          <th style="padding:9px 16px;text-align:left;font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.05em">Peça</th>
-          <th style="padding:9px 16px;text-align:center;font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.05em">Qtd</th>
-          <th style="padding:9px 16px;text-align:left;font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.05em;white-space:nowrap">Vlr Unit.</th>
-          <th style="padding:9px 16px;text-align:left;font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.05em">Total</th>
-          <th style="padding:9px 16px;text-align:left;font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.05em">M.O.</th>
-          <th style="padding:9px 16px;text-align:left;font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.05em;white-space:nowrap">Prazo</th>
-          <% if (canEdit) { %>
-          <th style="padding:9px 16px;text-align:left;font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.05em">Fornecedor</th>
-          <th style="padding:9px 16px;text-align:left;font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.05em">Obs</th>
-          <% } %>
-          <th style="padding:9px 16px;text-align:left;font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.05em">Status</th>
-          <% if (currentUser.role === 'compras' || currentUser.role === 'admin') { %>
-          <th style="padding:9px 16px;text-align:center;font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.05em">Chegou</th>
-          <% } %>
-        </tr>
-      </thead>
-      <tbody>
-        <% items.forEach((item, idx) => { %>
-        <tr style="border-bottom:1px solid #f8fafc" onmouseover="this.style.background='#fafbff'" onmouseout="this.style.background=''">
-          <td style="padding:12px 16px;color:#94a3b8;font-size:12px"><%= item.part_code || '—' %></td>
-          <td style="padding:12px 16px">
-            <span style="font-weight:700;color:#0f172a"><%= item.part_name %></span>
-            <% if (!canEdit && item.supplier_name) { %><br><small style="color:#94a3b8">Forn: <%= item.supplier_name %></small><% } %>
-            <% if (!canEdit && item.notes) { %><br><small style="color:#94a3b8;font-style:italic"><%= item.notes %></small><% } %>
-          </td>
-          <td style="padding:12px 16px;text-align:center;color:#334155"><%= item.quantity %></td>
-
-          <% if (canEdit) { %>
-          <td style="padding:8px 10px;min-width:90px">
-            <input type="hidden" name="item_ids[]" value="<%= item.id %>">
-            <input type="number" name="unit_prices[]" class="nc-input-sm" style="min-width:80px"
-              value="<%= item.unit_price || '' %>" step="0.01" min="0"
-              data-qty="<%= item.quantity %>" data-idx="<%= idx %>">
-          </td>
-          <td style="padding:8px 10px;min-width:90px">
-            <input type="number" name="total_prices[]" class="nc-input-sm" style="min-width:80px"
-              value="<%= item.total_price || '' %>" step="0.01" min="0" data-idx="<%= idx %>">
-          </td>
-          <td style="padding:8px 10px;min-width:80px">
-            <input type="number" name="labor_costs_compras[]" class="nc-input-sm" style="min-width:70px"
-              value="<%= item.labor_cost_compras || 0 %>" step="0.01" min="0">
-          </td>
-          <td style="padding:8px 10px;min-width:120px">
-            <input type="number" name="delivery_days[]" class="nc-input-sm" style="min-width:50px;margin-bottom:4px"
-              placeholder="dias" value="<%= item.delivery_days || '' %>" min="0">
-            <input type="date" name="delivery_deadlines[]" class="nc-input-sm"
-              value="<%= item.delivery_deadline ? item.delivery_deadline.substring(0,10) : '' %>">
-          </td>
-          <td style="padding:8px 10px;min-width:120px">
-            <input type="text" name="supplier_names[]" class="nc-input-sm"
-              value="<%= item.supplier_name || '' %>" placeholder="Fornecedor">
-          </td>
-          <td style="padding:8px 10px;min-width:120px">
-            <input type="text" name="item_notes[]" class="nc-input-sm"
-              value="<%= item.notes || '' %>" placeholder="Observação">
-          </td>
-          <% } else { %>
-          <td style="padding:12px 16px;color:#334155"><%= item.unit_price ? 'R$ ' + item.unit_price.toFixed(2) : '—' %></td>
-          <td style="padding:12px 16px;font-weight:700;color:#0f172a"><%= item.total_price ? 'R$ ' + item.total_price.toFixed(2) : '—' %></td>
-          <td style="padding:12px 16px;color:#334155"><%= item.labor_cost_compras ? 'R$ ' + item.labor_cost_compras.toFixed(2) : '—' %></td>
-          <td style="padding:12px 16px;font-size:12px;color:#64748b">
-            <% if (item.delivery_deadline) { %>
-              <%= new Date(item.delivery_deadline).toLocaleDateString('pt-BR') %>
-              <% if (item.delivery_days) { %><br><small><%= item.delivery_days %>d</small><% } %>
-            <% } else if (item.delivery_days) { %><%= item.delivery_days %> dias
-            <% } else { %>—<% } %>
-          </td>
-          <% } %>
-
-          <td style="padding:12px 16px">
-            <% const iCfg = {
-              aguardando:  { l:'Aguardando', c:'badge-amber'  },
-              em_cotacao:  { l:'Em Cotação', c:'badge-blue'   },
-              cotado:      { l:'Cotado',     c:'badge-green'  },
-              peca_chegou: { l:'Chegou',     c:'badge-purple' }
-            }[item.item_status] || { l: item.item_status, c: 'badge-gray' }; %>
-            <span class="badge <%= iCfg.c %>"><%= iCfg.l %></span>
-          </td>
-
-          <% if (currentUser.role === 'compras' || currentUser.role === 'admin') { %>
-          <td style="padding:12px 16px;text-align:center">
-            <% if (item.item_status !== 'peca_chegou' && quotation.status !== 'cancelado') { %>
-            <form action="/cotacoes/<%= quotation.id %>/peca-chegou" method="POST" style="display:inline">
-              <input type="hidden" name="item_id" value="<%= item.id %>">
-              <button type="submit" class="btn-icon blue" title="Marcar como chegou"
-                onclick="return confirm('Confirma chegada desta peça?')">
-                <i class="bi bi-box-arrow-in-down"></i>
-              </button>
-            </form>
-            <% } else { %>
-            <i class="bi bi-check-circle-fill" style="color:var(--green);font-size:16px"></i>
-            <% } %>
-          </td>
-          <% } %>
-        </tr>
-        <% }) %>
-      </tbody>
-    </table>
-  </div>
-
-  <% if (canEdit) { %>
-  <div style="padding:16px 20px;border-top:1px solid #f1f5f9;background:#f8fafc;display:flex;align-items:flex-end;gap:16px;flex-wrap:wrap">
-    <div style="flex:1;min-width:200px">
-      <label class="nc-label">Observação de Compras</label>
-      <textarea name="notes_compras" class="nc-input" rows="2" style="resize:none;font-size:13px"><%= quotation.notes_compras || '' %></textarea>
-    </div>
-    <button type="submit" class="nc-btn-send" style="padding:10px 24px;flex-shrink:0">
-      <i class="bi bi-check-circle"></i> Salvar e Notificar
+    <% } else if (showClientActions && !quotation.whatsapp_sent_at) { %>
+    <button class="nc-btn-send" id="btn-whatsapp" style="width:100%;justify-content:center;padding:11px;background:#16a34a">
+      <i class="bi bi-whatsapp"></i> Enviar pelo WhatsApp
     </button>
-  </div>
-  <% } %>
-</div>
-
-<% if (canEdit) { %>
-</form>
-<% } %>
-
-<!-- ── ZONA 3: RODAPÉ (2 colunas) ──────────────────────────────── -->
-<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
-
-  <!-- Observações -->
-  <div class="nc-card" style="padding:18px">
-    <h2 style="font-size:13px;font-weight:700;color:#334155;margin:0 0 14px">Observações</h2>
-    <% if (quotation.notes_vendas) { %>
-    <div style="background:#eff6ff;border:1px solid #bfdbfe;padding:12px;border-radius:8px;margin-bottom:10px">
-      <p style="font-size:9px;font-weight:700;color:#1d4ed8;text-transform:uppercase;letter-spacing:.05em;margin:0 0 5px">Vendedor</p>
-      <p style="font-size:13px;color:#334155;margin:0"><%= quotation.notes_vendas %></p>
-    </div>
-    <% } %>
-    <% if (quotation.notes_compras) { %>
-    <div style="background:#f0fdf4;border:1px solid #bbf7d0;padding:12px;border-radius:8px">
-      <p style="font-size:9px;font-weight:700;color:#15803d;text-transform:uppercase;letter-spacing:.05em;margin:0 0 5px">Compras</p>
-      <p style="font-size:13px;color:#334155;margin:0"><%= quotation.notes_compras %></p>
-    </div>
-    <% } %>
-    <% if (!quotation.notes_vendas && !quotation.notes_compras) { %>
-    <p style="font-size:13px;color:#94a3b8;font-style:italic;margin:0">Nenhuma observação registrada.</p>
-    <% } %>
-  </div>
-
-  <!-- Ações secundárias -->
-  <div style="display:flex;flex-direction:column;gap:10px">
-
-    <!-- Cancelar (compras/admin) -->
-    <% if (canAct) { %>
-    <div class="nc-card" style="padding:16px">
-      <form action="/cotacoes/<%= quotation.id %>/status" method="POST"
-        onsubmit="return confirm('Cancelar esta cotação?')">
-        <input type="hidden" name="status" value="cancelado">
-        <button type="submit" class="nc-btn-cancel" style="width:100%;justify-content:center;padding:9px 16px;font-size:12px">
-          <i class="bi bi-x-circle"></i> Cancelar Cotação
-        </button>
-      </form>
-    </div>
-    <% } %>
-
-    <!-- WhatsApp (vendas) - já aparece como ação principal, aqui mostra info de envio se já enviado -->
-    <% if ((currentUser.role === 'vendas' || currentUser.role === 'admin') &&
-           (quotation.status === 'cotado' || quotation.status === 'peca_chegou') &&
-           quotation.whatsapp_sent_at) { %>
-    <div class="nc-card" style="padding:14px;background:#f0fdf4;border-color:#bbf7d0">
-      <p style="font-size:11px;color:#15803d;font-weight:600;margin:0">
-        <i class="bi bi-whatsapp"></i> WhatsApp enviado em <%= new Date(quotation.whatsapp_sent_at).toLocaleString('pt-BR') %>
+    <% } else if (showClientActions && quotation.whatsapp_sent_at) { %>
+    <div class="nc-card" style="padding:12px;background:#f0fdf4;border-color:#bbf7d0;text-align:center">
+      <p style="font-size:12px;color:#15803d;font-weight:600;margin:0">
+        <i class="bi bi-whatsapp"></i> WhatsApp enviado<br>
+        <span style="font-weight:400;font-size:11px"><%= new Date(quotation.whatsapp_sent_at).toLocaleString('pt-BR') %></span>
       </p>
     </div>
     <% } %>
 
-    <!-- Aprovação do cliente (vendas/admin) -->
-    <% if ((quotation.status === 'cotado' || quotation.status === 'peca_chegou')) { %>
+    <!-- Cancelar (compras/admin) -->
+    <% if (canAct) { %>
+    <form action="/cotacoes/<%= quotation.id %>/status" method="POST"
+      onsubmit="return confirm('Cancelar esta cotação?')">
+      <input type="hidden" name="status" value="cancelado">
+      <button type="submit" style="width:100%;display:flex;align-items:center;justify-content:center;gap:8px;padding:9px;border:1.5px solid #fee2e2;color:#dc2626;border-radius:8px;font-size:12px;font-weight:700;background:transparent;cursor:pointer;font-family:inherit;transition:background .15s"
+        onmouseover="this.style.background='#fef2f2'" onmouseout="this.style.background='transparent'">
+        <i class="bi bi-x-circle"></i> Cancelar Cotação
+      </button>
+    </form>
+    <% } %>
+
+    <!-- Aprovação do Cliente (vendas/admin) -->
+    <% if (showClientActions) { %>
     <div class="nc-card" style="padding:16px">
-      <h2 style="font-size:12px;font-weight:700;color:#334155;margin:0 0 12px">Resposta do Cliente</h2>
+      <p style="font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.07em;margin:0 0 12px">Resposta do Cliente</p>
 
       <% if (quotation.customer_approved === null || quotation.customer_approved === undefined) { %>
         <% if (currentUser.role === 'vendas' || currentUser.role === 'admin') { %>
@@ -334,29 +298,29 @@
         <div style="display:flex;gap:8px">
           <form action="/cotacoes/<%= quotation.id %>/resposta-cliente" method="POST" style="flex:1">
             <input type="hidden" name="approved" value="1">
-            <button type="submit" class="nc-btn-send" style="width:100%;justify-content:center;padding:8px 12px;font-size:11px;background:#16a34a"
-              onclick="return confirm('Confirmar que o cliente APROVOU?')">
+            <button type="submit" class="nc-btn-send" style="width:100%;justify-content:center;padding:8px;font-size:11px;background:#16a34a"
+              onclick="return confirm('Confirmar APROVAÇÃO?')">
               <i class="bi bi-check-circle"></i> Aprovou
             </button>
           </form>
           <form action="/cotacoes/<%= quotation.id %>/resposta-cliente" method="POST" style="flex:1">
             <input type="hidden" name="approved" value="0">
-            <button type="submit" class="nc-btn-cancel" style="width:100%;justify-content:center;padding:8px 12px;font-size:11px"
-              onclick="return confirm('Confirmar que o cliente RECUSOU?')">
+            <button type="submit" class="nc-btn-cancel" style="width:100%;justify-content:center;padding:8px;font-size:11px"
+              onclick="return confirm('Confirmar RECUSA?')">
               <i class="bi bi-x-circle"></i> Recusou
             </button>
           </form>
         </div>
         <% } else { %>
         <div style="text-align:center;padding:10px;color:#94a3b8">
-          <i class="bi bi-hourglass-split" style="font-size:22px;display:block;margin-bottom:6px"></i>
+          <i class="bi bi-hourglass-split" style="font-size:20px;display:block;margin-bottom:6px"></i>
           <span style="font-size:12px">Aguardando resposta</span>
         </div>
         <% } %>
 
       <% } else if (quotation.customer_approved == 1) { %>
         <div style="display:flex;align-items:center;gap:8px;padding:10px;background:#f0fdf4;border-radius:8px">
-          <i class="bi bi-check-circle-fill" style="color:#16a34a;font-size:20px;flex-shrink:0"></i>
+          <i class="bi bi-check-circle-fill" style="color:#16a34a;font-size:18px;flex-shrink:0"></i>
           <div>
             <div style="font-weight:700;color:#16a34a;font-size:13px">Aprovado</div>
             <% if (quotation.customer_approved_at) { %><div style="font-size:11px;color:#94a3b8"><%= new Date(quotation.customer_approved_at).toLocaleString('pt-BR') %></div><% } %>
@@ -364,7 +328,7 @@
         </div>
       <% } else { %>
         <div style="display:flex;align-items:center;gap:8px;padding:10px;background:#fef2f2;border-radius:8px">
-          <i class="bi bi-x-circle-fill" style="color:#dc2626;font-size:20px;flex-shrink:0"></i>
+          <i class="bi bi-x-circle-fill" style="color:#dc2626;font-size:18px;flex-shrink:0"></i>
           <div>
             <div style="font-weight:700;color:#dc2626;font-size:13px">Recusado</div>
             <% if (quotation.customer_approved_at) { %><div style="font-size:11px;color:#94a3b8"><%= new Date(quotation.customer_approved_at).toLocaleString('pt-BR') %></div><% } %>
@@ -374,11 +338,11 @@
     </div>
     <% } %>
 
-  </div>
-</div>
+  </div><!-- fim sidebar -->
+</div><!-- fim grid 2 colunas -->
 
 <script>
-// Auto-cálculo total = unit × qty
+// Auto-calc: unit × qty → total
 document.querySelectorAll('[name="unit_prices[]"]').forEach(input => {
   input.addEventListener('input', () => {
     const idx = input.dataset.idx;
@@ -391,9 +355,9 @@ document.querySelectorAll('[name="total_prices[]"]').forEach(input => {
   input.addEventListener('input', () => { input._touched = parseFloat(input.value) > 0; });
 });
 
-// WhatsApp button
+// WhatsApp
 const btn = document.getElementById('btn-whatsapp');
-if (btn && !btn.disabled) {
+if (btn) {
   btn.addEventListener('click', async () => {
     if (!confirm('Enviar resultado para <%= quotation.customer_name %> (<%= quotation.customer_phone %>)?')) return;
     btn.disabled = true;
@@ -403,6 +367,7 @@ if (btn && !btn.disabled) {
       const json = await r.json();
       if (json.ok) {
         btn.innerHTML = '<i class="bi bi-check-circle"></i> Enviado!';
+        btn.style.background = '#15803d';
         showToast('WhatsApp', 'Mensagem enviada!', 'success');
       } else {
         btn.disabled = false;
