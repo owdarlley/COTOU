@@ -1,8 +1,4 @@
 <style>
-  .nc-card { background:#fff; border:1px solid #e2e8f0; border-radius:12px; padding:24px; box-shadow:0 4px 6px -1px rgba(0,0,0,.05),0 2px 4px -1px rgba(0,0,0,.03); }
-  .nc-label { display:block; font-size:10.5px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:.07em; margin-bottom:5px; }
-  .nc-input { width:100%; padding:9px 12px; border:1px solid #e2e8f0; border-radius:8px; font-size:13.5px; color:#475569; font-family:inherit; outline:none; transition:border-color .15s,box-shadow .15s; background:#fff; }
-  .nc-input:focus { border-color:#3b82f6; box-shadow:0 0 0 3px rgba(191,219,254,.4); }
   .nc-section-title { display:flex; align-items:center; gap:8px; font-size:16px; font-weight:700; color:#1e293b; margin-bottom:20px; }
   .nc-table thead tr { background:rgba(239,246,255,.5); border-top:1px solid #f1f5f9; border-bottom:1px solid #f1f5f9; }
   .nc-table th { padding:12px 20px; font-size:10.5px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:.07em; text-align:left; }
@@ -11,12 +7,7 @@
   .nc-table tbody tr:hover td { background:rgba(248,250,252,.5); }
   .nc-btn-add { display:inline-flex; align-items:center; gap:6px; padding:8px 16px; border:1.5px solid #2563eb; color:#2563eb; border-radius:8px; font-size:13px; font-weight:600; background:transparent; cursor:pointer; font-family:inherit; transition:background .12s; }
   .nc-btn-add:hover { background:#eff6ff; }
-  .nc-btn-send { display:inline-flex; align-items:center; gap:8px; padding:11px 32px; background:#002884; color:#fff; border:none; border-radius:8px; font-size:13px; font-weight:700; cursor:pointer; font-family:inherit; letter-spacing:.05em; text-transform:uppercase; transition:background .15s; }
-  .nc-btn-send:hover { background:#1e3a8a; }
-  .nc-btn-cancel { display:inline-flex; align-items:center; gap:8px; padding:11px 32px; border:1.5px solid #002884; color:#002884; border-radius:8px; font-size:13px; font-weight:700; background:transparent; cursor:pointer; font-family:inherit; letter-spacing:.05em; text-transform:uppercase; text-decoration:none; transition:background .15s; }
-  .nc-btn-cancel:hover { background:#f1f5f9; }
   .photo-zone { position:relative; border-radius:12px; overflow:hidden; cursor:pointer; border:1px solid #e2e8f0; box-shadow:0 4px 6px -1px rgba(0,0,0,.05); min-height:100%; }
-  .photo-zone-bg { width:100%; height:100%; min-height:220px; object-fit:cover; filter:blur(1px) brightness(.7); transition:filter .2s; display:block; }
   .photo-zone-placeholder { width:100%; min-height:220px; background:linear-gradient(135deg,#1e3a8a,#3b82f6); display:flex; flex-direction:column; align-items:center; justify-content:center; color:#fff; gap:8px; }
   .photo-zone:hover .photo-zone-placeholder { filter:brightness(.9); }
   .photo-zone-overlay { position:absolute; inset:0; display:flex; flex-direction:column; justify-content:flex-end; padding:20px; color:#fff; background:linear-gradient(to top,rgba(30,64,175,.8),transparent); pointer-events:none; }
