@@ -6,342 +6,498 @@
                   quotation.status !== 'cancelado';
   const isVendas = currentUser.role === 'vendas' || currentUser.role === 'admin';
   const showClientActions = isVendas && (quotation.status === 'cotado' || quotation.status === 'peca_chegou');
+  const defaultTab = canEdit ? 'valores' : 'pecas';
 %>
 
-<!-- HEADER -->
-<div style="display:flex;align-items:center;gap:14px;margin-bottom:20px;flex-wrap:wrap">
-  <a href="/cotacoes" class="nc-btn-cancel" style="padding:7px 14px;font-size:12px;letter-spacing:0;text-transform:none;flex-shrink:0">
-    <i class="bi bi-arrow-left"></i> Voltar
-  </a>
-  <div>
-    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-      <h1 style="font-size:19px;font-weight:800;color:#0f172a;margin:0">Cotação #<%= quotation.quote_number %></h1>
-      <%- include('../partials/status-badge', { status: quotation.status }) %>
-      <% if (quotation.whatsapp_sent_at) { %><span class="badge badge-green"><i class="bi bi-whatsapp"></i> Enviado</span><% } %>
+<style>
+.cot-header {
+  background:#fff;
+  border:1px solid #e2e8f0;
+  border-radius:12px;
+  padding:16px 22px;
+  margin-bottom:20px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:16px;
+  flex-wrap:wrap;
+}
+.cot-header-left { display:flex; align-items:center; gap:14px; flex-wrap:wrap; min-width:0; }
+.cot-meta { font-size:12px; color:#94a3b8; margin:4px 0 0; }
+.cot-meta strong { color:#64748b; }
+.cot-header-actions { display:flex; align-items:center; gap:10px; flex-shrink:0; flex-wrap:wrap; }
+
+.tab-strip {
+  display:flex;
+  gap:4px;
+  margin-bottom:20px;
+  background:#f1f5f9;
+  padding:4px;
+  border-radius:10px;
+  width:fit-content;
+}
+.tab-btn {
+  padding:8px 20px;
+  border:none;
+  background:transparent;
+  border-radius:7px;
+  font-size:13px;
+  font-weight:600;
+  color:#64748b;
+  cursor:pointer;
+  font-family:inherit;
+  display:flex;
+  align-items:center;
+  gap:7px;
+  transition:background .15s, color .15s;
+  white-space:nowrap;
+}
+.tab-btn:hover { background:#e2e8f0; color:#334155; }
+.tab-btn.tab-active { background:#fff; color:#1d4ed8; box-shadow:0 1px 3px rgba(0,0,0,.1); }
+.tab-btn .tab-dot {
+  width:7px; height:7px; border-radius:50%; background:#f59e0b; flex-shrink:0;
+}
+
+.tab-panel { display:none; }
+.tab-panel.tab-panel-active { display:block; }
+
+.items-table { width:100%; border-collapse:collapse; font-size:13px; }
+.items-table th {
+  padding:9px 16px;
+  font-size:10px; font-weight:700; color:#64748b;
+  text-transform:uppercase; letter-spacing:.05em;
+  border-bottom:2px solid #f1f5f9;
+  white-space:nowrap;
+}
+.items-table td { padding:12px 16px; border-bottom:1px solid #f8fafc; }
+.items-table tbody tr:last-child td { border-bottom:none; }
+.items-table tbody tr:hover td { background:#fafbff; }
+.items-table tfoot td {
+  padding:12px 16px;
+  border-top:2px solid #e2e8f0;
+  background:#f8fafc;
+}
+
+.price-block {
+  border:1px solid #e2e8f0;
+  border-radius:10px;
+  padding:16px;
+  margin-bottom:12px;
+  background:#fafbff;
+}
+.price-block-title {
+  font-size:13px; font-weight:700; color:#0f172a;
+  margin-bottom:12px;
+  display:flex; align-items:center; gap:8px;
+}
+.price-grid-4 { display:grid; grid-template-columns:1fr 1fr 1fr 1fr; gap:8px; margin-bottom:8px; }
+.price-grid-3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; }
+
+.info-row { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+.info-pair { display:flex; flex-direction:column; gap:3px; }
+.info-pair .lbl { font-size:10px; font-weight:700; color:#94a3b8; text-transform:uppercase; letter-spacing:.07em; }
+.info-pair .val { font-size:13px; font-weight:600; color:#0f172a; }
+
+.resumo-line { display:flex; justify-content:space-between; align-items:center; font-size:13px; color:#64748b; }
+.resumo-line.total { border-top:1px solid #e2e8f0; padding-top:10px; margin-top:4px; }
+.resumo-line.total span:first-child { font-weight:700; color:#1e3a8a; font-size:14px; }
+.resumo-line.total span:last-child  { font-weight:900; color:#1e3a8a; font-size:20px; }
+
+.btn-cancel-red {
+  display:inline-flex; align-items:center; gap:6px;
+  padding:9px 16px;
+  border:1.5px solid #fecaca; color:#dc2626;
+  border-radius:8px; font-size:12px; font-weight:700;
+  background:transparent; cursor:pointer;
+  font-family:inherit; transition:background .15s;
+}
+.btn-cancel-red:hover { background:#fef2f2; }
+
+.obs-card {
+  padding:12px 14px;
+  border-radius:8px;
+  margin-bottom:8px;
+}
+.obs-card.vendedor { background:#eff6ff; border:1px solid #bfdbfe; }
+.obs-card.compras  { background:#f0fdf4; border:1px solid #bbf7d0; }
+.obs-card .obs-tag { font-size:9px; font-weight:700; text-transform:uppercase; letter-spacing:.06em; margin:0 0 5px; }
+.obs-card.vendedor .obs-tag { color:#1d4ed8; }
+.obs-card.compras  .obs-tag { color:#15803d; }
+.obs-card p { font-size:13px; color:#334155; margin:0; }
+</style>
+
+<!-- ═══════ HEADER ═══════ -->
+<div class="cot-header">
+  <div class="cot-header-left">
+    <a href="/cotacoes" class="nc-btn-cancel" style="padding:7px 12px;font-size:12px;letter-spacing:0;text-transform:none;flex-shrink:0;text-decoration:none">
+      <i class="bi bi-arrow-left"></i> Voltar
+    </a>
+    <div>
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <span style="font-size:18px;font-weight:800;color:#0f172a">Cotação #<%= quotation.quote_number %></span>
+        <%- include('../partials/status-badge', { status: quotation.status }) %>
+        <% if (quotation.whatsapp_sent_at) { %>
+          <span class="badge badge-green"><i class="bi bi-whatsapp"></i> Enviado</span>
+        <% } %>
+      </div>
+      <p class="cot-meta">
+        Aberta em <strong><%= new Date(quotation.created_at).toLocaleDateString('pt-BR') %></strong>
+        &nbsp;•&nbsp; Vendedor: <strong><%= quotation.creator_name %></strong>
+        <% if (quotation.buyer_name) { %>&nbsp;•&nbsp; Compras: <strong><%= quotation.buyer_name %></strong><% } %>
+      </p>
     </div>
-    <p style="font-size:12px;color:#94a3b8;margin:3px 0 0">
-      Aberta em <strong style="color:#64748b"><%= new Date(quotation.created_at).toLocaleDateString('pt-BR') %></strong>
-      &nbsp;•&nbsp; Vendedor: <strong style="color:#64748b"><%= quotation.creator_name %></strong>
-      <% if (quotation.buyer_name) { %>&nbsp;•&nbsp; Compras: <strong style="color:#64748b"><%= quotation.buyer_name %></strong><% } %>
-    </p>
+  </div>
+
+  <div class="cot-header-actions">
+    <%# Ação principal por perfil+status %>
+    <% if (canAct && quotation.status === 'pendente') { %>
+      <form action="/cotacoes/<%= quotation.id %>/status" method="POST">
+        <input type="hidden" name="status" value="em_cotacao">
+        <button type="submit" class="nc-btn-send" style="padding:9px 20px">
+          <i class="bi bi-search"></i> Iniciar Cotação
+        </button>
+      </form>
+    <% } else if (canAct && quotation.status === 'cotado') { %>
+      <form action="/cotacoes/<%= quotation.id %>/peca-chegou" method="POST"
+            onsubmit="return confirm('Confirma chegada de todas as peças?')">
+        <button type="submit" class="nc-btn-send" style="padding:9px 20px">
+          <i class="bi bi-box-arrow-in-down"></i> Confirmar Chegada
+        </button>
+      </form>
+    <% } else if (showClientActions && !quotation.whatsapp_sent_at) { %>
+      <button class="nc-btn-send" id="btn-whatsapp" style="padding:9px 20px;background:#16a34a">
+        <i class="bi bi-whatsapp"></i> Enviar pelo WhatsApp
+      </button>
+    <% } else if (showClientActions && quotation.whatsapp_sent_at) { %>
+      <span style="font-size:12px;color:#15803d;font-weight:600">
+        <i class="bi bi-check-circle-fill"></i> WhatsApp enviado
+      </span>
+    <% } %>
+
+    <%# Cancelar (compras/admin) %>
+    <% if (canAct) { %>
+      <form action="/cotacoes/<%= quotation.id %>/status" method="POST"
+            onsubmit="return confirm('Cancelar esta cotação?')">
+        <input type="hidden" name="status" value="cancelado">
+        <button type="submit" class="btn-cancel-red">
+          <i class="bi bi-x-circle"></i> Cancelar
+        </button>
+      </form>
+    <% } %>
   </div>
 </div>
 
-<!-- LAYOUT 2 COLUNAS -->
-<div style="display:grid;grid-template-columns:1fr 300px;gap:20px;align-items:start">
+<!-- ═══════ TAB STRIP ═══════ -->
+<div class="tab-strip">
+  <button class="tab-btn <%= defaultTab === 'pecas' ? 'tab-active' : '' %>" onclick="switchTab('pecas', this)">
+    <i class="bi bi-box-seam"></i> Peças
+    <span style="font-size:11px;font-weight:400;color:#94a3b8">(<%= items.length %>)</span>
+  </button>
+  <% if (canEdit) { %>
+  <button class="tab-btn <%= defaultTab === 'valores' ? 'tab-active' : '' %>" onclick="switchTab('valores', this)">
+    <i class="bi bi-pencil-square"></i> Preencher Valores
+    <span class="tab-dot"></span>
+  </button>
+  <% } %>
+  <button class="tab-btn" onclick="switchTab('cliente', this)">
+    <i class="bi bi-person-vcard"></i> Cliente / Veículo
+  </button>
+</div>
 
-  <!-- COLUNA PRINCIPAL (esquerda) -->
-  <div style="display:flex;flex-direction:column;gap:16px;min-width:0">
-
-    <!-- TABELA DE PEÇAS -->
-    <div class="nc-card" style="padding:0;overflow:hidden">
-      <div style="padding:14px 20px;background:#f8fafc;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;gap:8px">
-        <svg width="15" height="15" fill="none" stroke="#2563eb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
-        <span style="font-size:13px;font-weight:700;color:#334155">Peças Solicitadas</span>
-        <span style="font-size:11px;color:#94a3b8">(<%= items.length %> <%= items.length === 1 ? 'item' : 'itens' %>)</span>
-      </div>
-      <div style="overflow-x:auto">
-        <table style="width:100%;border-collapse:collapse;font-size:13px">
-          <thead>
-            <tr style="border-bottom:1px solid #f1f5f9">
-              <th style="padding:9px 16px;text-align:left;font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.05em">Peça</th>
-              <th style="padding:9px 16px;text-align:center;font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.05em">Qtd</th>
-              <th style="padding:9px 16px;text-align:right;font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.05em;white-space:nowrap">Vlr Unit.</th>
-              <th style="padding:9px 16px;text-align:right;font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.05em">Total</th>
-              <th style="padding:9px 16px;text-align:left;font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.05em">Prazo</th>
-              <th style="padding:9px 16px;text-align:left;font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.05em">Status</th>
-              <% if (currentUser.role === 'compras' || currentUser.role === 'admin') { %>
-              <th style="padding:9px 16px;text-align:center;font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.05em">Chegou</th>
+<!-- ═══════ ABA: PEÇAS ═══════ -->
+<div id="tab-pecas" class="tab-panel <%= defaultTab === 'pecas' ? 'tab-panel-active' : '' %>">
+  <div class="nc-card" style="padding:0;overflow:hidden">
+    <div style="overflow-x:auto">
+      <table class="items-table">
+        <thead>
+          <tr>
+            <th style="text-align:left">Peça</th>
+            <th style="text-align:center">Qtd</th>
+            <th style="text-align:right">Vlr Unit.</th>
+            <th style="text-align:right">Total</th>
+            <th style="text-align:left">Prazo</th>
+            <th style="text-align:left">Status</th>
+            <% if (currentUser.role === 'compras' || currentUser.role === 'admin') { %>
+            <th style="text-align:center">Chegou</th>
+            <% } %>
+          </tr>
+        </thead>
+        <tbody>
+          <% items.forEach(item => {
+            const iCfg = {
+              aguardando:  { l:'Aguardando', c:'badge-amber'  },
+              em_cotacao:  { l:'Em Cotação', c:'badge-blue'   },
+              cotado:      { l:'Cotado',     c:'badge-green'  },
+              peca_chegou: { l:'Chegou',     c:'badge-purple' }
+            }[item.item_status] || { l: item.item_status, c: 'badge-gray' };
+          %>
+          <tr>
+            <td style="max-width:220px">
+              <div style="font-weight:700;color:#0f172a"><%= item.part_name %></div>
+              <% if (item.part_code) { %><div style="font-size:11px;color:#94a3b8;margin-top:1px"><%= item.part_code %></div><% } %>
+              <% if (item.supplier_name) { %><div style="font-size:11px;color:#64748b">Forn: <%= item.supplier_name %></div><% } %>
+              <% if (item.notes) { %><div style="font-size:11px;color:#94a3b8;font-style:italic"><%= item.notes %></div><% } %>
+            </td>
+            <td style="text-align:center;color:#475569"><%= item.quantity %></td>
+            <td style="text-align:right;color:#475569"><%= item.unit_price ? 'R$ ' + item.unit_price.toFixed(2) : '—' %></td>
+            <td style="text-align:right;font-weight:700;color:#0f172a"><%= item.total_price ? 'R$ ' + item.total_price.toFixed(2) : '—' %></td>
+            <td style="font-size:12px;color:#64748b;white-space:nowrap">
+              <% if (item.delivery_deadline) { %>
+                <%= new Date(item.delivery_deadline).toLocaleDateString('pt-BR') %>
+                <% if (item.delivery_days) { %><br><span style="color:#94a3b8"><%= item.delivery_days %>d</span><% } %>
+              <% } else if (item.delivery_days) { %><%= item.delivery_days %> dias
+              <% } else { %>—<% } %>
+            </td>
+            <td><span class="badge <%= iCfg.c %>"><%= iCfg.l %></span></td>
+            <% if (currentUser.role === 'compras' || currentUser.role === 'admin') { %>
+            <td style="text-align:center">
+              <% if (item.item_status !== 'peca_chegou' && quotation.status !== 'cancelado') { %>
+              <form action="/cotacoes/<%= quotation.id %>/peca-chegou" method="POST" style="display:inline">
+                <input type="hidden" name="item_id" value="<%= item.id %>">
+                <button type="submit" class="btn-icon blue" title="Marcar chegada"
+                        onclick="return confirm('Confirma chegada desta peça?')">
+                  <i class="bi bi-box-arrow-in-down"></i>
+                </button>
+              </form>
+              <% } else { %>
+              <i class="bi bi-check-circle-fill" style="color:var(--green);font-size:16px"></i>
               <% } %>
-            </tr>
-          </thead>
-          <tbody>
-            <% items.forEach(item => { %>
-            <tr style="border-bottom:1px solid #f8fafc" onmouseover="this.style.background='#fafbff'" onmouseout="this.style.background=''">
-              <td style="padding:12px 16px;max-width:240px">
-                <div style="font-weight:700;color:#0f172a"><%= item.part_name %></div>
-                <% if (item.part_code) { %><div style="font-size:11px;color:#94a3b8;margin-top:1px"><%= item.part_code %></div><% } %>
-                <% if (item.supplier_name) { %><div style="font-size:11px;color:#64748b;margin-top:1px">Forn: <%= item.supplier_name %></div><% } %>
-                <% if (item.notes) { %><div style="font-size:11px;color:#94a3b8;font-style:italic;margin-top:1px"><%= item.notes %></div><% } %>
-              </td>
-              <td style="padding:12px 16px;text-align:center;color:#475569"><%= item.quantity %></td>
-              <td style="padding:12px 16px;text-align:right;color:#475569"><%= item.unit_price ? 'R$ ' + item.unit_price.toFixed(2) : '—' %></td>
-              <td style="padding:12px 16px;text-align:right;font-weight:700;color:#0f172a"><%= item.total_price ? 'R$ ' + item.total_price.toFixed(2) : '—' %></td>
-              <td style="padding:12px 16px;font-size:12px;color:#64748b;white-space:nowrap">
-                <% if (item.delivery_deadline) { %>
-                  <%= new Date(item.delivery_deadline).toLocaleDateString('pt-BR') %>
-                  <% if (item.delivery_days) { %><br><span style="color:#94a3b8"><%= item.delivery_days %>d</span><% } %>
-                <% } else if (item.delivery_days) { %><%= item.delivery_days %> dias
-                <% } else { %>—<% } %>
-              </td>
-              <td style="padding:12px 16px">
-                <% const iCfg = {
-                  aguardando:  { l:'Aguardando', c:'badge-amber'  },
-                  em_cotacao:  { l:'Em Cotação', c:'badge-blue'   },
-                  cotado:      { l:'Cotado',     c:'badge-green'  },
-                  peca_chegou: { l:'Chegou',     c:'badge-purple' }
-                }[item.item_status] || { l: item.item_status, c: 'badge-gray' }; %>
-                <span class="badge <%= iCfg.c %>"><%= iCfg.l %></span>
-              </td>
-              <% if (currentUser.role === 'compras' || currentUser.role === 'admin') { %>
-              <td style="padding:12px 16px;text-align:center">
-                <% if (item.item_status !== 'peca_chegou' && quotation.status !== 'cancelado') { %>
-                <form action="/cotacoes/<%= quotation.id %>/peca-chegou" method="POST" style="display:inline">
-                  <input type="hidden" name="item_id" value="<%= item.id %>">
-                  <button type="submit" class="btn-icon blue" title="Marcar chegada" onclick="return confirm('Confirma chegada desta peça?')">
-                    <i class="bi bi-box-arrow-in-down"></i>
-                  </button>
-                </form>
-                <% } else { %>
-                <i class="bi bi-check-circle-fill" style="color:var(--green);font-size:16px"></i>
-                <% } %>
-              </td>
-              <% } %>
-            </tr>
-            <% }) %>
-          </tbody>
-        </table>
-      </div>
+            </td>
+            <% } %>
+          </tr>
+          <% }) %>
+        </tbody>
+        <tfoot>
+          <tr>
+            <td colspan="<%= (currentUser.role === 'compras' || currentUser.role === 'admin') ? 6 : 5 %>"
+                style="text-align:right;font-size:12px;color:#64748b;font-weight:600">
+              Total geral
+            </td>
+            <td style="text-align:right;font-weight:900;font-size:16px;color:#1e3a8a">
+              R$ <%= grandTotal.toFixed(2) %>
+            </td>
+            <% if (currentUser.role === 'compras' || currentUser.role === 'admin') { %><td></td><% } %>
+          </tr>
+        </tfoot>
+      </table>
     </div>
-
-    <!-- FORMULÁRIO DE PREÇOS (compras, em_cotacao/cotado) -->
-    <% if (canEdit) { %>
-    <div class="nc-card">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
-        <h2 style="font-size:13px;font-weight:700;color:#334155;margin:0">Preencher Valores</h2>
-        <span style="font-size:11px;color:#2563eb;background:#eff6ff;padding:3px 10px;border-radius:99px;font-weight:600">Modo edição</span>
-      </div>
-      <form action="/cotacoes/<%= quotation.id %>/responder" method="POST" id="form-responder">
-        <% items.forEach((item, idx) => { %>
-        <div style="border:1px solid #e2e8f0;border-radius:10px;padding:14px;margin-bottom:12px;background:#fafbff">
-          <div style="font-size:13px;font-weight:700;color:#0f172a;margin-bottom:10px">
-            <%= item.part_name %>
-            <% if (item.part_code) { %><span style="font-weight:400;color:#94a3b8;font-size:12px"> <%= item.part_code %></span><% } %>
-            <span style="font-weight:400;color:#64748b;font-size:12px"> — Qtd: <%= item.quantity %></span>
-          </div>
-          <input type="hidden" name="item_ids[]" value="<%= item.id %>">
-          <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;margin-bottom:8px">
-            <div>
-              <label class="nc-label">Vlr Unit. (R$)</label>
-              <input type="number" name="unit_prices[]" class="nc-input" style="font-size:13px;padding:7px 10px"
-                value="<%= item.unit_price || '' %>" step="0.01" min="0"
-                data-qty="<%= item.quantity %>" data-idx="<%= idx %>">
-            </div>
-            <div>
-              <label class="nc-label">Total (R$)</label>
-              <input type="number" name="total_prices[]" class="nc-input" style="font-size:13px;padding:7px 10px"
-                value="<%= item.total_price || '' %>" step="0.01" min="0" data-idx="<%= idx %>">
-            </div>
-            <div>
-              <label class="nc-label">M.O. (R$)</label>
-              <input type="number" name="labor_costs_compras[]" class="nc-input" style="font-size:13px;padding:7px 10px"
-                value="<%= item.labor_cost_compras || 0 %>" step="0.01" min="0">
-            </div>
-            <div>
-              <label class="nc-label">Prazo (dias)</label>
-              <input type="number" name="delivery_days[]" class="nc-input" style="font-size:13px;padding:7px 10px"
-                value="<%= item.delivery_days || '' %>" min="0">
-            </div>
-          </div>
-          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
-            <div>
-              <label class="nc-label">Data Entrega</label>
-              <input type="date" name="delivery_deadlines[]" class="nc-input" style="font-size:13px;padding:7px 10px"
-                value="<%= item.delivery_deadline ? item.delivery_deadline.substring(0,10) : '' %>">
-            </div>
-            <div>
-              <label class="nc-label">Fornecedor</label>
-              <input type="text" name="supplier_names[]" class="nc-input" style="font-size:13px;padding:7px 10px"
-                value="<%= item.supplier_name || '' %>" placeholder="Nome do fornecedor">
-            </div>
-            <div>
-              <label class="nc-label">Obs. do item</label>
-              <input type="text" name="item_notes[]" class="nc-input" style="font-size:13px;padding:7px 10px"
-                value="<%= item.notes || '' %>" placeholder="Observação">
-            </div>
-          </div>
-        </div>
-        <% }) %>
-        <div style="margin-bottom:14px">
-          <label class="nc-label">Observação de Compras</label>
-          <textarea name="notes_compras" class="nc-input" rows="2" style="resize:none;font-size:13px"><%= quotation.notes_compras || '' %></textarea>
-        </div>
-        <button type="submit" class="nc-btn-send" style="width:100%;justify-content:center">
-          <i class="bi bi-check-circle"></i> Salvar e Notificar Vendedor
-        </button>
-      </form>
-    </div>
-    <% } %>
-
-    <!-- OBSERVAÇÕES -->
-    <% if (quotation.notes_vendas || quotation.notes_compras) { %>
-    <div class="nc-card">
-      <h2 style="font-size:13px;font-weight:700;color:#334155;margin:0 0 14px">Observações</h2>
-      <% if (quotation.notes_vendas) { %>
-      <div style="background:#eff6ff;border:1px solid #bfdbfe;padding:12px;border-radius:8px;<%= quotation.notes_compras ? 'margin-bottom:10px' : '' %>">
-        <p style="font-size:9px;font-weight:700;color:#1d4ed8;text-transform:uppercase;letter-spacing:.05em;margin:0 0 5px">Vendedor</p>
-        <p style="font-size:13px;color:#334155;margin:0"><%= quotation.notes_vendas %></p>
-      </div>
-      <% } %>
-      <% if (quotation.notes_compras) { %>
-      <div style="background:#f0fdf4;border:1px solid #bbf7d0;padding:12px;border-radius:8px">
-        <p style="font-size:9px;font-weight:700;color:#15803d;text-transform:uppercase;letter-spacing:.05em;margin:0 0 5px">Compras</p>
-        <p style="font-size:13px;color:#334155;margin:0"><%= quotation.notes_compras %></p>
-      </div>
-      <% } %>
-    </div>
-    <% } %>
-
   </div>
 
-  <!-- SIDEBAR DIREITA (30%) -->
-  <div style="display:flex;flex-direction:column;gap:14px;position:sticky;top:80px">
+  <% if (quotation.notes_vendas || quotation.notes_compras) { %>
+  <div class="nc-card" style="margin-top:16px">
+    <p style="font-size:11px;font-weight:700;color:#334155;text-transform:uppercase;letter-spacing:.06em;margin:0 0 12px">Observações</p>
+    <% if (quotation.notes_vendas) { %>
+    <div class="obs-card vendedor">
+      <p class="obs-tag">Vendedor</p>
+      <p><%= quotation.notes_vendas %></p>
+    </div>
+    <% } %>
+    <% if (quotation.notes_compras) { %>
+    <div class="obs-card compras" style="<%= quotation.notes_vendas ? '' : '' %>">
+      <p class="obs-tag">Compras</p>
+      <p><%= quotation.notes_compras %></p>
+    </div>
+    <% } %>
+  </div>
+  <% } %>
+</div>
+
+<!-- ═══════ ABA: VALORES (compras/admin, canEdit) ═══════ -->
+<% if (canEdit) { %>
+<div id="tab-valores" class="tab-panel <%= defaultTab === 'valores' ? 'tab-panel-active' : '' %>">
+  <div class="nc-card">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px">
+      <div>
+        <p style="font-size:14px;font-weight:700;color:#0f172a;margin:0">Preencher Valores</p>
+        <p style="font-size:12px;color:#64748b;margin:3px 0 0"><%= items.length %> <%= items.length === 1 ? 'item' : 'itens' %> para cotar</p>
+      </div>
+      <span style="font-size:11px;color:#2563eb;background:#eff6ff;padding:4px 12px;border-radius:99px;font-weight:600">
+        <i class="bi bi-pencil-fill" style="font-size:9px"></i> Modo edição
+      </span>
+    </div>
+
+    <form action="/cotacoes/<%= quotation.id %>/responder" method="POST" id="form-responder">
+      <% items.forEach((item, idx) => { %>
+      <div class="price-block">
+        <div class="price-block-title">
+          <span style="background:#e0e7ff;color:#3730a3;border-radius:6px;padding:2px 8px;font-size:11px;font-weight:700;flex-shrink:0"><%= idx + 1 %></span>
+          <%= item.part_name %>
+          <% if (item.part_code) { %><span style="font-weight:400;color:#94a3b8;font-size:12px"><%= item.part_code %></span><% } %>
+          <span style="font-weight:400;color:#64748b;font-size:12px;margin-left:auto">Qtd: <strong><%= item.quantity %></strong></span>
+        </div>
+        <input type="hidden" name="item_ids[]" value="<%= item.id %>">
+        <div class="price-grid-4">
+          <div>
+            <label class="nc-label">Vlr Unit. (R$)</label>
+            <input type="number" name="unit_prices[]" class="nc-input" style="font-size:13px;padding:7px 10px"
+              value="<%= item.unit_price || '' %>" step="0.01" min="0"
+              data-qty="<%= item.quantity %>" data-idx="<%= idx %>">
+          </div>
+          <div>
+            <label class="nc-label">Total (R$)</label>
+            <input type="number" name="total_prices[]" class="nc-input" style="font-size:13px;padding:7px 10px"
+              value="<%= item.total_price || '' %>" step="0.01" min="0" data-idx="<%= idx %>">
+          </div>
+          <div>
+            <label class="nc-label">M.O. (R$)</label>
+            <input type="number" name="labor_costs_compras[]" class="nc-input" style="font-size:13px;padding:7px 10px"
+              value="<%= item.labor_cost_compras || 0 %>" step="0.01" min="0">
+          </div>
+          <div>
+            <label class="nc-label">Prazo (dias)</label>
+            <input type="number" name="delivery_days[]" class="nc-input" style="font-size:13px;padding:7px 10px"
+              value="<%= item.delivery_days || '' %>" min="0">
+          </div>
+        </div>
+        <div class="price-grid-3">
+          <div>
+            <label class="nc-label">Data Entrega</label>
+            <input type="date" name="delivery_deadlines[]" class="nc-input" style="font-size:13px;padding:7px 10px"
+              value="<%= item.delivery_deadline ? item.delivery_deadline.substring(0,10) : '' %>">
+          </div>
+          <div>
+            <label class="nc-label">Fornecedor</label>
+            <input type="text" name="supplier_names[]" class="nc-input" style="font-size:13px;padding:7px 10px"
+              value="<%= item.supplier_name || '' %>" placeholder="Nome do fornecedor">
+          </div>
+          <div>
+            <label class="nc-label">Obs. do item</label>
+            <input type="text" name="item_notes[]" class="nc-input" style="font-size:13px;padding:7px 10px"
+              value="<%= item.notes || '' %>" placeholder="Observação">
+          </div>
+        </div>
+      </div>
+      <% }) %>
+
+      <div style="margin-bottom:16px">
+        <label class="nc-label">Observação de Compras</label>
+        <textarea name="notes_compras" class="nc-input" rows="3" style="resize:vertical;font-size:13px"><%= quotation.notes_compras || '' %></textarea>
+      </div>
+      <button type="submit" class="nc-btn-send" style="width:100%;justify-content:center">
+        <i class="bi bi-check-circle"></i> Salvar e Notificar Vendedor
+      </button>
+    </form>
+  </div>
+</div>
+<% } %>
+
+<!-- ═══════ ABA: CLIENTE / VEÍCULO ═══════ -->
+<div id="tab-cliente" class="tab-panel">
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
 
     <!-- Cliente -->
-    <div class="nc-card" style="padding:18px">
-      <p style="font-size:9px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.07em;margin:0 0 10px">Cliente</p>
-      <p style="font-size:14px;font-weight:800;color:#0f172a;margin:0 0 8px"><%= quotation.customer_name %></p>
+    <div class="nc-card" style="padding:20px">
+      <p style="font-size:9px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.07em;margin:0 0 12px">Cliente</p>
+      <p style="font-size:15px;font-weight:800;color:#0f172a;margin:0 0 10px"><%= quotation.customer_name %></p>
       <a href="https://wa.me/<%= quotation.customer_phone.replace(/\D/g,'') %>" target="_blank"
-         style="display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:#16a34a;text-decoration:none">
-        <i class="bi bi-whatsapp"></i> <%= quotation.customer_phone %>
+         style="display:inline-flex;align-items:center;gap:7px;font-size:13px;font-weight:600;color:#16a34a;text-decoration:none;padding:7px 14px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px">
+        <i class="bi bi-whatsapp" style="font-size:15px"></i> <%= quotation.customer_phone %>
       </a>
     </div>
 
     <!-- Veículo -->
-    <div class="nc-card" style="padding:18px">
-      <p style="font-size:9px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.07em;margin:0 0 10px">Veículo</p>
-      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px">
+    <div class="nc-card" style="padding:20px">
+      <p style="font-size:9px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.07em;margin:0 0 12px">Veículo</p>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
         <span class="plate-tag" style="font-size:13px"><%= quotation.license_plate %></span>
-        <span style="font-size:13px;font-weight:700;color:#0f172a"><%= quotation.model || '—' %></span>
+        <span style="font-size:14px;font-weight:700;color:#0f172a"><%= quotation.model || '—' %></span>
       </div>
-      <% if (quotation.year_model) { %><p style="font-size:12px;color:#64748b;margin:4px 0 0">Ano <%= quotation.year_model %></p><% } %>
+      <% if (quotation.year_model) { %><p style="font-size:12px;color:#64748b;margin:0 0 10px">Ano <%= quotation.year_model %></p><% } %>
       <% if (quotation.photo_path) { %>
-      <a href="<%= quotation.photo_path %>" target="_blank" rel="noopener" style="display:block;margin-top:12px">
+      <a href="<%= quotation.photo_path %>" target="_blank" rel="noopener">
         <img src="<%= quotation.photo_path %>" alt="Relatório Técnico"
-          style="width:100%;height:80px;object-fit:cover;border-radius:8px;border:1px solid #e2e8f0;cursor:zoom-in">
+          style="width:100%;height:90px;object-fit:cover;border-radius:8px;border:1px solid #e2e8f0;cursor:zoom-in;display:block">
       </a>
-      <p style="font-size:10px;color:#94a3b8;text-align:center;margin:4px 0 0">Relatório técnico</p>
+      <p style="font-size:10px;color:#94a3b8;text-align:center;margin:5px 0 0">Relatório técnico</p>
       <% } %>
     </div>
+  </div>
 
-    <!-- Resumo de Valores -->
-    <div class="nc-card" style="padding:18px">
-      <p style="font-size:9px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.07em;margin:0 0 12px">Resumo</p>
-      <div style="display:flex;flex-direction:column;gap:8px;font-size:13px">
-        <div style="display:flex;justify-content:space-between;color:#64748b">
-          <span>Subtotal peças</span>
-          <span style="font-weight:600;color:#334155">R$ <%= partsTotal.toFixed(2) %></span>
-        </div>
-        <% if (laborTotal > 0) { %>
-        <div style="display:flex;justify-content:space-between;color:#64748b">
-          <span>Mão de obra</span>
-          <span style="font-weight:600;color:#334155">R$ <%= laborTotal.toFixed(2) %></span>
-        </div>
-        <% } %>
-        <div style="display:flex;justify-content:space-between;border-top:1px solid #e2e8f0;padding-top:10px;margin-top:2px">
-          <span style="font-weight:700;color:#1e3a8a;font-size:14px">Total</span>
-          <span style="font-weight:900;font-size:18px;color:#1e3a8a">R$ <%= grandTotal.toFixed(2) %></span>
-        </div>
+  <!-- Resumo Financeiro -->
+  <div class="nc-card" style="padding:20px;margin-bottom:16px">
+    <p style="font-size:9px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.07em;margin:0 0 14px">Resumo Financeiro</p>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div class="resumo-line">
+        <span>Subtotal peças</span>
+        <span style="font-weight:600;color:#334155">R$ <%= partsTotal.toFixed(2) %></span>
+      </div>
+      <% if (laborTotal > 0) { %>
+      <div class="resumo-line">
+        <span>Mão de obra</span>
+        <span style="font-weight:600;color:#334155">R$ <%= laborTotal.toFixed(2) %></span>
+      </div>
+      <% } %>
+      <div class="resumo-line total">
+        <span>Total</span>
+        <span>R$ <%= grandTotal.toFixed(2) %></span>
       </div>
     </div>
+  </div>
 
-    <!-- Ação Principal -->
-    <% if (canAct && quotation.status === 'pendente') { %>
-    <form action="/cotacoes/<%= quotation.id %>/status" method="POST">
-      <input type="hidden" name="status" value="em_cotacao">
-      <button type="submit" class="nc-btn-send" style="width:100%;justify-content:center;padding:11px">
-        <i class="bi bi-search"></i> Iniciar Cotação
-      </button>
-    </form>
+  <!-- Resposta do Cliente (vendas/admin) -->
+  <% if (showClientActions) { %>
+  <div class="nc-card" style="padding:20px">
+    <p style="font-size:9px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.07em;margin:0 0 14px">Resposta do Cliente</p>
 
-    <% } else if (canAct && quotation.status === 'cotado') { %>
-    <form action="/cotacoes/<%= quotation.id %>/peca-chegou" method="POST"
-      onsubmit="return confirm('Confirma chegada de todas as peças?')">
-      <button type="submit" class="nc-btn-send" style="width:100%;justify-content:center;padding:11px">
-        <i class="bi bi-box-arrow-in-down"></i> Confirmar Chegada
-      </button>
-    </form>
-
-    <% } else if (showClientActions && !quotation.whatsapp_sent_at) { %>
-    <button class="nc-btn-send" id="btn-whatsapp" style="width:100%;justify-content:center;padding:11px;background:#16a34a">
-      <i class="bi bi-whatsapp"></i> Enviar pelo WhatsApp
-    </button>
-    <% } else if (showClientActions && quotation.whatsapp_sent_at) { %>
-    <div class="nc-card" style="padding:12px;background:#f0fdf4;border-color:#bbf7d0;text-align:center">
-      <p style="font-size:12px;color:#15803d;font-weight:600;margin:0">
-        <i class="bi bi-whatsapp"></i> WhatsApp enviado<br>
-        <span style="font-weight:400;font-size:11px"><%= new Date(quotation.whatsapp_sent_at).toLocaleString('pt-BR') %></span>
-      </p>
-    </div>
-    <% } %>
-
-    <!-- Cancelar (compras/admin) -->
-    <% if (canAct) { %>
-    <form action="/cotacoes/<%= quotation.id %>/status" method="POST"
-      onsubmit="return confirm('Cancelar esta cotação?')">
-      <input type="hidden" name="status" value="cancelado">
-      <button type="submit" style="width:100%;display:flex;align-items:center;justify-content:center;gap:8px;padding:9px;border:1.5px solid #fee2e2;color:#dc2626;border-radius:8px;font-size:12px;font-weight:700;background:transparent;cursor:pointer;font-family:inherit;transition:background .15s"
-        onmouseover="this.style.background='#fef2f2'" onmouseout="this.style.background='transparent'">
-        <i class="bi bi-x-circle"></i> Cancelar Cotação
-      </button>
-    </form>
-    <% } %>
-
-    <!-- Aprovação do Cliente (vendas/admin) -->
-    <% if (showClientActions) { %>
-    <div class="nc-card" style="padding:16px">
-      <p style="font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.07em;margin:0 0 12px">Resposta do Cliente</p>
-
-      <% if (quotation.customer_approved === null || quotation.customer_approved === undefined) { %>
-        <% if (currentUser.role === 'vendas' || currentUser.role === 'admin') { %>
-        <p style="font-size:12px;color:#64748b;margin:0 0 10px">O cliente aprovou ou recusou?</p>
-        <div style="display:flex;gap:8px">
-          <form action="/cotacoes/<%= quotation.id %>/resposta-cliente" method="POST" style="flex:1">
-            <input type="hidden" name="approved" value="1">
-            <button type="submit" class="nc-btn-send" style="width:100%;justify-content:center;padding:8px;font-size:11px;background:#16a34a"
-              onclick="return confirm('Confirmar APROVAÇÃO?')">
-              <i class="bi bi-check-circle"></i> Aprovou
-            </button>
-          </form>
-          <form action="/cotacoes/<%= quotation.id %>/resposta-cliente" method="POST" style="flex:1">
-            <input type="hidden" name="approved" value="0">
-            <button type="submit" class="nc-btn-cancel" style="width:100%;justify-content:center;padding:8px;font-size:11px"
-              onclick="return confirm('Confirmar RECUSA?')">
-              <i class="bi bi-x-circle"></i> Recusou
-            </button>
-          </form>
-        </div>
-        <% } else { %>
-        <div style="text-align:center;padding:10px;color:#94a3b8">
-          <i class="bi bi-hourglass-split" style="font-size:20px;display:block;margin-bottom:6px"></i>
-          <span style="font-size:12px">Aguardando resposta</span>
-        </div>
-        <% } %>
-
-      <% } else if (quotation.customer_approved == 1) { %>
-        <div style="display:flex;align-items:center;gap:8px;padding:10px;background:#f0fdf4;border-radius:8px">
-          <i class="bi bi-check-circle-fill" style="color:#16a34a;font-size:18px;flex-shrink:0"></i>
-          <div>
-            <div style="font-weight:700;color:#16a34a;font-size:13px">Aprovado</div>
-            <% if (quotation.customer_approved_at) { %><div style="font-size:11px;color:#94a3b8"><%= new Date(quotation.customer_approved_at).toLocaleString('pt-BR') %></div><% } %>
-          </div>
-        </div>
+    <% if (quotation.customer_approved === null || quotation.customer_approved === undefined) { %>
+      <% if (currentUser.role === 'vendas' || currentUser.role === 'admin') { %>
+      <p style="font-size:13px;color:#64748b;margin:0 0 12px">O cliente aprovou ou recusou a cotação?</p>
+      <div style="display:flex;gap:10px">
+        <form action="/cotacoes/<%= quotation.id %>/resposta-cliente" method="POST" style="flex:1">
+          <input type="hidden" name="approved" value="1">
+          <button type="submit" class="nc-btn-send" style="width:100%;justify-content:center;padding:10px;background:#16a34a"
+            onclick="return confirm('Confirmar APROVAÇÃO?')">
+            <i class="bi bi-check-circle"></i> Aprovou
+          </button>
+        </form>
+        <form action="/cotacoes/<%= quotation.id %>/resposta-cliente" method="POST" style="flex:1">
+          <input type="hidden" name="approved" value="0">
+          <button type="submit" class="nc-btn-cancel" style="width:100%;justify-content:center;padding:10px"
+            onclick="return confirm('Confirmar RECUSA?')">
+            <i class="bi bi-x-circle"></i> Recusou
+          </button>
+        </form>
+      </div>
       <% } else { %>
-        <div style="display:flex;align-items:center;gap:8px;padding:10px;background:#fef2f2;border-radius:8px">
-          <i class="bi bi-x-circle-fill" style="color:#dc2626;font-size:18px;flex-shrink:0"></i>
-          <div>
-            <div style="font-weight:700;color:#dc2626;font-size:13px">Recusado</div>
-            <% if (quotation.customer_approved_at) { %><div style="font-size:11px;color:#94a3b8"><%= new Date(quotation.customer_approved_at).toLocaleString('pt-BR') %></div><% } %>
-          </div>
-        </div>
+      <div style="text-align:center;padding:16px;color:#94a3b8">
+        <i class="bi bi-hourglass-split" style="font-size:24px;display:block;margin-bottom:8px"></i>
+        <span style="font-size:13px">Aguardando resposta do cliente</span>
+      </div>
       <% } %>
-    </div>
-    <% } %>
 
-  </div><!-- fim sidebar -->
-</div><!-- fim grid 2 colunas -->
+    <% } else if (quotation.customer_approved == 1) { %>
+      <div style="display:flex;align-items:center;gap:10px;padding:14px;background:#f0fdf4;border-radius:8px">
+        <i class="bi bi-check-circle-fill" style="color:#16a34a;font-size:22px;flex-shrink:0"></i>
+        <div>
+          <div style="font-weight:700;color:#16a34a;font-size:14px">Aprovado pelo cliente</div>
+          <% if (quotation.customer_approved_at) { %>
+          <div style="font-size:11px;color:#64748b"><%= new Date(quotation.customer_approved_at).toLocaleString('pt-BR') %></div>
+          <% } %>
+        </div>
+      </div>
+    <% } else { %>
+      <div style="display:flex;align-items:center;gap:10px;padding:14px;background:#fef2f2;border-radius:8px">
+        <i class="bi bi-x-circle-fill" style="color:#dc2626;font-size:22px;flex-shrink:0"></i>
+        <div>
+          <div style="font-weight:700;color:#dc2626;font-size:14px">Recusado pelo cliente</div>
+          <% if (quotation.customer_approved_at) { %>
+          <div style="font-size:11px;color:#64748b"><%= new Date(quotation.customer_approved_at).toLocaleString('pt-BR') %></div>
+          <% } %>
+        </div>
+      </div>
+    <% } %>
+  </div>
+  <% } %>
+</div>
 
 <script>
+function switchTab(name, btn) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('tab-panel-active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('tab-active'));
+  document.getElementById('tab-' + name).classList.add('tab-panel-active');
+  btn.classList.add('tab-active');
+}
+
 // Auto-calc: unit × qty → total
 document.querySelectorAll('[name="unit_prices[]"]').forEach(input => {
   input.addEventListener('input', () => {
