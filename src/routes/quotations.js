@@ -131,6 +131,8 @@ router.post('/', requireRole('vendas', 'admin'), async (req, res) => {
 
 // Detalhe da cotação
 router.get('/:id', (req, res) => {
+  res.set('Cache-Control', 'no-store, no-cache, must-revalidate');
+  res.set('Pragma', 'no-cache');
   const quotation = Quotation.findById(parseInt(req.params.id));
   if (!quotation) return res.status(404).render('errors/404', { title: 'Não encontrado' });
 
