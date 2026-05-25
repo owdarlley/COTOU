@@ -2849,13 +2849,16 @@ function QuotationDetail() {
         </div>
         <div className="row" style={{ gap: 8 }}>
           {canAssign && (
-            <Button variant="primary" icon="bi-bag-check" onClick={() => dispatch({ type: 'assign_quotation', id: qt.id })}>
-              Assumir cotação
+            <Button variant="primary" icon="bi-bag-check" onClick={() => {
+              dispatch({ type: 'assign_quotation', id: qt.id });
+              setRespondOpen(true);
+            }}>
+              Assumir e cotar
             </Button>
           )}
           {canRespond && (
             <Button variant="primary" icon="bi-currency-exchange" onClick={() => setRespondOpen(true)}>
-              Responder com valores
+              Preencher valores
             </Button>
           )}
           {canMarkArrived && (
