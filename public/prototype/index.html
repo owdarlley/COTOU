@@ -2877,6 +2877,7 @@ function QuotationDetail() {
     );
   }
   const totals = calcTotals(qt.items);
+  const hasValues = qt.items.some(it => it.unit_price > 0);
 
   const isVendas = currentUser.role === 'vendas';
   const isCompras = currentUser.role === 'compras';
@@ -2889,74 +2890,92 @@ function QuotationDetail() {
 
   return (
     <div className="page">
-      <div className="page-head">
-        <div>
-          <button className="btn btn-ghost btn-sm" onClick={() => dispatch({ type: 'navigate', name: 'quotations' })} style={{ marginBottom: 8 }}>
-            <i className="bi bi-arrow-left"></i> Voltar
-          </button>
-          <h2 className="page-title row" style={{ gap: 12, alignItems: 'baseline' }}>
-            <span className="mono">{qt.quote_number}</span>
-            <StatusBadge status={qt.status} />
-          </h2>
-          <p className="page-sub">Aberta {fmt.ago(qt.created_at)} por {qt.creator_name}</p>
-        </div>
-        <div className="row" style={{ gap: 8 }}>
-          {canAssign && (
-            <Button variant="primary" icon="bi-bag-check" onClick={() => {
-              dispatch({ type: 'assign_quotation', id: qt.id });
-              setRespondOpen(true);
-            }}>
-              Assumir e cotar
-            </Button>
-          )}
-          {canRespond && (
-            <Button variant="primary" icon="bi-currency-exchange" onClick={() => setRespondOpen(true)}>
-              Preencher valores
-            </Button>
-          )}
-          {canMarkArrived && (
-            <Button variant="primary" icon="bi-box-seam" onClick={() => dispatch({ type: 'mark_arrived', id: qt.id })}>
-              Marcar peça chegou
-            </Button>
-          )}
-          {canSendWhats && (
-            <Button variant="whatsapp" icon="bi-whatsapp" onClick={() => setWaOpen(true)}>
-              {qt.whatsapp_sent_at ? 'Reenviar WhatsApp' : 'Enviar WhatsApp'}
-            </Button>
-          )}
-          {canCancel && (
-            <Button variant="danger" icon="bi-x-circle" onClick={() => setCancelOpen(true)}>
-              Cancelar
-            </Button>
-          )}
+
+      {/* ── Compact page header ── */}
+      <div style={{ marginBottom: 20 }}>
+        <div className="row between" style={{ alignItems: 'flex-start', gap: 12, flexWrap: 'wrap' }}>
+          <div style={{ minWidth: 0 }}>
+            <button className="btn btn-ghost btn-sm" onClick={() => dispatch({ type: 'navigate', name: 'quotations' })} style={{ marginBottom: 8, paddingLeft: 0 }}>
+              <i className="bi bi-arrow-left"></i> Cotações
+            </button>
+            <div className="row" style={{ gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+              <span className="mono bold" style={{ fontSize: 20, letterSpacing: '-0.01em' }}>{qt.quote_number}</span>
+              <StatusBadge status={qt.status} />
+              {totals.grandTotal > 0 && (
+                <span className="mono semibold" style={{ fontSize: 14, color: 'var(--brand)' }}>{fmt.brl(totals.grandTotal)}</span>
+              )}
+            </div>
+            <div className="row" style={{ gap: 6, marginTop: 5, color: 'var(--text-faint)', fontSize: 12.5, flexWrap: 'wrap' }}>
+              <span>{qt.items.length} {qt.items.length === 1 ? 'peça' : 'peças'}</span>
+              <span>·</span><span>{qt.customer_name}</span>
+              <span>·</span><span>{qt.vehicle.make} {qt.vehicle.model}</span>
+              <span>·</span><span>{fmt.ago(qt.created_at)}</span>
+            </div>
+          </div>
+          <div className="row" style={{ gap: 8, flexShrink: 0, alignItems: 'center', flexWrap: 'wrap' }}>
+            {canCancel && (
+              <button className="btn btn-ghost btn-sm" style={{ color: 'var(--st-cancelado)' }} onClick={() => setCancelOpen(true)}>
+                <i className="bi bi-x-circle"></i> Cancelar
+              </button>
+            )}
+            {canCancel && (canAssign || canRespond || canMarkArrived || canSendWhats) && (
+              <div style={{ width: 1, height: 22, background: 'var(--border)', flexShrink: 0 }}></div>
+            )}
+            {canAssign && (
+              <Button variant="primary" icon="bi-bag-check" onClick={() => {
+                dispatch({ type: 'assign_quotation', id: qt.id });
+                setRespondOpen(true);
+              }}>Assumir e cotar</Button>
+            )}
+            {canRespond && (
+              <Button variant="primary" icon="bi-currency-exchange" onClick={() => setRespondOpen(true)}>
+                Preencher valores
+              </Button>
+            )}
+            {canMarkArrived && (
+              <Button variant="primary" icon="bi-box-seam" onClick={() => dispatch({ type: 'mark_arrived', id: qt.id })}>
+                Peça chegou
+              </Button>
+            )}
+            {canSendWhats && (
+              <Button variant="whatsapp" icon="bi-whatsapp" onClick={() => setWaOpen(true)}>
+                {qt.whatsapp_sent_at ? 'Reenviar' : 'WhatsApp'}
+              </Button>
+            )}
+          </div>
         </div>
       </div>
 
-      {/* Timeline */}
-      <div className="card card-pad" style={{ marginBottom: 16 }}>
-        <StatusTimeline quotation={qt} />
-      </div>
+      {/* ── 2-column layout: 65% / 35% ── */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 300px', gap: 20, alignItems: 'start' }}>
 
-      <div className="grid-side">
-        {/* Left: items + notes */}
+        {/* LEFT column */}
         <div className="col" style={{ gap: 16 }}>
-          {/* Items */}
+
+          {/* Timeline — compact */}
+          <div className="card" style={{ padding: '14px 20px' }}>
+            <StatusTimeline quotation={qt} />
+          </div>
+
+          {/* Items table — smart columns (hide Unit/MO/Total/Prazo when not filled) */}
           <div className="card">
             <div className="card-head">
               <i className="bi bi-list-ul" style={{ color: 'var(--text-muted)' }}></i>
               <h3>Peças solicitadas</h3>
-              <span className="badge" style={{ marginLeft: 'auto' }}>{qt.items.length} {qt.items.length === 1 ? 'item' : 'itens'}</span>
+              <span className="badge" style={{ marginLeft: 'auto' }}>
+                {qt.items.length} {qt.items.length === 1 ? 'item' : 'itens'}
+              </span>
             </div>
             <table className="tbl">
               <thead>
                 <tr>
                   <th>Peça</th>
-                  <th>Código</th>
-                  <th style={{ width: 60 }}>Qtd</th>
-                  <th style={{ width: 110 }}>Unit.</th>
-                  <th style={{ width: 110 }}>M.O.</th>
-                  <th style={{ width: 110 }}>Total</th>
-                  <th style={{ width: 60 }}>Prazo</th>
+                  <th style={{ width: 120 }}>Código</th>
+                  <th style={{ width: 55 }}>Qtd</th>
+                  {hasValues && <th style={{ width: 105 }}>Unitário</th>}
+                  {hasValues && <th style={{ width: 100 }}>M.O.</th>}
+                  {hasValues && <th style={{ width: 105 }}>Total</th>}
+                  {hasValues && <th style={{ width: 58 }}>Prazo</th>}
                   <th style={{ width: 100 }}>Status</th>
                 </tr>
               </thead>
@@ -2966,14 +2985,14 @@ function QuotationDetail() {
                     <td>
                       <div className="semibold">{it.part_name}</div>
                       {it.supplier_name && <div className="tiny faint">via {it.supplier_name}</div>}
-                      {it.notes && <div className="tiny" style={{ color: 'var(--text-muted)', marginTop: 4, fontStyle: 'italic' }}>"{it.notes}"</div>}
+                      {it.notes && <div className="tiny" style={{ color: 'var(--text-muted)', marginTop: 3, fontStyle: 'italic' }}>"{it.notes}"</div>}
                     </td>
                     <td><span className="mono tiny faint">{it.part_code || '—'}</span></td>
                     <td><span className="mono semibold">{it.quantity}</span></td>
-                    <td><span className="mono">{fmt.brl(it.unit_price)}</span></td>
-                    <td><span className="mono">{fmt.brl(it.labor_cost_compras)}</span></td>
-                    <td><span className="mono semibold">{fmt.brl(it.total_price)}</span></td>
-                    <td><span className="mono small">{it.delivery_days != null ? `${it.delivery_days}d` : '—'}</span></td>
+                    {hasValues && <td><span className="mono small">{fmt.brl(it.unit_price)}</span></td>}
+                    {hasValues && <td><span className="mono small">{fmt.brl(it.labor_cost_compras)}</span></td>}
+                    {hasValues && <td><span className="mono semibold">{fmt.brl(it.total_price)}</span></td>}
+                    {hasValues && <td><span className="mono small">{it.delivery_days != null ? `${it.delivery_days}d` : '—'}</span></td>}
                     <td>
                       <span className={`badge badge-${it.item_status === 'aguardando' ? 'pendente' : it.item_status}`}>
                         <span className="dot-sm"></span>
@@ -2986,148 +3005,122 @@ function QuotationDetail() {
                   </tr>
                 ))}
               </tbody>
-              {totals.grandTotal > 0 && (
+              {hasValues && totals.grandTotal > 0 && (
                 <tfoot>
                   <tr style={{ background: 'var(--surface-2)' }}>
-                    <td colSpan="5" style={{ textAlign: 'right', padding: '12px 16px' }}>
+                    <td colSpan={5} style={{ textAlign: 'right', padding: '12px 16px' }}>
                       <span className="muted small">Peças <span className="mono semibold" style={{ color: 'var(--text)' }}>{fmt.brl(totals.partsTotal)}</span></span>
-                      <span style={{ margin: '0 12px', color: 'var(--text-faint)' }}>·</span>
-                      <span className="muted small">Mão de obra <span className="mono semibold" style={{ color: 'var(--text)' }}>{fmt.brl(totals.laborTotal)}</span></span>
+                      <span style={{ margin: '0 10px', color: 'var(--text-faint)' }}>·</span>
+                      <span className="muted small">M.O. <span className="mono semibold" style={{ color: 'var(--text)' }}>{fmt.brl(totals.laborTotal)}</span></span>
                     </td>
                     <td style={{ padding: '12px 16px' }}>
                       <div className="tiny faint" style={{ letterSpacing: '0.1em', textTransform: 'uppercase' }}>Total</div>
                       <div className="mono bold big">{fmt.brl(totals.grandTotal)}</div>
                     </td>
-                    <td colSpan="2"></td>
+                    <td colSpan={2}></td>
                   </tr>
                 </tfoot>
               )}
             </table>
           </div>
 
-          {/* Notes vendas */}
+          {/* Observations — 2 columns side by side with avatar initials */}
           <div className="grid-2">
             <div className="card">
               <div className="card-head">
-                <i className="bi bi-chat-left-text" style={{ color: 'var(--st-em-cotacao)' }}></i>
-                <h3>Observação de Vendas</h3>
+                <div style={{ width: 26, height: 26, borderRadius: 99, background: 'var(--st-em-cotacao-bg)', color: 'var(--st-em-cotacao)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, flexShrink: 0 }}>
+                  {qt.creator_name ? qt.creator_name.trim().split(/\s+/).slice(0, 2).map(w => w[0].toUpperCase()).join('') : 'V'}
+                </div>
+                <h3>Obs. Vendas</h3>
               </div>
-              <div className="card-pad" style={{ paddingTop: 14 }}>
-                <p className="small" style={{ margin: 0, color: 'var(--text-muted)', lineHeight: 1.55 }}>
-                  {qt.notes_vendas || <span className="faint">Nenhuma observação.</span>}
+              <div className="card-pad" style={{ paddingTop: 12 }}>
+                <p className="small" style={{ margin: 0, color: qt.notes_vendas ? 'var(--text)' : 'var(--text-faint)', lineHeight: 1.55 }}>
+                  {qt.notes_vendas || 'Nenhuma observação.'}
                 </p>
                 {qt.creator_name && (
-                  <div className="row tiny faint" style={{ marginTop: 12, gap: 6 }}>
-                    <i className="bi bi-person"></i> {qt.creator_name}
-                  </div>
+                  <div className="tiny faint" style={{ marginTop: 10 }}>{qt.creator_name}</div>
                 )}
               </div>
             </div>
             <div className="card">
               <div className="card-head">
-                <i className="bi bi-chat-right-text" style={{ color: 'var(--st-cotado)' }}></i>
-                <h3>Observação de Compras</h3>
+                <div style={{ width: 26, height: 26, borderRadius: 99, background: 'var(--st-cotado-bg)', color: 'var(--st-cotado)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, flexShrink: 0 }}>
+                  {qt.buyer_name ? qt.buyer_name.trim().split(/\s+/).slice(0, 2).map(w => w[0].toUpperCase()).join('') : 'C'}
+                </div>
+                <h3>Obs. Compras</h3>
               </div>
-              <div className="card-pad" style={{ paddingTop: 14 }}>
-                <p className="small" style={{ margin: 0, color: 'var(--text-muted)', lineHeight: 1.55 }}>
-                  {qt.notes_compras || <span className="faint">Ainda não respondida.</span>}
+              <div className="card-pad" style={{ paddingTop: 12 }}>
+                <p className="small" style={{ margin: 0, color: qt.notes_compras ? 'var(--text)' : 'var(--text-faint)', lineHeight: 1.55 }}>
+                  {qt.notes_compras || 'Ainda não respondida.'}
                 </p>
                 {qt.buyer_name && (
-                  <div className="row tiny faint" style={{ marginTop: 12, gap: 6 }}>
-                    <i className="bi bi-person"></i> {qt.buyer_name}
-                  </div>
+                  <div className="tiny faint" style={{ marginTop: 10 }}>{qt.buyer_name}</div>
                 )}
               </div>
             </div>
           </div>
         </div>
 
-        {/* Right: customer + vehicle + meta */}
-        <div className="col" style={{ gap: 16 }}>
-          {/* Customer */}
+        {/* RIGHT column — sticky sidebar */}
+        <div className="col" style={{ gap: 12, position: 'sticky', top: 24, alignSelf: 'start' }}>
+
+          {/* Client card */}
           <div className="card">
-            <div className="card-head">
+            <div className="card-head" style={{ paddingBottom: 10 }}>
               <i className="bi bi-person-circle" style={{ color: 'var(--text-muted)' }}></i>
               <h3>Cliente</h3>
             </div>
-            <div className="card-pad" style={{ paddingTop: 14 }}>
-              <div className="bold">{qt.customer_name}</div>
-              <div className="row" style={{ gap: 6, marginTop: 6 }}>
-                <i className="bi bi-whatsapp" style={{ color: '#16a34a' }}></i>
-                <span className="mono small">{fmt.phone(qt.customer_phone)}</span>
-              </div>
+            <div className="card-pad" style={{ paddingTop: 10 }}>
+              <div className="semibold">{qt.customer_name}</div>
+              <a
+                href={`https://wa.me/55${String(qt.customer_phone).replace(/\D/g, '')}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="row"
+                style={{ gap: 6, marginTop: 6, color: '#16a34a', textDecoration: 'none', fontSize: 13 }}
+              >
+                <i className="bi bi-whatsapp"></i>
+                <span className="mono">{fmt.phone(qt.customer_phone)}</span>
+              </a>
               {qt.customer_approved != null && (
-                <div className={`badge ${qt.customer_approved ? 'badge-cotado' : 'badge-cancelado'}`} style={{ marginTop: 12 }}>
+                <div className={`badge ${qt.customer_approved ? 'badge-cotado' : 'badge-cancelado'}`} style={{ marginTop: 10 }}>
                   <i className={`bi ${qt.customer_approved ? 'bi-check-circle-fill' : 'bi-x-circle-fill'}`}></i>
                   Cliente {qt.customer_approved ? 'aprovou' : 'recusou'}
                 </div>
               )}
               {qt.status === 'cotado' && qt.customer_approved == null && (isVendas || isAdmin) && (
-                <div className="row" style={{ gap: 6, marginTop: 12 }}>
-                  <Button variant="secondary" size="sm" icon="bi-check-lg" onClick={() => dispatch({ type: 'customer_response', id: qt.id, approved: true })}>Cliente aprovou</Button>
+                <div className="row" style={{ gap: 6, marginTop: 10 }}>
+                  <Button variant="secondary" size="sm" icon="bi-check-lg" onClick={() => dispatch({ type: 'customer_response', id: qt.id, approved: true })}>Aprovou</Button>
                   <Button variant="ghost" size="sm" icon="bi-x-lg" onClick={() => dispatch({ type: 'customer_response', id: qt.id, approved: false })}>Recusou</Button>
                 </div>
               )}
             </div>
           </div>
 
-          {/* Vehicle */}
+          {/* Vehicle card — compact inline layout */}
           <div className="card">
-            <div className="card-head">
+            <div className="card-head" style={{ paddingBottom: 10 }}>
               <i className="bi bi-car-front" style={{ color: 'var(--text-muted)' }}></i>
               <h3>Veículo</h3>
             </div>
-            <div className="card-pad" style={{ paddingTop: 14 }}>
-              <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 10 }}>
+            <div className="card-pad" style={{ paddingTop: 10 }}>
+              <div className="row" style={{ gap: 10, alignItems: 'flex-start' }}>
                 <Plate value={qt.vehicle.plate} />
-              </div>
-              <div className="bold" style={{ textAlign: 'center' }}>{qt.vehicle.make} {qt.vehicle.model}</div>
-              <div className="grid-2" style={{ gap: 8, marginTop: 12 }}>
-                <div>
-                  <div className="tiny faint" style={{ textTransform: 'uppercase', letterSpacing: '0.06em' }}>Ano</div>
-                  <div className="mono small">{qt.vehicle.year_manuf}/{qt.vehicle.year_model}</div>
-                </div>
-                <div>
-                  <div className="tiny faint" style={{ textTransform: 'uppercase', letterSpacing: '0.06em' }}>Cor</div>
-                  <div className="mono small">{qt.vehicle.color || '—'}</div>
-                </div>
-                <div>
-                  <div className="tiny faint" style={{ textTransform: 'uppercase', letterSpacing: '0.06em' }}>Combustível</div>
-                  <div className="mono small">{qt.vehicle.fuel || '—'}</div>
+                <div style={{ minWidth: 0 }}>
+                  <div className="semibold" style={{ fontSize: 13, lineHeight: 1.3 }}>{qt.vehicle.make} {qt.vehicle.model}</div>
+                  <div className="row" style={{ gap: 5, marginTop: 3, flexWrap: 'wrap' }}>
+                    <span className="mono tiny faint">{qt.vehicle.year_manuf}/{qt.vehicle.year_model}</span>
+                    {qt.vehicle.color && <><span className="tiny faint">·</span><span className="mono tiny faint">{qt.vehicle.color}</span></>}
+                    {qt.vehicle.fuel && <><span className="tiny faint">·</span><span className="mono tiny faint">{qt.vehicle.fuel}</span></>}
+                  </div>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Photo */}
+          {/* Metadata — compact list */}
           <div className="card">
-            <div className="card-head">
-              <i className="bi bi-image" style={{ color: 'var(--text-muted)' }}></i>
-              <h3>Foto da peça</h3>
-            </div>
-            <div className="card-pad" style={{ paddingTop: 14 }}>
-              {qt.photo_path ? (
-                <div className="photo-preview">
-                  <img src={qt.photo_path} alt="Foto" />
-                </div>
-              ) : (
-                <div style={{
-                  border: '1.5px dashed var(--border-strong)',
-                  borderRadius: 'var(--r-md)',
-                  padding: '32px 16px',
-                  textAlign: 'center',
-                  color: 'var(--text-faint)',
-                }}>
-                  <i className="bi bi-camera" style={{ fontSize: 28, display: 'block', marginBottom: 6 }}></i>
-                  <div className="tiny">Sem foto anexada</div>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Meta */}
-          <div className="card">
-            <div className="card-pad" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <div className="card-pad" style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
               <MetaRow label="Aberta por" value={qt.creator_name} />
               <MetaRow label="Comprador" value={qt.buyer_name || '—'} />
               <MetaRow label="Criada" value={fmt.datetime(qt.created_at)} mono />
@@ -3137,15 +3130,30 @@ function QuotationDetail() {
             </div>
           </div>
 
-          {/* Chat */}
+          {/* Photo — compact thumbnail (max 80px height) */}
+          <div className="card">
+            <div className="card-head" style={{ paddingBottom: 8 }}>
+              <i className="bi bi-image" style={{ color: 'var(--text-muted)', fontSize: 13 }}></i>
+              <h3>Foto da peça</h3>
+            </div>
+            <div style={{ padding: '0 14px 14px' }}>
+              {qt.photo_path ? (
+                <img src={qt.photo_path} alt="Foto" style={{ width: '100%', maxHeight: 80, objectFit: 'cover', borderRadius: 'var(--r-sm)', border: '1px solid var(--border)' }} />
+              ) : (
+                <div style={{ border: '1.5px dashed var(--border-strong)', borderRadius: 'var(--r-sm)', padding: '10px 12px', display: 'flex', alignItems: 'center', gap: 10, color: 'var(--text-faint)' }}>
+                  <i className="bi bi-camera" style={{ fontSize: 16 }}></i>
+                  <span className="tiny">Sem foto anexada</span>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Chat — collapsible */}
           <ChatPanel quotation={qt} />
         </div>
       </div>
 
-      {/* Respond modal */}
       {respondOpen && <RespondModal quotation={qt} onClose={() => setRespondOpen(false)} />}
-
-      {/* Cancel confirm */}
       <ConfirmDialog
         open={cancelOpen}
         onClose={() => setCancelOpen(false)}
@@ -3155,8 +3163,6 @@ function QuotationDetail() {
         tone="danger"
         onConfirm={() => { dispatch({ type: 'cancel_quotation', id: qt.id }); setCancelOpen(false); }}
       />
-
-      {/* WhatsApp preview */}
       {waOpen && <WhatsAppModal quotation={qt} onClose={() => setWaOpen(false)} />}
     </div>
   );
@@ -3175,24 +3181,26 @@ function MetaRow({ label, value, mono, icon, iconColor }) {
 }
 
 /* =========================================================
-   Chat panel
+   Chat panel — collapsible
    ========================================================= */
 function ChatPanel({ quotation }) {
   const { state, dispatch } = useStore();
   const [text, setText] = useState('');
+  const [collapsed, setCollapsed] = useState((quotation.messages || []).length === 0);
   const bottomRef = React.useRef(null);
   const me = state.users.find(u => u.id === state.currentUserId);
   const messages = quotation.messages || [];
 
   React.useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages.length]);
+    if (!collapsed) bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages.length, collapsed]);
 
   function send() {
     const t = text.trim();
     if (!t) return;
     dispatch({ type: 'send_message', quotationId: quotation.id, text: t });
     setText('');
+    setCollapsed(false);
   }
 
   function getUserName(id) {
@@ -3200,46 +3208,57 @@ function ChatPanel({ quotation }) {
   }
 
   return (
-    <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: 0, padding: 0, overflow: 'hidden' }}>
-      <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--border)', fontWeight: 600, fontSize: 13, display: 'flex', alignItems: 'center', gap: 8 }}>
-        <i className="bi bi-chat-dots" style={{ color: 'var(--brand)' }}></i>
-        Chat interno
-        {messages.length > 0 && <span className="badge" style={{ marginLeft: 'auto', fontSize: 10 }}>{messages.length}</span>}
-      </div>
-      <div style={{ overflowY: 'auto', maxHeight: 260, padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 10 }}>
-        {messages.length === 0 && (
-          <div className="tiny faint" style={{ textAlign: 'center', padding: '18px 0' }}>Nenhuma mensagem ainda.</div>
+    <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+      <button
+        type="button"
+        style={{ width: '100%', background: 'none', border: 'none', padding: '12px 16px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8, fontFamily: 'inherit', textAlign: 'left' }}
+        onClick={() => setCollapsed(c => !c)}
+      >
+        <i className="bi bi-chat-dots" style={{ color: 'var(--brand)', fontSize: 14 }}></i>
+        <span style={{ fontWeight: 600, fontSize: 13, color: 'var(--text)' }}>Chat interno</span>
+        {messages.length > 0 && (
+          <span className="badge" style={{ fontSize: 10, marginLeft: 2 }}>{messages.length}</span>
         )}
-        {messages.map(msg => {
-          const mine = msg.from === me.id;
-          return (
-            <div key={msg.id} style={{ display: 'flex', flexDirection: 'column', alignItems: mine ? 'flex-end' : 'flex-start' }}>
-              <div className="tiny faint" style={{ marginBottom: 3 }}>{mine ? 'Você' : getUserName(msg.from)}</div>
-              <div style={{
-                background: mine ? 'var(--brand)' : 'var(--surface-2)',
-                color: mine ? 'var(--brand-text)' : 'var(--text)',
-                borderRadius: mine ? '12px 12px 2px 12px' : '12px 12px 12px 2px',
-                padding: '7px 11px', fontSize: 13, maxWidth: '88%', wordBreak: 'break-word', lineHeight: 1.45,
-              }}>
-                {msg.text}
-              </div>
-              <div className="tiny faint" style={{ marginTop: 3 }}>{fmt.time(msg.ts)}</div>
-            </div>
-          );
-        })}
-        <div ref={bottomRef} />
-      </div>
-      <div style={{ padding: '10px 12px', borderTop: '1px solid var(--border)', display: 'flex', gap: 8 }}>
-        <input
-          className="input"
-          style={{ flex: 1, fontSize: 13 }}
-          placeholder="Mensagem… (Enter para enviar)"
-          value={text}
-          onChange={e => setText(e.target.value)}
-          onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } }}
-        />
-        <Button variant="primary" icon="bi-send" onClick={send} disabled={!text.trim()} />
-      </div>
+        <i className={`bi bi-chevron-${collapsed ? 'down' : 'up'}`} style={{ marginLeft: 'auto', fontSize: 11, color: 'var(--text-faint)' }}></i>
+      </button>
+      {!collapsed && (
+        <>
+          <div style={{ borderTop: '1px solid var(--border)', overflowY: 'auto', maxHeight: 220, padding: '10px 14px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {messages.length === 0 && (
+              <div className="tiny faint" style={{ textAlign: 'center', padding: '14px 0' }}>Nenhuma mensagem ainda.</div>
+            )}
+            {messages.map(msg => {
+              const mine = msg.from === me.id;
+              return (
+                <div key={msg.id} style={{ display: 'flex', flexDirection: 'column', alignItems: mine ? 'flex-end' : 'flex-start' }}>
+                  <div className="tiny faint" style={{ marginBottom: 3 }}>{mine ? 'Você' : getUserName(msg.from)}</div>
+                  <div style={{
+                    background: mine ? 'var(--brand)' : 'var(--surface-2)',
+                    color: mine ? 'var(--brand-text)' : 'var(--text)',
+                    borderRadius: mine ? '12px 12px 2px 12px' : '12px 12px 12px 2px',
+                    padding: '6px 11px', fontSize: 12.5, maxWidth: '88%', wordBreak: 'break-word', lineHeight: 1.45,
+                  }}>
+                    {msg.text}
+                  </div>
+                  <div className="tiny faint" style={{ marginTop: 3 }}>{fmt.time(msg.ts)}</div>
+                </div>
+              );
+            })}
+            <div ref={bottomRef} />
+          </div>
+          <div style={{ padding: '8px 12px', borderTop: '1px solid var(--border)', display: 'flex', gap: 8 }}>
+            <input
+              className="input"
+              style={{ flex: 1, fontSize: 13 }}
+              placeholder="Mensagem… (Enter)"
+              value={text}
+              onChange={e => setText(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } }}
+            />
+            <Button variant="primary" icon="bi-send" onClick={send} disabled={!text.trim()} />
+          </div>
+        </>
+      )}
     </div>
   );
 }
