@@ -1738,14 +1738,11 @@ const SEED_NOTIFICATIONS = [
   { id: 5, user_id: 2, type: 'cotacao_atualizada', title: 'Cliente APROVOU — Cotação #COT-2026-0004', message: 'Ricardo informou que o cliente aprovou. Pode encomendar!', read_at: '2026-05-21T12:00:00Z', quotation_id: 4, created_at: '2026-05-21T11:30:00Z', time_label: '4 dias' },
 ];
 
-// Plate-API mock — quick lookup by plate
-const PLATE_DB = {
-  'ABC1D23':  { make:'VOLKSWAGEN', model:'Gol 1.0', year_model:2019, year_manuf:2018, color:'PRATA',   fuel:'FLEX' },
-  'XYZ5E67':  { make:'TOYOTA',     model:'Corolla 2.0 XEi', year_model:2022, year_manuf:2021, color:'PRETO', fuel:'FLEX' },
-  'BRA2E19':  { make:'JEEP',       model:'Compass Limited', year_model:2024, year_manuf:2023, color:'PRATA', fuel:'FLEX' },
-  'RIO3F45':  { make:'NISSAN',     model:'Kicks 1.6 Advance', year_model:2023, year_manuf:2022, color:'AZUL', fuel:'FLEX' },
-  'SAO1G88':  { make:'CHEVROLET',  model:'Tracker Premier 1.2T', year_model:2024, year_manuf:2024, color:'BRANCO', fuel:'FLEX' },
-};
+// URL do proxy Vercel para consulta de placas no GitHub Pages.
+// Deixar vazio ('') usa o backend local (/api/placa/:plate).
+// Após deploy na Vercel, preencher com a URL do projeto, ex:
+//   const PLATE_PROXY_URL = 'https://cotou-owdarlley.vercel.app';
+const PLATE_PROXY_URL = '';
 
 /* =========================================================
    Store (reducer)
@@ -1992,7 +1989,7 @@ function StoreProvider({ children }) {
     const currentUser = state.users.find(u => u.id === state.currentUserId);
     const myNotifs = state.notifications.filter(n => n.user_id === state.currentUserId);
     const unreadCount = myNotifs.filter(n => !n.read_at).length;
-    return { state, dispatch, currentUser, myNotifs, unreadCount, calcTotals, PLATE_DB };
+    return { state, dispatch, currentUser, myNotifs, unreadCount, calcTotals };
   }, [state]);
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>;
 }
@@ -3458,21 +3455,34 @@ function NewQuotation() {
   const [photo, setPhoto] = useState(null);
   const fileRef = useRef(null);
 
-  function lookupPlate() {
+  async function lookupPlate() {
     const key = plate.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
+    if (!key) return;
     setPlateLoading(true);
     setPlateWarning('');
-    setTimeout(() => {
-      const data = PLATE_DB[key];
-      if (data) {
-        setVehicle({ ...data, year_model: String(data.year_model), year_manuf: String(data.year_manuf) });
+    try {
+      const base = PLATE_PROXY_URL || '';
+      const res = await fetch(`${base}/api/placa/${key}`);
+      const json = await res.json();
+      if (json.ok && json.data) {
+        setVehicle({
+          make:       json.data.make || '',
+          model:      json.data.model || '',
+          year_model: String(json.data.year_model || ''),
+          year_manuf: String(json.data.year_manuf || ''),
+          color:      json.data.color || '',
+          fuel:       json.data.fuel || '',
+        });
         setPlateFound(true);
         dispatch({ type: 'toast', tone: 'success', message: 'Dados do veículo carregados' });
       } else {
         setPlateFound(false);
-        dispatch({ type: 'toast', tone: 'error', message: 'Placa não encontrada — preencha manualmente' });
+        dispatch({ type: 'toast', tone: 'error', message: json.message || 'Placa não encontrada — preencha manualmente' });
       }
-      // Check for existing open quotation for this plate
+    } catch (_err) {
+      setPlateFound(false);
+      dispatch({ type: 'toast', tone: 'error', message: 'Erro ao consultar placa. Preencha manualmente.' });
+    } finally {
       const existing = state.quotations.find(
         q => q.vehicle.plate.toUpperCase() === key && ['pendente', 'em_cotacao'].includes(q.status)
       );
@@ -3480,7 +3490,7 @@ function NewQuotation() {
         setPlateWarning(`⚠️ Este veículo já possui a cotação ${existing.quote_number} em aberto (${STATUS_META[existing.status].label}).`);
       }
       setPlateLoading(false);
-    }, 800);
+    }
   }
 
   function addItem(part) {
