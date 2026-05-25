@@ -1,86 +1,323 @@
-<!-- KPI Grid -->
-<div class="kpi-grid">
-  <a href="/cotacoes?status=pendente" class="kpi-card kpi-amber">
-    <div class="kpi-top">
-      <div class="kpi-icon icon-amber"><i class="bi bi-clock"></i></div>
-      <div class="kpi-num"><%= statusMap.pendente || 0 %></div>
-    </div>
-    <div class="kpi-label">Aguardando</div>
-    <div class="kpi-trend">em aberto</div>
-  </a>
-  <a href="/cotacoes?status=em_cotacao" class="kpi-card kpi-blue">
-    <div class="kpi-top">
-      <div class="kpi-icon icon-blue"><i class="bi bi-search"></i></div>
-      <div class="kpi-num"><%= statusMap.em_cotacao || 0 %></div>
-    </div>
-    <div class="kpi-label">Em Cotação</div>
-    <div class="kpi-trend">em andamento</div>
-  </a>
-  <a href="/cotacoes?status=cotado" class="kpi-card kpi-green">
-    <div class="kpi-top">
-      <div class="kpi-icon icon-green"><i class="bi bi-check-circle"></i></div>
-      <div class="kpi-num"><%= statusMap.cotado || 0 %></div>
-    </div>
-    <div class="kpi-label">Cotado</div>
-    <div class="kpi-trend<% if ((statusMap.cotado||0) > 0) { %> up<% } %>">
-      <% if ((statusMap.cotado||0) > 0) { %><i class="bi bi-arrow-up-short"></i><% } %>aguardando cliente
-    </div>
-  </a>
-  <a href="/cotacoes?status=peca_chegou" class="kpi-card kpi-purple">
-    <div class="kpi-top">
-      <div class="kpi-icon icon-purple"><i class="bi bi-box-arrow-in-down"></i></div>
-      <div class="kpi-num"><%= statusMap.peca_chegou || 0 %></div>
-    </div>
-    <div class="kpi-label">Peça Chegou</div>
-    <div class="kpi-trend">aguardando retirada</div>
-  </a>
-</div>
+<div class="page">
 
-<!-- Recent quotations -->
-<div class="section-card">
-  <div class="section-head">
-    <span class="section-title"><i class="bi bi-clock-history"></i> Cotações Recentes</span>
-    <a href="/cotacoes" class="btn-link">Ver todas →</a>
+<%
+  function initials(name){ return (name||'?').split(' ').slice(0,2).map(w=>w[0]).join('').toUpperCase(); }
+  function fmtBRL(v){ if(v==null) return '—'; return 'R$ ' + parseFloat(v).toFixed(2).replace('.',',').replace(/(\d)(?=(\d{3})+,)/g,'$1.'); }
+  function fmtDate(d){ return d ? new Date(d).toLocaleDateString('pt-BR') : '—'; }
+
+  const role = currentUser.role;
+  const first = currentUser.name.split(' ')[0];
+
+  // Personal queue: items needing MY action
+  const myQueue = (locals.myQueue || []);
+  const queueCount = myQueue.length;
+
+  const heroCopy = role === 'vendas'
+    ? (queueCount > 0
+        ? queueCount + (queueCount === 1 ? ' cotação precisa' : ' cotações precisam') + ' ser enviada ao cliente.'
+        : 'Tudo enviado ao cliente — bom trabalho.')
+    : role === 'compras'
+    ? (queueCount > 0
+        ? queueCount + (queueCount === 1 ? ' cotação está' : ' cotações estão') + ' esperando você cotar.'
+        : 'Sua fila está limpa.')
+    : ((locals.todayCount || 0) + ' ' + ((locals.todayCount||0) === 1 ? 'nova cotação' : 'novas cotações') + ' hoje.');
+
+  const pipeline = [
+    { key: 'pendente',    label: 'Aguardando',  count: statusMap.pendente    || 0, icon: 'clock',         tone: 'amber' },
+    { key: 'em_cotacao',  label: 'Em Cotação',  count: statusMap.em_cotacao  || 0, icon: 'search',        tone: 'blue' },
+    { key: 'cotado',      label: 'Cotado',      count: statusMap.cotado      || 0, icon: 'check-circle',  tone: 'green' },
+    { key: 'peca_chegou', label: 'Peça Chegou', count: statusMap.peca_chegou || 0, icon: 'box-seam',      tone: 'violet' }
+  ];
+  const pipelineTotal = pipeline.reduce((s, p) => s + p.count, 0);
+%>
+
+<!-- ─── HERO ─────────────────────────────────────────────── -->
+<div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);padding:22px 26px;margin-bottom:22px;display:flex;align-items:center;gap:24px;flex-wrap:wrap;position:relative;overflow:hidden" class="anim-in">
+  <div style="position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--accent)"></div>
+
+  <div style="flex:1;min-width:240px">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+      <span style="font-size:11px;font-weight:700;color:var(--text-3);letter-spacing:.08em;text-transform:uppercase">
+        Olá, <%= first %>
+      </span>
+      <span style="display:inline-flex;align-items:center;gap:5px;font-size:10.5px;font-weight:600;color:var(--text-3);padding:2px 8px;background:var(--surface-2);border:1px solid var(--border);border-radius:99px">
+        <span style="width:5px;height:5px;border-radius:50%;background:var(--green);box-shadow:0 0 0 2px color-mix(in srgb, var(--green) 18%, transparent)"></span>
+        <%= locals.liveNow || 0 %> online
+      </span>
+    </div>
+    <h1 style="font-size:22px;font-weight:700;letter-spacing:-.02em;margin:0;color:var(--text);line-height:1.3">
+      <%= heroCopy %>
+    </h1>
   </div>
-  <% if (recentQuotations.length === 0) { %>
-  <div style="text-align:center;padding:48px 16px;color:var(--text-muted)">
-    <i class="bi bi-inbox" style="font-size:40px;display:block;margin-bottom:8px"></i>
-    Nenhuma cotação ainda.
-    <% if (currentUser.role === 'vendas' || currentUser.role === 'admin') { %>
-    <br><a href="/cotacoes/nova" class="btn-primary" style="margin-top:16px;display:inline-flex">
-      <i class="bi bi-plus-circle"></i>Criar primeira cotação
+
+  <div style="display:flex;align-items:stretch;gap:10px">
+    <div style="padding:8px 16px;background:var(--surface-2);border:1px solid var(--border);border-radius:9px;min-width:84px;text-align:center;display:flex;flex-direction:column;justify-content:center">
+      <div style="font-size:9.5px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.08em">Hoje</div>
+      <div style="font-size:22px;font-weight:800;color:var(--text);font-variant-numeric:tabular-nums;letter-spacing:-.02em;line-height:1.1;margin-top:2px"><%= locals.todayCount || 0 %></div>
+      <div style="font-size:10px;color:var(--text-3);margin-top:1px">novas</div>
+    </div>
+    <div style="padding:8px 16px;background:var(--surface-2);border:1px solid var(--border);border-radius:9px;min-width:84px;text-align:center;display:flex;flex-direction:column;justify-content:center">
+      <div style="font-size:9.5px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.08em">Sua fila</div>
+      <div style="font-size:22px;font-weight:800;color:<%= queueCount > 0 ? 'var(--accent)' : 'var(--text)' %>;font-variant-numeric:tabular-nums;letter-spacing:-.02em;line-height:1.1;margin-top:2px"><%= queueCount %></div>
+      <div style="font-size:10px;color:var(--text-3);margin-top:1px"><%= queueCount === 1 ? 'item' : 'itens' %></div>
+    </div>
+    <% if (role === 'vendas' || role === 'admin') { %>
+    <a href="/cotacoes/nova" class="btn btn-primary btn-lg">
+      <i class="bi bi-plus-lg"></i> Nova Cotação
+    </a>
+    <% } else if (queueCount > 0) { %>
+    <a href="/cotacoes?status=pendente" class="btn btn-primary btn-lg">
+      <i class="bi bi-arrow-right"></i> Atender Fila
     </a>
     <% } %>
   </div>
-  <% } else { %>
-  <table class="data-table">
-    <thead>
-      <tr>
-        <th>Número</th><th>Cliente</th><th>Veículo</th><th>Status</th><th>Data</th><th></th>
-      </tr>
-    </thead>
-    <tbody>
-      <% recentQuotations.forEach(q => { %>
-      <tr>
-        <td><a href="/cotacoes/<%= q.id %>" class="qid">#<%= q.quote_number %></a></td>
-        <td>
-          <div style="display:flex;align-items:center;gap:8px">
-            <div class="av" style="width:28px;height:28px;font-size:10px;background:var(--accent)">
-              <%= q.customer_name.split(' ').slice(0,2).map(w=>w[0]).join('').toUpperCase() %>
+</div>
+
+<!-- ─── PIPELINE BOARD (cotações reais por faixa) ─────────── -->
+<%
+  // Group quotations by status
+  const byStatus = { pendente: [], em_cotacao: [], cotado: [], peca_chegou: [] };
+  (locals.allQuotations || recentQuotations || []).forEach(q => {
+    if (byStatus[q.status]) byStatus[q.status].push(q);
+  });
+  // Sort: oldest first (need attention)
+  Object.keys(byStatus).forEach(k => {
+    byStatus[k].sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+  });
+
+  const avgAges = locals.avgAges || { pendente: '—', em_cotacao: '—', cotado: '—', peca_chegou: '—' };
+
+  function ageHours(d) { return (Date.now() - new Date(d)) / 3600000; }
+  function ageStr(d) {
+    const h = ageHours(d);
+    if (h < 1) return Math.floor(h * 60) + 'min';
+    if (h < 24) return Math.floor(h) + 'h';
+    return Math.floor(h / 24) + 'd';
+  }
+
+  const lanes = pipeline.map(p => ({ ...p, items: byStatus[p.key] || [] }));
+  const stuckCount = byStatus.pendente.filter(q => ageHours(q.created_at) > 2).length;
+%>
+
+<div class="card">
+  <div class="card-head">
+    <div class="card-title"><i class="bi bi-graph-up-arrow"></i> Pipeline ao Vivo</div>
+    <div style="margin-left:auto;display:flex;align-items:center;gap:14px">
+      <% if (stuckCount > 0) { %>
+      <span style="display:inline-flex;align-items:center;gap:5px;font-size:11px;color:var(--amber);font-weight:600;padding:2px 9px;background:var(--amber-soft);border:1px solid var(--amber-border);border-radius:99px">
+        <i class="bi bi-exclamation-triangle"></i>
+        <%= stuckCount %> <%= stuckCount === 1 ? 'cotação parada' : 'cotações paradas' %> &gt; 2h
+      </span>
+      <% } %>
+      <span class="card-meta"><span class="num"><%= pipelineTotal %></span> ativas</span>
+    </div>
+  </div>
+  <div class="card-body" style="padding:14px;background:var(--surface-2)">
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px">
+      <% lanes.forEach(lane => { %>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <!-- Lane header -->
+        <div style="display:flex;align-items:center;gap:8px;padding:6px 4px 4px;border-bottom:2px solid var(--<%= lane.tone %>)">
+          <div class="kpi-icon <%= lane.tone %>" style="width:24px;height:24px;border-radius:6px"><i class="bi bi-<%= lane.icon %>" style="font-size:13px"></i></div>
+          <span style="font-size:11.5px;font-weight:700;color:var(--text);text-transform:uppercase;letter-spacing:.04em"><%= lane.label %></span>
+          <span style="margin-left:auto;font-size:11px;font-weight:700;color:var(--<%= lane.tone %>);background:var(--<%= lane.tone %>-soft);padding:1px 7px;border-radius:99px;font-variant-numeric:tabular-nums"><%= lane.count %></span>
+        </div>
+
+        <!-- Avg wait -->
+        <div style="font-size:10.5px;color:var(--text-3);padding:0 4px;display:flex;align-items:center;gap:4px">
+          <i class="bi bi-clock" style="font-size:10px"></i> Média:
+          <span class="num" style="font-weight:600;color:var(--text-2)"><%= avgAges[lane.key] %></span>
+        </div>
+
+        <!-- Cards -->
+        <div style="display:flex;flex-direction:column;gap:6px" class="anim-stagger">
+          <% if (lane.items.length === 0) { %>
+          <div style="padding:24px 8px;text-align:center;font-size:11px;color:var(--text-3);background:var(--surface);border:1px dashed var(--border);border-radius:8px">Nenhuma</div>
+          <% } else { lane.items.forEach(q => { const isOld = q.status === 'pendente' && ageHours(q.created_at) > 2; %>
+          <a href="/cotacoes/<%= q.id %>" style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:8px 10px;text-decoration:none;color:inherit;transition:border-color .12s,transform .1s,box-shadow .12s;position:relative;overflow:hidden;display:block"
+             onmouseenter="this.style.borderColor='var(--<%= lane.tone %>)';this.style.transform='translateY(-1px)';this.style.boxShadow='var(--shadow-sm)'"
+             onmouseleave="this.style.borderColor='var(--border)';this.style.transform='none';this.style.boxShadow='none'">
+            <div style="position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--<%= lane.tone %>)"></div>
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;padding-left:4px">
+              <div class="avatar sm"><%= initials(q.customer_name) %></div>
+              <span style="font-size:12px;font-weight:700;color:var(--text);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
+                <%= q.customer_name %>
+              </span>
             </div>
-            <span style="font-weight:600"><%= q.customer_name %></span>
-          </div>
-        </td>
-        <td>
-          <span style="font-size:13px"><%= q.make || '' %> <%= q.model || '' %></span>
-          <% if (q.license_plate) { %><br><span class="plate-tag"><%= q.license_plate %></span><% } %>
-        </td>
-        <td><%- include('../partials/status-badge', { status: q.status }) %></td>
-        <td style="color:var(--text-muted);font-size:13px"><%= new Date(q.created_at).toLocaleDateString('pt-BR') %></td>
-        <td><a href="/cotacoes/<%= q.id %>" class="btn-icon" title="Ver"><i class="bi bi-eye"></i></a></td>
-      </tr>
+            <div style="display:flex;align-items:center;justify-content:space-between;padding-left:4px">
+              <span class="mono" style="font-size:10.5px;color:var(--text-3);font-weight:600">
+                #<%= q.quote_number.toString().slice(-4) %>
+              </span>
+              <span style="font-size:10.5px;font-weight:600;color:<%= isOld ? 'var(--amber)' : 'var(--text-3)' %>;display:inline-flex;align-items:center;gap:3px;font-variant-numeric:tabular-nums">
+                <% if (isOld) { %><i class="bi bi-exclamation-triangle" style="font-size:10px"></i><% } %>
+                <%= ageStr(q.created_at) %>
+              </span>
+            </div>
+            <div style="font-size:10.5px;color:var(--text-3);margin-top:3px;padding-left:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
+              <%= q.make || '' %> <%= q.model || '' %> · <span class="num"><%= q.items_count || 0 %></span> <%= (q.items_count || 0) === 1 ? 'item' : 'itens' %>
+            </div>
+          </a>
+          <% }) } %>
+        </div>
+      </div>
       <% }) %>
-    </tbody>
-  </table>
+    </div>
+  </div>
+</div>
+
+<!-- ─── SUA FILA + PULSO ─────────────────────────────────── -->
+<div style="display:grid;grid-template-columns:1.5fr 1fr;gap:18px;margin-top:22px">
+
+  <% if (role === 'admin') { %>
+  <!-- Admin: cotações recentes -->
+  <div class="card">
+    <div class="card-head">
+      <div class="card-title"><i class="bi bi-clock-history"></i> Cotações Recentes</div>
+      <a href="/cotacoes" class="card-meta">Ver todas →</a>
+    </div>
+    <div class="card-body tight">
+      <% if (recentQuotations.length === 0) { %>
+        <div class="empty"><i class="bi bi-inbox"></i><div class="ttl">Nenhuma cotação ainda</div></div>
+      <% } else { %>
+      <table class="table">
+        <thead><tr><th>Nº</th><th>Cliente</th><th>Veículo</th><th>Status</th><th style="text-align:right">Data</th></tr></thead>
+        <tbody>
+          <% recentQuotations.forEach(q => { %>
+          <tr onclick="window.location.href='/cotacoes/<%= q.id %>'">
+            <td><a href="/cotacoes/<%= q.id %>" class="qid">#<%= q.quote_number %></a></td>
+            <td>
+              <div style="display:flex;align-items:center;gap:8px">
+                <div class="avatar sm"><%= initials(q.customer_name) %></div>
+                <span style="font-weight:600;font-size:13px"><%= q.customer_name %></span>
+              </div>
+            </td>
+            <td>
+              <div style="font-size:12.5px"><%= q.make || '' %> <%= q.model || '' %></div>
+              <% if (q.license_plate) { %><span class="plate"><%= q.license_plate %></span><% } %>
+            </td>
+            <td><%- include('../partials/status-badge', { status: q.status }) %></td>
+            <td style="text-align:right;color:var(--text-3);font-size:12px"><%= fmtDate(q.created_at) %></td>
+          </tr>
+          <% }) %>
+        </tbody>
+      </table>
+      <% } %>
+    </div>
+  </div>
+  <% } else { %>
+  <!-- Vendas/Compras: fila pessoal -->
+  <div class="card">
+    <div class="card-head">
+      <div class="card-title"><i class="bi bi-check2-circle"></i> Sua Fila</div>
+      <span class="card-meta"><%= queueCount %> <%= queueCount === 1 ? 'item' : 'itens' %></span>
+    </div>
+    <div class="card-body" style="padding:0">
+      <% if (queueCount === 0) { %>
+        <div class="empty">
+          <i class="bi bi-check2-circle"></i>
+          <div class="ttl">Fila limpa!</div>
+          <div class="sub">Você está em dia com tudo.</div>
+        </div>
+      <% } else { %>
+      <div class="anim-stagger" style="display:flex;flex-direction:column">
+        <% myQueue.forEach((it, i) => { const isHigh = it.priority === 'high'; %>
+        <a href="/cotacoes/<%= it.quotation.id %>" style="display:flex;align-items:center;gap:14px;padding:14px 20px;border-bottom:<%= i < myQueue.length-1 ? '1px solid var(--border)' : 'none' %>;cursor:pointer;transition:background .12s;text-decoration:none;color:inherit"
+           onmouseenter="this.style.background='var(--surface-2)'" onmouseleave="this.style.background='transparent'">
+          <div style="width:4px;height:36px;border-radius:2px;background:<%= isHigh ? 'var(--amber)' : 'var(--blue)' %>;flex-shrink:0"></div>
+          <div class="avatar md"><%= initials(it.quotation.customer_name) %></div>
+          <div style="flex:1;min-width:0">
+            <div style="display:flex;align-items:center;gap:8px">
+              <span class="qid">#<%= it.quotation.quote_number %></span>
+              <span style="font-weight:600;font-size:13px"><%= it.quotation.customer_name %></span>
+              <% if (it.quotation.license_plate) { %><span class="plate"><%= it.quotation.license_plate %></span><% } %>
+            </div>
+            <div style="font-size:12px;color:var(--text-2);margin-top:3px">
+              <span style="font-weight:600;color:<%= isHigh ? 'var(--amber)' : 'var(--accent)' %>"><%= it.reason %></span>
+              · <%= it.quotation.items_count || 0 %> <%= (it.quotation.items_count||0) === 1 ? 'item' : 'itens' %>
+              · <%= it.quotation.make || '' %> <%= it.quotation.model || '' %>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:12px">
+            <%- include('../partials/status-badge', { status: it.quotation.status }) %>
+            <i class="bi bi-chevron-right" style="color:var(--text-3);font-size:14px"></i>
+          </div>
+        </a>
+        <% }) %>
+      </div>
+      <% } %>
+    </div>
+  </div>
   <% } %>
+
+  <!-- Pulso ao Vivo -->
+  <div class="card">
+    <div class="card-head">
+      <div class="card-title"><i class="bi bi-chat-square-text"></i> Pulso ao Vivo</div>
+      <span class="live-dot" style="margin-left:auto">ao vivo</span>
+    </div>
+    <div class="card-body" style="padding:0">
+      <% if (!locals.activity || activity.length === 0) { %>
+        <div class="empty"><i class="bi bi-chat-square"></i><div class="ttl">Sem atividade ainda</div></div>
+      <% } else { %>
+      <div class="anim-stagger" style="display:flex;flex-direction:column">
+        <% activity.forEach((it, i, arr) => { %>
+        <div style="padding:11px 20px;border-bottom:<%= i < arr.length-1 ? '1px solid var(--border)' : 'none' %>;display:flex;align-items:center;gap:10px">
+          <div class="avatar sm <%= it.tone || '' %>"><%= initials(it.who) %></div>
+          <div style="flex:1;font-size:12.5px;color:var(--text-2);line-height:1.45;min-width:0">
+            <strong style="color:var(--text)"><%= it.who %></strong> <%= it.what %>
+          </div>
+          <span style="font-size:10.5px;color:var(--text-3);white-space:nowrap;font-variant-numeric:tabular-nums"><%= it.when %></span>
+        </div>
+        <% }) %>
+      </div>
+      <% } %>
+    </div>
+  </div>
+</div>
+
+<!-- ─── INSIGHTS ─────────────────────────────────────────── -->
+<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:22px">
+  <div class="card" style="padding:16px">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px">
+      <div class="kpi-icon green"><i class="bi bi-receipt"></i></div>
+      <span style="font-size:10.5px;color:var(--green)"><i class="bi bi-arrow-up-short"></i></span>
+    </div>
+    <div style="font-size:22px;font-weight:800;letter-spacing:-.02em;font-variant-numeric:tabular-nums;margin-bottom:4px;line-height:1.2">
+      <%= fmtBRL(locals.monthTotal || 0) %>
+    </div>
+    <div style="font-size:11.5px;color:var(--text-2);font-weight:500">Valor cotado este mês</div>
+    <% if (locals.monthGrowth) { %><div style="font-size:10.5px;color:var(--green);margin-top:6px;font-weight:600">+<%= monthGrowth %>% vs. mês anterior</div><% } %>
+  </div>
+
+  <div class="card" style="padding:16px">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px">
+      <div class="kpi-icon blue"><i class="bi bi-clock"></i></div>
+    </div>
+    <div style="font-size:22px;font-weight:800;letter-spacing:-.02em;margin-bottom:4px;line-height:1.2">
+      <%= locals.avgTime || '—' %>
+    </div>
+    <div style="font-size:11.5px;color:var(--text-2);font-weight:500">Tempo médio de resposta</div>
+  </div>
+
+  <div class="card" style="padding:16px">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px">
+      <div class="kpi-icon violet"><i class="bi bi-box-seam"></i></div>
+    </div>
+    <div style="font-size:15px;font-weight:700;letter-spacing:-.01em;margin-bottom:4px;line-height:1.2">
+      <%= locals.topPart || '—' %>
+    </div>
+    <div style="font-size:11.5px;color:var(--text-2);font-weight:500">Peça mais cotada</div>
+  </div>
+
+  <div class="card" style="padding:16px">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px">
+      <div class="kpi-icon amber"><i class="bi bi-shop"></i></div>
+    </div>
+    <div style="font-size:15px;font-weight:700;letter-spacing:-.01em;margin-bottom:4px;line-height:1.2">
+      <%= locals.topSupplier || '—' %>
+    </div>
+    <div style="font-size:11.5px;color:var(--text-2);font-weight:500">Fornecedor preferido</div>
+  </div>
+</div>
+
 </div>

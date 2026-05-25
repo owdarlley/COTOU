@@ -1,53 +1,125 @@
-<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:10px">
-  <div></div>
-  <a href="/admin/usuarios/novo" class="btn-primary">
-    <i class="bi bi-person-plus"></i>Novo Usuário
+<div class="page">
+
+<%
+  function initials(name){ return (name||'?').split(' ').slice(0,2).map(w=>w[0]).join('').toUpperCase(); }
+  const roles = {
+    admin:   { label: 'Administrador', color: 'violet' },
+    vendas:  { label: 'Vendas',        color: 'blue' },
+    compras: { label: 'Compras',       color: 'green' }
+  };
+  const counts = {
+    todos: users.length,
+    admin: users.filter(u => u.role === 'admin').length,
+    vendas: users.filter(u => u.role === 'vendas').length,
+    compras: users.filter(u => u.role === 'compras').length
+  };
+  const activeFilter = locals.roleFilter || 'todos';
+%>
+
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Usuários</h1>
+    <p class="page-subtitle"><%= users.length %> usuários cadastrados · <%= users.filter(u => u.active).length %> ativos</p>
+  </div>
+  <a href="/admin/usuarios/novo" class="btn btn-primary">
+    <i class="bi bi-person-plus"></i> Adicionar Usuário
   </a>
 </div>
 
+<div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;flex-wrap:wrap">
+  <div class="pills">
+    <a href="/admin/usuarios" class="pill <%= activeFilter === 'todos' ? 'active' : '' %>">
+      Todos <span class="count"><%= counts.todos %></span>
+    </a>
+    <a href="/admin/usuarios?role=admin" class="pill <%= activeFilter === 'admin' ? 'active' : '' %>">
+      Admin <span class="count"><%= counts.admin %></span>
+    </a>
+    <a href="/admin/usuarios?role=vendas" class="pill <%= activeFilter === 'vendas' ? 'active' : '' %>">
+      Vendas <span class="count"><%= counts.vendas %></span>
+    </a>
+    <a href="/admin/usuarios?role=compras" class="pill <%= activeFilter === 'compras' ? 'active' : '' %>">
+      Compras <span class="count"><%= counts.compras %></span>
+    </a>
+  </div>
+  <form method="GET" class="input-with-icon" style="flex:1;max-width:320px;margin-left:auto">
+    <i class="bi bi-search"></i>
+    <input type="text" name="q" class="input" placeholder="Buscar usuário…" value="<%= locals.q || '' %>">
+    <% if (activeFilter !== 'todos') { %><input type="hidden" name="role" value="<%= activeFilter %>"><% } %>
+  </form>
+</div>
+
+<% if (users.length === 0) { %>
+  <div class="card"><div class="empty"><i class="bi bi-people"></i><div class="ttl">Nenhum usuário encontrado</div></div></div>
+<% } else { %>
 <div class="table-wrap">
-  <table class="data-table">
+  <table class="table">
     <thead>
-      <tr><th>Nome</th><th>E-mail</th><th>Setor</th><th>WhatsApp</th><th>Status</th><th>Ações</th></tr>
+      <tr>
+        <th>Usuário</th>
+        <th>E-mail</th>
+        <th>Setor</th>
+        <th>Status</th>
+        <th>Cotações</th>
+        <th style="width:120px;text-align:right">Ações</th>
+      </tr>
     </thead>
     <tbody>
-      <% users.forEach(u => { %>
+      <% users.forEach(u => {
+        const r = roles[u.role] || { label: u.role, color: 'gray' };
+        const tone = u.role === 'compras' ? 'green' : u.role === 'admin' ? 'violet' : '';
+      %>
       <tr>
         <td>
           <div style="display:flex;align-items:center;gap:10px">
-            <div class="av" style="width:30px;height:30px;font-size:11px;background:var(--accent);flex-shrink:0">
-              <%= u.name.split(' ').slice(0,2).map(w=>w[0]).join('').toUpperCase() %>
+            <div class="avatar md <%= tone %>"><%= initials(u.name) %></div>
+            <div>
+              <div style="font-weight:600;font-size:13px"><%= u.name %></div>
+              <div style="font-size:11.5px;color:var(--text-3)" class="num">ID #<%= u.id %></div>
             </div>
-            <strong><%= u.name %></strong>
           </div>
         </td>
-        <td style="color:var(--text-muted);font-size:13px"><%= u.email %></td>
+        <td><span class="mono" style="font-size:12px"><%= u.email %></span></td>
         <td>
-          <% const roleMap = { admin: { l: 'Admin', c: 'badge-amber' }, vendas: { l: 'Vendas', c: 'badge-blue' }, compras: { l: 'Compras', c: 'badge-green' } }; %>
-          <% const rc = roleMap[u.role] || { l: u.role, c: 'badge-gray' }; %>
-          <span class="badge <%= rc.c %>"><%= rc.l %></span>
-        </td>
-        <td style="color:var(--text-muted);font-size:13px"><%= u.phone_whatsapp || '—' %></td>
-        <td>
-          <span class="badge <%= u.active ? 'badge-green' : 'badge-gray' %>">
-            <%= u.active ? 'Ativo' : 'Inativo' %>
+          <span class="status" style="background:var(--<%= r.color %>-soft);border-color:var(--<%= r.color %>-border);color:var(--<%= r.color %>)">
+            <span class="dot" style="background:var(--<%= r.color %>)"></span><%= r.label %>
           </span>
         </td>
         <td>
-          <div style="display:flex;gap:6px">
-            <a href="/admin/usuarios/<%= u.id %>/editar" class="btn-icon blue" title="Editar">
-              <i class="bi bi-pencil"></i>
-            </a>
-            <% if (u.id !== currentUser.id) { %>
-            <form action="/admin/usuarios/<%= u.id %>/desativar" method="POST" style="display:inline"
-              onsubmit="return confirm('Desativar usuário <%= u.name %>?')">
-              <button type="submit" class="btn-icon red" title="Desativar"><i class="bi bi-person-x"></i></button>
-            </form>
-            <% } %>
-          </div>
+          <% if (u.active) { %>
+            <span style="display:inline-flex;align-items:center;gap:5px;font-size:12px;color:var(--green);font-weight:600">
+              <span style="width:7px;height:7px;border-radius:50%;background:var(--green)"></span> Ativo
+            </span>
+          <% } else { %>
+            <span style="display:inline-flex;align-items:center;gap:5px;font-size:12px;color:var(--text-3);font-weight:600">
+              <span style="width:7px;height:7px;border-radius:50%;background:var(--text-3)"></span> Inativo
+            </span>
+          <% } %>
+        </td>
+        <td>
+          <% if (u.quotation_count > 0) { %>
+            <div style="font-size:12.5px;font-weight:600" class="num"><%= u.quotation_count %></div>
+            <div style="font-size:10.5px;color:var(--text-3)">este mês</div>
+          <% } else { %>
+            <span style="color:var(--text-3)">—</span>
+          <% } %>
+        </td>
+        <td style="text-align:right">
+          <a href="/admin/usuarios/<%= u.id %>/senha" class="icon-btn" title="Redefinir senha"><i class="bi bi-key" style="font-size:13px"></i></a>
+          <a href="/admin/usuarios/<%= u.id %>/editar" class="icon-btn" title="Editar"><i class="bi bi-pencil" style="font-size:13px"></i></a>
+          <% if (u.id !== currentUser.id) { %>
+          <form action="/admin/usuarios/<%= u.id %>/<%= u.active ? 'desativar' : 'ativar' %>" method="POST" style="margin:0;display:inline">
+            <button type="submit" class="icon-btn" title="<%= u.active ? 'Desativar' : 'Ativar' %>"
+                    onclick="return confirm('<%= u.active ? 'Desativar' : 'Ativar' %> usuário?')">
+              <i class="bi bi-<%= u.active ? 'pause-circle' : 'play-circle' %>" style="font-size:13px"></i>
+            </button>
+          </form>
+          <% } %>
         </td>
       </tr>
       <% }) %>
     </tbody>
   </table>
+</div>
+<% } %>
+
 </div>

@@ -1,452 +1,388 @@
-<div style="background:#ef4444;color:#fff;text-align:center;padding:12px;font-weight:800;font-size:14px;border-radius:8px;margin-bottom:16px">
-  ✅ VERSÃO NOVA v5 — Se você vê isso, o cache foi limpo!
-</div>
-
 <%
+  function initials(name){ return (name||'?').split(' ').slice(0,2).map(w=>w[0]).join('').toUpperCase(); }
+  function fmtBRL(v){ if(v==null) return '—'; return 'R$ ' + parseFloat(v).toFixed(2).replace('.',',').replace(/(\d)(?=(\d{3})+,)/g,'$1.'); }
+  function fmtDate(d){ return d ? new Date(d).toLocaleDateString('pt-BR') : '—'; }
+  function fmtDT(d){
+    if(!d) return '—';
+    const dt = new Date(d);
+    return dt.toLocaleDateString('pt-BR') + ' às ' + dt.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+  }
+
   const canEdit = (currentUser.role === 'compras' || currentUser.role === 'admin') &&
                   (quotation.status === 'em_cotacao' || quotation.status === 'cotado') &&
                   quotation.status !== 'cancelado';
-  const canAct  = (currentUser.role === 'compras' || currentUser.role === 'admin') &&
-                  quotation.status !== 'cancelado';
+  const canAct = (currentUser.role === 'compras' || currentUser.role === 'admin') && quotation.status !== 'cancelado';
   const isVendas = currentUser.role === 'vendas' || currentUser.role === 'admin';
-  const showClientActions = isVendas &&
-    (quotation.status === 'cotado' || quotation.status === 'peca_chegou');
-  const defaultTab = canEdit ? 'valores' : 'pecas';
+  const showClientActions = isVendas && (quotation.status === 'cotado' || quotation.status === 'peca_chegou');
+  const defaultTab = canEdit && quotation.status === 'em_cotacao' ? 'valores' : 'pecas';
 
-  const fmtBRL = v => {
-    if (v == null) return '—';
-    return 'R$ ' + parseFloat(v).toFixed(2)
-      .replace('.', ',').replace(/(\d)(?=(\d{3})+,)/g, '$1.');
-  };
-  const fmtDate = d => d ? new Date(d).toLocaleDateString('pt-BR') : '—';
-  const fmtDT = d => {
-    if (!d) return '—';
-    const dt = new Date(d);
-    return dt.toLocaleDateString('pt-BR') + ' às ' +
-      dt.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-  };
-  const mkInitials = n => (n || '?').split(' ').slice(0,2).map(w => w[0]).join('').toUpperCase();
-
+  // Build timeline
   const timeline = [];
-  timeline.push({ type:'create', label:'Cotação criada', date: quotation.created_at, by: quotation.creator_name });
-  if (quotation.whatsapp_sent_at)
-    timeline.push({ type:'whatsapp', label:'WhatsApp enviado ao cliente', date: quotation.whatsapp_sent_at });
-  if (quotation.customer_approved_at)
-    timeline.push({
-      type: quotation.customer_approved == 1 ? 'approved' : 'rejected',
-      label: quotation.customer_approved == 1 ? 'Cliente aprovou a cotação' : 'Cliente recusou a cotação',
-      date: quotation.customer_approved_at
-    });
+  timeline.push({ type: 'create', tone: 'gray', label: 'Cotação criada', date: quotation.created_at, by: quotation.creator_name, icon: 'plus-circle' });
+  if (quotation.status === 'em_cotacao' || quotation.status === 'cotado' || quotation.status === 'peca_chegou') {
+    timeline.push({ type: 'assume', tone: 'blue', label: 'Comprador assumiu', date: quotation.assumed_at || quotation.updated_at, by: quotation.buyer_name, icon: 'search' });
+  }
+  if (quotation.status === 'cotado' || quotation.status === 'peca_chegou') {
+    timeline.push({ type: 'cotado', tone: 'green', label: 'Valores preenchidos', date: quotation.responded_at || quotation.updated_at, by: quotation.buyer_name, icon: 'check-circle' });
+  }
+  if (quotation.whatsapp_sent_at) timeline.push({ type: 'wa', tone: 'green', label: 'WhatsApp enviado ao cliente', date: quotation.whatsapp_sent_at, by: quotation.creator_name, icon: 'whatsapp' });
+  if (quotation.customer_approved === 1) timeline.push({ type: 'aprov', tone: 'green', label: 'Cliente aprovou', date: quotation.customer_approved_at, by: quotation.customer_name, icon: 'check2-circle' });
+  if (quotation.customer_approved === 0) timeline.push({ type: 'rejec', tone: 'red', label: 'Cliente recusou', date: quotation.customer_approved_at, by: quotation.customer_name, icon: 'x-circle' });
+  if (quotation.status === 'peca_chegou') timeline.push({ type: 'chegou', tone: 'violet', label: 'Peça chegou ao estoque', date: quotation.peca_chegou_at || quotation.updated_at, by: quotation.buyer_name, icon: 'box-seam' });
   timeline.sort((a,b) => new Date(a.date) - new Date(b.date));
 %>
 
-<style>
-/* ─── Reset de escopo ─────────────────────────── */
-.v5 * { box-sizing: border-box; }
+<div class="page">
 
-/* ─── Header ──────────────────────────────────── */
-.v5-header {
-  background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%);
-  border-radius: 14px;
-  padding: 20px 24px;
-  margin-bottom: 24px;
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 20px;
-  flex-wrap: wrap;
-  box-shadow: 0 4px 20px rgba(30,58,138,.25);
-}
-.v5-header-left { display:flex; align-items:flex-start; gap:14px; flex:1; min-width:0; }
-.v5-back {
-  display:inline-flex; align-items:center; gap:6px;
-  padding:7px 12px; border:1.5px solid rgba(255,255,255,.25); color:rgba(255,255,255,.85);
-  border-radius:8px; font-size:12px; font-weight:600; text-decoration:none;
-  background:rgba(255,255,255,.08); transition:background .15s; flex-shrink:0; margin-top:2px;
-  font-family:inherit;
-}
-.v5-back:hover { background:rgba(255,255,255,.15); color:#fff; }
-.v5-title { font-size:20px; font-weight:800; color:#fff; letter-spacing:-.01em; }
-.v5-badges { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin:5px 0 7px; }
-.v5-badge-status { border-radius:99px; padding:3px 11px; font-size:11px; font-weight:700; }
-.v5-customer {
-  display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:8px;
-}
-.v5-customer-name { font-size:16px; font-weight:700; color:#e2e8f0; }
-.v5-wa {
-  display:inline-flex; align-items:center; gap:5px; color:#4ade80;
-  font-size:12px; font-weight:600; text-decoration:none; white-space:nowrap;
-  padding:3px 9px; background:rgba(74,222,128,.12); border:1px solid rgba(74,222,128,.3);
-  border-radius:6px; transition:background .15s;
-}
-.v5-wa:hover { background:rgba(74,222,128,.2); }
-.v5-meta { display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
-.v5-meta-item { display:flex; align-items:center; gap:4px; font-size:11.5px; color:rgba(255,255,255,.55); white-space:nowrap; }
-.v5-meta-item .material-symbols-outlined { font-size:13px; color:rgba(255,255,255,.4); }
-.v5-meta-sep { color:rgba(255,255,255,.2); font-size:12px; }
-.v5-header-actions { display:flex; align-items:center; gap:8px; flex-wrap:wrap; flex-shrink:0; padding-top:2px; }
+<!-- ─── HEADER ──────────────────────────────────────────── -->
+<div class="detail-header">
+  <a href="/cotacoes" style="display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--text-2);font-weight:600;margin-bottom:14px">
+    <i class="bi bi-arrow-left"></i> Voltar para cotações
+  </a>
 
-/* ─── Tabs underline ──────────────────────────── */
-.v5-tabs {
-  display:flex; gap:0; margin-bottom:20px;
-  border-bottom:2px solid #e2e8f0; overflow-x:auto;
-}
-.v5-tab {
-  display:flex; align-items:center; gap:7px;
-  padding:10px 20px; border:none; background:transparent;
-  font-size:13px; font-weight:600; color:#64748b; cursor:pointer;
-  font-family:inherit; border-bottom:2px solid transparent;
-  margin-bottom:-2px; transition:color .15s, border-color .15s;
-  white-space:nowrap;
-}
-.v5-tab:hover { color:#334155; }
-.v5-tab.active { color:#1d4ed8; border-bottom-color:#1d4ed8; }
-.v5-tab-dot { width:7px; height:7px; border-radius:50%; background:#f59e0b; flex-shrink:0; }
-.v5-tab-count { font-size:11px; font-weight:400; color:#94a3b8; }
+  <!-- Top: título + ações -->
+  <div class="detail-top">
+    <div class="detail-title-row">
+      <span class="detail-num">Cotação <span class="mono">#<%= quotation.quote_number %></span></span>
+      <%- include('../partials/status-badge', { status: quotation.status }) %>
+      <% if (quotation.whatsapp_sent_at) { %>
+        <span class="status cotado"><i class="bi bi-whatsapp"></i> Enviado WA</span>
+      <% } %>
+    </div>
 
-/* ─── Tabelas ─────────────────────────────────── */
-.v5-table-wrap { background:#fff; border:1px solid #e2e8f0; border-radius:12px; overflow:hidden; margin-bottom:16px; }
-.v5-table { width:100%; border-collapse:collapse; font-size:13px; }
-.v5-table thead tr { background:#f1f5f9; }
-.v5-table th {
-  padding:10px 14px; font-size:10px; font-weight:700;
-  color:#475569; text-transform:uppercase; letter-spacing:.06em;
-  white-space:nowrap; border-bottom:1px solid #e2e8f0;
-}
-.v5-table td { padding:12px 14px; border-bottom:1px solid #f8fafc; vertical-align:middle; }
-.v5-table tbody tr:last-child td { border-bottom:none; }
-.v5-table tbody tr:hover td { background:#fafbff; }
-.v5-table tfoot td { padding:12px 14px; border-top:2px solid #e2e8f0; background:#f8fafc; }
-.num { font-variant-numeric:tabular-nums; font-feature-settings:"tnum"; }
+    <div class="detail-actions">
+      <% if (canAct && quotation.status === 'pendente') { %>
+        <form action="/cotacoes/<%= quotation.id %>/status" method="POST" style="margin:0">
+          <input type="hidden" name="status" value="em_cotacao">
+          <button type="submit" class="btn btn-primary">
+            <i class="bi bi-search"></i> Assumir Cotação
+          </button>
+        </form>
+      <% } else if (canAct && quotation.status === 'cotado') { %>
+        <form action="/cotacoes/<%= quotation.id %>/peca-chegou" method="POST" style="margin:0"
+              onsubmit="return confirm('Confirma chegada de todas as peças?')">
+          <button type="submit" class="btn btn-primary">
+            <i class="bi bi-box-arrow-in-down"></i> Confirmar Chegada
+          </button>
+        </form>
+      <% } else if (showClientActions && !quotation.whatsapp_sent_at) { %>
+        <button class="btn btn-success" id="btn-whatsapp">
+          <i class="bi bi-whatsapp"></i> Enviar pelo WhatsApp
+        </button>
+      <% } %>
 
-/* ─── Seção de card ───────────────────────────── */
-.v5-card {
-  background:#fff; border:1px solid #e2e8f0; border-radius:12px; margin-bottom:16px;
-  box-shadow:0 1px 4px rgba(0,0,0,.04);
-}
-.v5-card-hd {
-  padding:14px 20px; border-bottom:1px solid #f1f5f9;
-  display:flex; align-items:center; gap:8px;
-}
-.v5-card-hd-icon { color:#2563eb; font-size:16px; flex-shrink:0; }
-.v5-card-title { font-size:12.5px; font-weight:700; color:#334155; text-transform:uppercase; letter-spacing:.05em; }
-.v5-card-body { padding:20px; }
-.v5-card-body.tight { padding:0; }
-
-/* ─── Chat ────────────────────────────────────── */
-.v5-chat { display:flex; flex-direction:column; gap:14px; }
-.v5-chat-empty { text-align:center; padding:32px 20px; color:#94a3b8; font-size:13px; }
-.v5-msg { display:flex; gap:10px; align-items:flex-start; max-width:72%; }
-.v5-msg.right { flex-direction:row-reverse; margin-left:auto; }
-.v5-av {
-  width:34px; height:34px; border-radius:50%; display:flex; align-items:center;
-  justify-content:center; font-size:11px; font-weight:700; color:#fff; flex-shrink:0;
-}
-.v5-av.blue  { background:#1d4ed8; }
-.v5-av.green { background:#16a34a; }
-.v5-msg-inner { display:flex; flex-direction:column; gap:3px; }
-.v5-msg-who { font-size:10.5px; font-weight:600; color:#64748b; }
-.v5-msg.right .v5-msg-who { text-align:right; }
-.v5-bubble { padding:10px 14px; border-radius:12px; font-size:13px; color:#334155; line-height:1.55; }
-.v5-msg.left  .v5-bubble { background:#eff6ff; border:1px solid #bfdbfe; border-top-left-radius:3px; }
-.v5-msg.right .v5-bubble { background:#f0fdf4; border:1px solid #bbf7d0; border-top-right-radius:3px; }
-
-/* ─── Timeline ────────────────────────────────── */
-.v5-tl { position:relative; padding-left:30px; display:flex; flex-direction:column; }
-.v5-tl::before { content:''; position:absolute; left:8px; top:8px; bottom:8px; width:2px; background:#e2e8f0; }
-.v5-tl-item { position:relative; padding-bottom:22px; }
-.v5-tl-item:last-child { padding-bottom:0; }
-.v5-tl-dot {
-  position:absolute; left:-22px; top:3px;
-  width:16px; height:16px; border-radius:50%; border:2.5px solid #fff;
-}
-.v5-tl-dot.create   { background:#94a3b8; box-shadow:0 0 0 2px #94a3b8; }
-.v5-tl-dot.whatsapp { background:#16a34a; box-shadow:0 0 0 2px #16a34a; }
-.v5-tl-dot.approved { background:#16a34a; box-shadow:0 0 0 2px #16a34a; }
-.v5-tl-dot.rejected { background:#dc2626; box-shadow:0 0 0 2px #dc2626; }
-.v5-tl-label { font-size:13px; font-weight:600; color:#0f172a; display:flex; align-items:center; gap:6px; }
-.v5-tl-date  { font-size:11px; color:#94a3b8; margin-top:3px; }
-.v5-tl-by    { font-size:11px; color:#64748b; }
-
-/* ─── Veículo labels ──────────────────────────── */
-.v5-veh { display:flex; flex-direction:column; gap:8px; }
-.v5-veh-row { display:flex; align-items:baseline; gap:10px; }
-.v5-veh-lbl { font-size:10px; font-weight:700; color:#94a3b8; text-transform:uppercase; letter-spacing:.06em; min-width:52px; flex-shrink:0; }
-.v5-veh-val { font-size:13px; font-weight:600; color:#0f172a; }
-
-/* ─── Resumo financeiro ───────────────────────── */
-.v5-resumo { display:flex; flex-direction:column; gap:10px; }
-.v5-resumo-row { display:flex; justify-content:space-between; align-items:center; font-size:13px; color:#64748b; }
-.v5-resumo-row .val { font-weight:600; color:#334155; }
-.v5-resumo-total {
-  display:flex; justify-content:space-between; align-items:center;
-  padding:13px 16px; margin-top:4px;
-  background:linear-gradient(135deg,#eff6ff,#dbeafe);
-  border:1px solid #bfdbfe; border-radius:10px;
-}
-.v5-resumo-total .lbl { font-size:13px; font-weight:700; color:#1e3a8a; }
-.v5-resumo-total .val { font-size:22px; font-weight:900; color:#1e3a8a; }
-
-/* ─── Form de preços ──────────────────────────── */
-.v5-price-block {
-  border:1px solid #e2e8f0; border-radius:10px; padding:16px;
-  margin-bottom:10px; background:#fafbff;
-}
-.v5-price-num {
-  width:24px; height:24px; border-radius:6px; background:#e0e7ff; color:#3730a3;
-  font-size:11px; font-weight:700; display:inline-flex; align-items:center; justify-content:center; flex-shrink:0;
-}
-.v5-price-name { font-size:13px; font-weight:700; color:#0f172a; }
-.v5-price-g4 { display:grid; grid-template-columns:1fr 1fr 1fr 1fr; gap:8px; margin-bottom:8px; }
-.v5-price-g3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; }
-
-/* ─── Botões de ação ──────────────────────────── */
-.v5-btn-primary {
-  display:inline-flex; align-items:center; gap:8px; padding:9px 20px;
-  background:#1d4ed8; color:#fff; border:none; border-radius:8px;
-  font-size:13px; font-weight:700; cursor:pointer; font-family:inherit;
-  transition:background .15s; white-space:nowrap;
-}
-.v5-btn-primary:hover { background:#1e40af; }
-.v5-btn-primary.green { background:#16a34a; }
-.v5-btn-primary.green:hover { background:#15803d; }
-.v5-btn-primary.full { width:100%; justify-content:center; }
-.v5-btn-outline {
-  display:inline-flex; align-items:center; gap:8px; padding:9px 20px;
-  border:1.5px solid #cbd5e1; color:#475569; border-radius:8px;
-  font-size:13px; font-weight:700; background:transparent; cursor:pointer;
-  font-family:inherit; text-decoration:none; transition:background .15s; white-space:nowrap;
-}
-.v5-btn-outline:hover { background:#f8fafc; }
-.v5-btn-outline.full { width:100%; justify-content:center; }
-
-/* ─── Zona de perigo ──────────────────────────── */
-.v5-danger {
-  border:1px solid #fecaca; border-radius:12px; overflow:hidden; margin-top:24px;
-}
-.v5-danger-hd {
-  padding:13px 20px; background:#fff5f5; display:flex; align-items:center;
-  justify-content:space-between; cursor:pointer; user-select:none;
-}
-.v5-danger-hd:hover { background:#fef2f2; }
-.v5-danger-hd-label { font-size:12px; font-weight:700; color:#dc2626; display:flex; align-items:center; gap:7px; }
-.v5-danger-chevron { color:#dc2626; font-size:13px; transition:transform .2s; }
-.v5-danger-body { padding:16px 20px; border-top:1px solid #fecaca; display:none; }
-.v5-btn-danger {
-  display:inline-flex; align-items:center; gap:7px; padding:9px 18px;
-  border:1.5px solid #fecaca; color:#dc2626; border-radius:8px;
-  font-size:13px; font-weight:700; background:transparent; cursor:pointer;
-  font-family:inherit; transition:background .15s;
-}
-.v5-btn-danger:hover { background:#fef2f2; }
-
-/* ─── Grid info ───────────────────────────────── */
-.v5-info-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; align-items:stretch; margin-bottom:16px; }
-</style>
-
-<div class="v5">
-
-<!-- ══════════════════════════════ HEADER ══ -->
-<div class="v5-header">
-  <div class="v5-header-left">
-    <a href="/cotacoes" class="v5-back"><i class="bi bi-arrow-left"></i> Voltar</a>
-    <div style="min-width:0">
-      <div class="v5-badges">
-        <span class="v5-title">Cotação #<%= quotation.quote_number %></span>
-        <%- include('../partials/status-badge', { status: quotation.status }) %>
-        <% if (quotation.whatsapp_sent_at) { %>
-          <span style="background:rgba(74,222,128,.15);color:#4ade80;border:1px solid rgba(74,222,128,.3);border-radius:99px;padding:2px 9px;font-size:11px;font-weight:700;white-space:nowrap">
-            <i class="bi bi-whatsapp"></i> Enviado
-          </span>
-        <% } %>
+      <% if (grandTotal > 0) { %>
+      <div class="detail-total">
+        <div class="detail-total-lbl">Total</div>
+        <div class="detail-total-val"><%= fmtBRL(grandTotal) %></div>
       </div>
-      <div class="v5-customer">
-        <span class="v5-customer-name"><%= quotation.customer_name %></span>
-        <a href="https://wa.me/<%= quotation.customer_phone.replace(/\D/g,'') %>" target="_blank" class="v5-wa">
-          <i class="bi bi-whatsapp"></i> <%= quotation.customer_phone %>
-        </a>
+      <% } %>
+    </div>
+  </div>
+
+  <!-- Bloco do cliente -->
+  <div class="detail-customer-block">
+    <div class="avatar lg"><%= initials(quotation.customer_name) %></div>
+    <div style="flex:1;min-width:0">
+      <div class="detail-customer-name"><%= quotation.customer_name %></div>
+      <div style="font-size:12.5px;color:var(--text-3);margin-top:2px">
+        Cliente · <%= quotation.make || '' %> <%= quotation.model || '' %>
       </div>
-      <div class="v5-meta">
-        <span class="v5-meta-item">
-          <span class="material-symbols-outlined">calendar_month</span>
-          <%= fmtDate(quotation.created_at) %>
-        </span>
-        <span class="v5-meta-sep">·</span>
-        <span class="v5-meta-item">
-          <span class="material-symbols-outlined">person</span>
-          <span>Vendedor: <strong style="color:rgba(255,255,255,.7)"><%= quotation.creator_name %></strong></span>
-        </span>
-        <% if (quotation.buyer_name) { %>
-        <span class="v5-meta-sep">·</span>
-        <span class="v5-meta-item">
-          <span class="material-symbols-outlined">shopping_cart</span>
-          <span>Compras: <strong style="color:rgba(255,255,255,.7)"><%= quotation.buyer_name %></strong></span>
-        </span>
+    </div>
+    <a href="https://wa.me/<%= quotation.customer_phone.replace(/\D/g,'') %>" target="_blank" rel="noopener" class="detail-whatsapp">
+      <i class="bi bi-whatsapp"></i>
+      <div style="display:flex;flex-direction:column;align-items:flex-start">
+        <span style="font-size:10px;opacity:.8;font-weight:500">WHATSAPP</span>
+        <span style="font-weight:700"><%= quotation.customer_phone %></span>
+      </div>
+    </a>
+  </div>
+
+  <!-- Meta grid -->
+  <div class="detail-meta-grid">
+    <div class="meta-col">
+      <div class="meta-col-icon"><i class="bi bi-calendar3"></i></div>
+      <div style="min-width:0;flex:1">
+        <div class="meta-col-lbl">Criado</div>
+        <div class="meta-col-val"><%= fmtDate(quotation.created_at) %></div>
+        <div class="meta-col-sub"><%= locals.createdRelative || '' %></div>
+      </div>
+    </div>
+    <div class="meta-col">
+      <div class="meta-col-icon blue"><i class="bi bi-person"></i></div>
+      <div style="min-width:0;flex:1">
+        <div class="meta-col-lbl">Vendedor</div>
+        <div class="meta-col-val"><%= quotation.creator_name %></div>
+        <div class="meta-col-sub">Setor Vendas</div>
+      </div>
+    </div>
+    <div class="meta-col">
+      <div class="meta-col-icon <%= quotation.buyer_name ? 'green' : 'gray' %>"><i class="bi bi-shop"></i></div>
+      <div style="min-width:0;flex:1">
+        <div class="meta-col-lbl">Compras</div>
+        <div class="meta-col-val"><%= quotation.buyer_name || '—' %></div>
+        <div class="meta-col-sub"><%= quotation.buyer_name ? 'Setor Compras' : 'Aguardando assumir' %></div>
+      </div>
+    </div>
+    <div class="meta-col">
+      <div class="meta-col-icon violet"><i class="bi bi-box-seam"></i></div>
+      <div style="min-width:0;flex:1">
+        <div class="meta-col-lbl">Peças</div>
+        <div class="meta-col-val"><%= items.length %> <%= items.length === 1 ? 'item' : 'itens' %></div>
+        <% if (quotation.license_plate) { %>
+        <div class="meta-col-sub">Placa <%= quotation.license_plate %></div>
         <% } %>
       </div>
     </div>
   </div>
-
-  <div class="v5-header-actions">
-    <% if (canAct && quotation.status === 'pendente') { %>
-      <form action="/cotacoes/<%= quotation.id %>/status" method="POST">
-        <input type="hidden" name="status" value="em_cotacao">
-        <button type="submit" class="v5-btn-primary">
-          <i class="bi bi-search"></i> Iniciar Cotação
-        </button>
-      </form>
-    <% } else if (canAct && quotation.status === 'cotado') { %>
-      <form action="/cotacoes/<%= quotation.id %>/peca-chegou" method="POST"
-            onsubmit="return confirm('Confirma chegada de todas as peças?')">
-        <button type="submit" class="v5-btn-primary">
-          <i class="bi bi-box-arrow-in-down"></i> Confirmar Chegada
-        </button>
-      </form>
-    <% } else if (showClientActions && !quotation.whatsapp_sent_at) { %>
-      <button class="v5-btn-primary green" id="btn-whatsapp">
-        <i class="bi bi-whatsapp"></i> Enviar pelo WhatsApp
-      </button>
-    <% } else if (showClientActions && quotation.whatsapp_sent_at) { %>
-      <span style="font-size:12px;color:#4ade80;font-weight:600;white-space:nowrap">
-        <i class="bi bi-check-circle-fill"></i> WA enviado em <%= fmtDate(quotation.whatsapp_sent_at) %>
-      </span>
-    <% } %>
-  </div>
 </div>
 
-<!-- ══════════════════════════════ TABS ══ -->
-<div class="v5-tabs">
-  <button class="v5-tab <%= defaultTab==='pecas'?'active':'' %>" onclick="vTab('pecas',this)">
-    <i class="bi bi-box-seam"></i> Peças
-    <span class="v5-tab-count">(<%= items.length %>)</span>
+<!-- ─── TABS ────────────────────────────────────────────── -->
+<div class="tabs">
+  <button class="tab <%= defaultTab === 'pecas' ? 'active' : '' %>" onclick="vTab('pecas', this)">
+    <i class="bi bi-box-seam"></i> Peças <span class="count">(<%= items.length %>)</span>
   </button>
   <% if (canEdit) { %>
-  <button class="v5-tab <%= defaultTab==='valores'?'active':'' %>" onclick="vTab('valores',this)">
+  <button class="tab <%= defaultTab === 'valores' ? 'active' : '' %>" onclick="vTab('valores', this)">
     <i class="bi bi-pencil-square"></i> Preencher Valores
-    <span class="v5-tab-dot"></span>
+    <% if (quotation.status === 'em_cotacao') { %><span class="alert-dot"></span><% } %>
   </button>
   <% } %>
-  <button class="v5-tab" onclick="vTab('cliente',this)">
-    <i class="bi bi-person-vcard"></i> Cliente / Veículo
+  <button class="tab" onclick="vTab('cliente', this)">
+    <i class="bi bi-person-vcard"></i> Cliente & Veículo
   </button>
-  <button class="v5-tab" onclick="vTab('historico',this)">
+  <button class="tab" onclick="vTab('chat', this)">
+    <i class="bi bi-chat-square-text"></i> Observações
+  </button>
+  <button class="tab" onclick="vTab('historico', this)">
     <i class="bi bi-clock-history"></i> Histórico
   </button>
 </div>
 
-<!-- ══════════════════════════ ABA PEÇAS ══ -->
-<div id="vtab-pecas" class="v5-panel <%= defaultTab==='pecas'?'active':'' %>">
+<!-- ─── LAYOUT GRID ─────────────────────────────────────── -->
+<div style="display:grid;grid-template-columns:1fr 320px;gap:16px" id="detail-grid">
 
-  <div class="v5-card">
-    <div class="v5-card-hd">
-      <i class="bi bi-box-seam v5-card-hd-icon"></i>
-      <span class="v5-card-title">Peças Solicitadas</span>
-      <span style="font-size:11px;color:#94a3b8;margin-left:4px">(<%= items.length %> <%= items.length===1?'item':'itens' %>)</span>
+<div>
+<!-- ABA PEÇAS -->
+<div id="vtab-pecas" class="vpanel <%= defaultTab === 'pecas' ? 'active' : '' %>">
+  <div class="card">
+    <div class="card-head">
+      <div class="card-title"><i class="bi bi-box-seam"></i> Peças solicitadas</div>
+      <span class="card-meta"><%= items.length %> <%= items.length === 1 ? 'item' : 'itens' %></span>
     </div>
-    <div class="v5-card-body tight">
-      <div style="overflow-x:auto">
-        <table class="v5-table">
-          <thead>
-            <tr>
-              <th style="text-align:left">Peça</th>
-              <th style="text-align:right">Qtd</th>
-              <th style="text-align:right">Vlr Unit.</th>
-              <th style="text-align:right">Total</th>
-              <th style="text-align:left">Prazo</th>
-              <th style="text-align:left">Status</th>
-              <% if (currentUser.role==='compras'||currentUser.role==='admin') { %>
-              <th style="text-align:center">Chegou</th>
-              <% } %>
-            </tr>
-          </thead>
-          <tbody>
-            <% items.forEach(item => {
-              const iCfg = {
-                aguardando:  { l:'Aguardando', c:'badge-amber'  },
-                em_cotacao:  { l:'Em Cotação', c:'badge-blue'   },
-                cotado:      { l:'Cotado',     c:'badge-green'  },
-                peca_chegou: { l:'Chegou',     c:'badge-purple' }
-              }[item.item_status] || { l:item.item_status, c:'badge-gray' };
-            %>
-            <tr>
-              <td style="max-width:220px">
-                <div style="font-weight:700;color:#0f172a"><%= item.part_name %></div>
-                <% if (item.part_code) { %><div style="font-size:11px;color:#94a3b8;margin-top:1px"><%= item.part_code %></div><% } %>
-                <% if (item.supplier_name) { %><div style="font-size:11px;color:#64748b">Forn: <%= item.supplier_name %></div><% } %>
-                <% if (item.notes) { %><div style="font-size:11px;color:#94a3b8;font-style:italic"><%= item.notes %></div><% } %>
-              </td>
-              <td style="text-align:right;font-weight:600;color:#475569" class="num"><%= item.quantity %></td>
-              <td style="text-align:right;color:#475569" class="num"><%= fmtBRL(item.unit_price) %></td>
-              <td style="text-align:right;font-weight:700;color:#0f172a" class="num"><%= fmtBRL(item.total_price) %></td>
-              <td style="font-size:12px;color:#64748b;white-space:nowrap">
-                <% if (item.delivery_deadline) { %>
-                  <%= fmtDate(item.delivery_deadline) %>
-                  <% if (item.delivery_days) { %><br><span style="color:#94a3b8"><%= item.delivery_days %>d</span><% } %>
-                <% } else if (item.delivery_days) { %><%= item.delivery_days %> dias
-                <% } else { %>—<% } %>
-              </td>
-              <td><span class="badge <%= iCfg.c %>" style="white-space:nowrap"><%= iCfg.l %></span></td>
-              <% if (currentUser.role==='compras'||currentUser.role==='admin') { %>
-              <td style="text-align:center">
-                <% if (item.item_status!=='peca_chegou'&&quotation.status!=='cancelado') { %>
-                <form action="/cotacoes/<%= quotation.id %>/peca-chegou" method="POST" style="display:inline">
-                  <input type="hidden" name="item_id" value="<%= item.id %>">
-                  <button type="submit" class="btn-icon blue" title="Marcar chegada"
-                          onclick="return confirm('Confirma chegada desta peça?')">
-                    <i class="bi bi-box-arrow-in-down"></i>
-                  </button>
-                </form>
-                <% } else { %>
-                <i class="bi bi-check-circle-fill" style="color:var(--green);font-size:16px"></i>
-                <% } %>
-              </td>
-              <% } %>
-            </tr>
-            <% }) %>
-          </tbody>
-          <tfoot>
-            <tr>
-              <td colspan="3" style="text-align:right;font-size:12px;font-weight:600;color:#64748b">Total Geral</td>
-              <td style="text-align:right" class="num">
-                <span style="font-size:17px;font-weight:900;color:#1e3a8a"><%= fmtBRL(grandTotal) %></span>
-              </td>
-              <td colspan="<%= (currentUser.role==='compras'||currentUser.role==='admin')?3:2 %>"></td>
-            </tr>
-          </tfoot>
-        </table>
+    <div class="card-body tight">
+      <table class="items-table">
+        <thead>
+          <tr>
+            <th>Peça</th>
+            <th style="text-align:right;width:60px">Qtd</th>
+            <th style="text-align:right;width:100px">Vlr Unit.</th>
+            <th style="text-align:right;width:110px">Total</th>
+            <th style="width:120px">Prazo</th>
+            <th style="width:110px">Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% items.forEach(item => {
+            const iCfg = {
+              aguardando:  { l: 'Aguardando', c: 'pendente'    },
+              em_cotacao:  { l: 'Em cotação', c: 'em_cotacao'  },
+              cotado:      { l: 'Cotado',     c: 'cotado'      },
+              peca_chegou: { l: 'Chegou',     c: 'peca_chegou' }
+            }[item.item_status] || { l: item.item_status, c: 'pendente' };
+          %>
+          <tr>
+            <td>
+              <div style="font-weight:600;font-size:13px"><%= item.part_name %></div>
+              <div style="display:flex;gap:10px;font-size:11.5px;color:var(--text-3);margin-top:2px">
+                <% if (item.part_code) { %><span class="mono"><%= item.part_code %></span><% } %>
+                <% if (item.supplier_name) { %><span>Forn: <%= item.supplier_name %></span><% } %>
+              </div>
+            </td>
+            <td style="text-align:right" class="num"><%= item.quantity %></td>
+            <td style="text-align:right" class="num"><%= fmtBRL(item.unit_price) %></td>
+            <td style="text-align:right" class="num" style="font-weight:700">
+              <% if (item.total_price) { %><%= fmtBRL(item.total_price) %><% } else { %><span style="color:var(--text-3);font-weight:400">—</span><% } %>
+            </td>
+            <td style="font-size:12px;color:var(--text-2)">
+              <% if (item.delivery_deadline) { %>
+                <%= fmtDate(item.delivery_deadline) %>
+                <% if (item.delivery_days) { %><div style="font-size:10.5px;color:var(--text-3)" class="num"><%= item.delivery_days %>d</div><% } %>
+              <% } else if (item.delivery_days) { %>
+                <span class="num"><%= item.delivery_days %> dias</span>
+              <% } else { %>—<% } %>
+            </td>
+            <td><span class="status <%= iCfg.c %>"><span class="dot"></span><%= iCfg.l %></span></td>
+          </tr>
+          <% }) %>
+        </tbody>
+        <tfoot>
+          <tr>
+            <td colspan="3" style="text-align:right;padding:12px 14px;border-top:2px solid var(--border);font-size:12px;color:var(--text-2);font-weight:600;background:var(--surface-2)">
+              Total geral
+            </td>
+            <td style="text-align:right;padding:12px 14px;border-top:2px solid var(--border);background:var(--surface-2)" class="num">
+              <span style="font-size:16px;font-weight:800;color:var(--accent);font-variant-numeric:tabular-nums"><%= fmtBRL(grandTotal) %></span>
+            </td>
+            <td colspan="2" style="border-top:2px solid var(--border);background:var(--surface-2)"></td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ABA VALORES -->
+<% if (canEdit) { %>
+<div id="vtab-valores" class="vpanel <%= defaultTab === 'valores' ? 'active' : '' %>">
+  <form action="/cotacoes/<%= quotation.id %>/responder" method="POST">
+    <div class="card" style="margin-bottom:14px">
+      <div class="card-head">
+        <div class="card-title"><i class="bi bi-pencil-square"></i> Preencher Valores</div>
+        <span class="card-meta" style="color:var(--accent);font-weight:600">Modo edição</span>
+      </div>
+      <div class="card-body" style="display:flex;flex-direction:column;gap:14px">
+        <% items.forEach((item, idx) => { %>
+        <div style="background:var(--surface-2);border:1px solid var(--border);border-radius:10px;padding:14px">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+            <span class="row-num"><%= idx + 1 %></span>
+            <div style="flex:1">
+              <div style="font-weight:700;font-size:13px"><%= item.part_name %></div>
+              <% if (item.part_code) { %><div class="mono" style="font-size:11px;color:var(--text-3)"><%= item.part_code %></div><% } %>
+            </div>
+            <span style="font-size:12px;color:var(--text-2)">Qtd: <strong><%= item.quantity %></strong></span>
+          </div>
+          <input type="hidden" name="item_ids[]" value="<%= item.id %>">
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;margin-bottom:8px">
+            <div class="field">
+              <label class="label" style="font-size:10.5px">Vlr Unit. (R$)</label>
+              <input type="number" name="unit_prices[]" class="input num" step="0.01" min="0" value="<%= item.unit_price || '' %>" data-qty="<%= item.quantity %>" data-idx="<%= idx %>" placeholder="0,00">
+            </div>
+            <div class="field">
+              <label class="label" style="font-size:10.5px">Total (R$)</label>
+              <input type="number" name="total_prices[]" class="input num" step="0.01" value="<%= item.total_price || '' %>" data-idx="<%= idx %>" placeholder="0,00">
+            </div>
+            <div class="field">
+              <label class="label" style="font-size:10.5px">M.O. (R$)</label>
+              <input type="number" name="labor_costs_compras[]" class="input num" step="0.01" value="<%= item.labor_cost_compras || 0 %>" placeholder="0,00">
+            </div>
+            <div class="field">
+              <label class="label" style="font-size:10.5px">Prazo (dias)</label>
+              <input type="number" name="delivery_days[]" class="input num" value="<%= item.delivery_days || '' %>" placeholder="0">
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 2fr;gap:8px">
+            <div class="field">
+              <label class="label" style="font-size:10.5px">Data Entrega</label>
+              <input type="date" name="delivery_deadlines[]" class="input" value="<%= item.delivery_deadline ? item.delivery_deadline.substring(0,10) : '' %>">
+            </div>
+            <div class="field">
+              <label class="label" style="font-size:10.5px">Fornecedor</label>
+              <input type="text" name="supplier_names[]" class="input" value="<%= item.supplier_name || '' %>" placeholder="Nome do fornecedor">
+            </div>
+            <div class="field">
+              <label class="label" style="font-size:10.5px">Obs. da Peça</label>
+              <input type="text" name="item_notes[]" class="input" value="<%= item.notes || '' %>" placeholder="Nota interna">
+            </div>
+          </div>
+        </div>
+        <% }) %>
+
+        <div class="field">
+          <label class="label">Observações internas de compras</label>
+          <textarea name="notes_compras" class="textarea" rows="2" placeholder="Notas internas (visível ao setor de vendas)…"><%= quotation.notes_compras || '' %></textarea>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:flex;align-items:center;justify-content:flex-end;gap:10px">
+      <button type="submit" class="btn btn-primary btn-lg">
+        <i class="bi bi-check2-circle"></i> Salvar e Notificar Vendedor
+      </button>
+    </div>
+  </form>
+</div>
+<% } %>
+
+<!-- ABA CLIENTE/VEÍCULO -->
+<div id="vtab-cliente" class="vpanel">
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
+    <div class="card">
+      <div class="card-head"><div class="card-title"><i class="bi bi-person"></i> Cliente</div></div>
+      <div class="card-body">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
+          <div class="avatar lg"><%= initials(quotation.customer_name) %></div>
+          <div>
+            <div style="font-size:16px;font-weight:700"><%= quotation.customer_name %></div>
+            <% if (quotation.customer_since) { %><div style="font-size:12px;color:var(--text-3)">Cliente desde <%= quotation.customer_since %></div><% } %>
+          </div>
+        </div>
+        <a href="https://wa.me/<%= quotation.customer_phone.replace(/\D/g,'') %>" target="_blank" rel="noopener"
+           class="btn" style="background:var(--green-soft);color:var(--green);border:1px solid var(--green-border);width:100%">
+          <i class="bi bi-whatsapp"></i> <%= quotation.customer_phone %>
+        </a>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><div class="card-title"><i class="bi bi-car-front"></i> Veículo</div></div>
+      <div class="card-body">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
+          <div style="width:56px;height:56px;border-radius:10px;background:var(--surface-2);display:flex;align-items:center;justify-content:center;color:var(--text-2)">
+            <i class="bi bi-car-front" style="font-size:24px"></i>
+          </div>
+          <div>
+            <div style="font-size:15px;font-weight:700"><%= quotation.make || '' %> <%= quotation.model || '' %></div>
+            <div style="display:flex;gap:8px;margin-top:4px;align-items:center">
+              <% if (quotation.license_plate) { %><span class="plate"><%= quotation.license_plate %></span><% } %>
+              <% if (quotation.year_model) { %><span style="font-size:12px;color:var(--text-3)" class="num"><%= quotation.year_manuf %>/<%= quotation.year_model %></span><% } %>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
+</div>
 
-  <!-- Observações chat -->
-  <div class="v5-card">
-    <div class="v5-card-hd">
-      <i class="bi bi-chat-square-text v5-card-hd-icon"></i>
-      <span class="v5-card-title">Observações</span>
+<!-- ABA CHAT (Observações) -->
+<div id="vtab-chat" class="vpanel">
+  <div class="card">
+    <div class="card-head">
+      <div class="card-title"><i class="bi bi-chat-square-text"></i> Observações</div>
+      <span class="card-meta">Conversa interna Vendas ↔ Compras</span>
     </div>
-    <div class="v5-card-body">
+    <div class="card-body">
       <% if (!quotation.notes_vendas && !quotation.notes_compras) { %>
-      <div class="v5-chat-empty">
-        <i class="bi bi-chat-square-dots" style="font-size:28px;display:block;margin-bottom:10px;color:#cbd5e1"></i>
-        Sem observações registradas
-      </div>
+        <div class="empty">
+          <i class="bi bi-chat-square-dots"></i>
+          <div class="ttl">Sem observações</div>
+          <div class="sub">Vendas e compras podem trocar notas internas aqui</div>
+        </div>
       <% } else { %>
-      <div class="v5-chat">
+      <div class="chat">
         <% if (quotation.notes_vendas) { %>
-        <div class="v5-msg left">
-          <div class="v5-av blue"><%= mkInitials(quotation.creator_name) %></div>
-          <div class="v5-msg-inner">
-            <span class="v5-msg-who"><%= quotation.creator_name %> &nbsp;·&nbsp; Vendedor</span>
-            <div class="v5-bubble"><%= quotation.notes_vendas %></div>
+        <div class="msg left">
+          <div class="avatar md"><%= initials(quotation.creator_name) %></div>
+          <div class="msg-body">
+            <div class="msg-who">
+              <strong style="color:var(--text)"><%= quotation.creator_name %></strong>
+              <span class="msg-role vendas">Vendas</span>
+            </div>
+            <div class="bubble"><%= quotation.notes_vendas %></div>
+            <div class="msg-date"><%= fmtDT(quotation.created_at) %></div>
           </div>
         </div>
         <% } %>
         <% if (quotation.notes_compras) { %>
-        <div class="v5-msg right">
-          <div class="v5-av green"><%= mkInitials(quotation.buyer_name||'C') %></div>
-          <div class="v5-msg-inner">
-            <span class="v5-msg-who"><%= quotation.buyer_name||'Compras' %> &nbsp;·&nbsp; Compras</span>
-            <div class="v5-bubble"><%= quotation.notes_compras %></div>
+        <div class="msg right">
+          <div class="avatar md green"><%= initials(quotation.buyer_name || 'C') %></div>
+          <div class="msg-body">
+            <div class="msg-who">
+              <span class="msg-role compras">Compras</span>
+              <strong style="color:var(--text)"><%= quotation.buyer_name || 'Compras' %></strong>
+            </div>
+            <div class="bubble"><%= quotation.notes_compras %></div>
+            <div class="msg-date"><%= fmtDT(quotation.responded_at || quotation.updated_at) %></div>
           </div>
         </div>
         <% } %>
@@ -456,274 +392,66 @@
   </div>
 </div>
 
-<!-- ══════════════════════════ ABA VALORES ══ -->
-<% if (canEdit) { %>
-<div id="vtab-valores" class="v5-panel <%= defaultTab==='valores'?'active':'' %>">
-  <div class="v5-card">
-    <div class="v5-card-hd">
-      <i class="bi bi-pencil-square v5-card-hd-icon"></i>
-      <span class="v5-card-title">Preencher Valores</span>
-      <span style="font-size:11px;color:#2563eb;background:#eff6ff;padding:3px 10px;border-radius:99px;font-weight:600;margin-left:auto">
-        Modo edição
-      </span>
+<!-- ABA HISTÓRICO -->
+<div id="vtab-historico" class="vpanel">
+  <div class="card">
+    <div class="card-head">
+      <div class="card-title"><i class="bi bi-clock-history"></i> Linha do Tempo</div>
+      <span class="card-meta"><%= timeline.length %> eventos</span>
     </div>
-    <div class="v5-card-body">
-      <form action="/cotacoes/<%= quotation.id %>/responder" method="POST" id="form-responder">
-        <button type="submit" class="v5-btn-primary full" style="margin-bottom:18px">
-          <i class="bi bi-check-circle"></i> Salvar e Notificar Vendedor
-        </button>
-
-        <% items.forEach((item,idx) => { %>
-        <div class="v5-price-block">
-          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:12px">
-            <span class="v5-price-num"><%= idx+1 %></span>
-            <span class="v5-price-name"><%= item.part_name %></span>
-            <% if (item.part_code) { %><span style="font-size:12px;color:#94a3b8"><%= item.part_code %></span><% } %>
-            <span style="font-size:12px;color:#64748b;margin-left:auto;white-space:nowrap">Qtd: <strong><%= item.quantity %></strong></span>
-          </div>
-          <input type="hidden" name="item_ids[]" value="<%= item.id %>">
-          <div class="v5-price-g4">
-            <div>
-              <label class="nc-label">Vlr Unit. (R$)</label>
-              <input type="number" name="unit_prices[]" class="nc-input" style="font-size:13px;padding:7px 10px"
-                value="<%= item.unit_price||'' %>" step="0.01" min="0"
-                data-qty="<%= item.quantity %>" data-idx="<%= idx %>">
-            </div>
-            <div>
-              <label class="nc-label">Total (R$)</label>
-              <input type="number" name="total_prices[]" class="nc-input" style="font-size:13px;padding:7px 10px"
-                value="<%= item.total_price||'' %>" step="0.01" min="0" data-idx="<%= idx %>">
-            </div>
-            <div>
-              <label class="nc-label">M.O. (R$)</label>
-              <input type="number" name="labor_costs_compras[]" class="nc-input" style="font-size:13px;padding:7px 10px"
-                value="<%= item.labor_cost_compras||0 %>" step="0.01" min="0">
-            </div>
-            <div>
-              <label class="nc-label">Prazo (dias)</label>
-              <input type="number" name="delivery_days[]" class="nc-input" style="font-size:13px;padding:7px 10px"
-                value="<%= item.delivery_days||'' %>" min="0">
-            </div>
-          </div>
-          <div class="v5-price-g3">
-            <div>
-              <label class="nc-label">Data Entrega</label>
-              <input type="date" name="delivery_deadlines[]" class="nc-input" style="font-size:13px;padding:7px 10px"
-                value="<%= item.delivery_deadline?item.delivery_deadline.substring(0,10):'' %>">
-            </div>
-            <div>
-              <label class="nc-label">Fornecedor</label>
-              <input type="text" name="supplier_names[]" class="nc-input" style="font-size:13px;padding:7px 10px"
-                value="<%= item.supplier_name||'' %>" placeholder="Nome do fornecedor">
-            </div>
-            <div>
-              <label class="nc-label">Obs. da Peça</label>
-              <input type="text" name="item_notes[]" class="nc-input" style="font-size:13px;padding:7px 10px"
-                value="<%= item.notes||'' %>" placeholder="Observação da peça">
-            </div>
-          </div>
-        </div>
-        <% }) %>
-
-        <div style="margin-bottom:16px">
-          <label class="nc-label">Obs. Internas de Compras</label>
-          <textarea name="notes_compras" class="nc-input" rows="3" style="resize:vertical;font-size:13px"
-                    placeholder="Observações internas do setor de compras..."><%= quotation.notes_compras||'' %></textarea>
-        </div>
-        <button type="submit" class="v5-btn-primary full">
-          <i class="bi bi-check-circle"></i> Salvar e Notificar Vendedor
-        </button>
-      </form>
-    </div>
-  </div>
-</div>
-<% } %>
-
-<!-- ══════════════════════ ABA CLIENTE/VEÍCULO ══ -->
-<div id="vtab-cliente" class="v5-panel">
-
-  <div class="v5-info-grid">
-    <!-- Cliente -->
-    <div class="v5-card" style="margin-bottom:0">
-      <div class="v5-card-hd">
-        <i class="bi bi-person-fill v5-card-hd-icon"></i>
-        <span class="v5-card-title">Cliente</span>
-      </div>
-      <div class="v5-card-body">
-        <p style="font-size:16px;font-weight:800;color:#0f172a;margin:0 0 14px"><%= quotation.customer_name %></p>
-        <a href="https://wa.me/<%= quotation.customer_phone.replace(/\D/g,'') %>" target="_blank"
-           style="display:inline-flex;align-items:center;gap:8px;font-size:13px;font-weight:600;color:#16a34a;text-decoration:none;padding:8px 14px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;white-space:nowrap">
-          <i class="bi bi-whatsapp" style="font-size:15px"></i> <%= quotation.customer_phone %>
-        </a>
-      </div>
-    </div>
-
-    <!-- Veículo -->
-    <div class="v5-card" style="margin-bottom:0">
-      <div class="v5-card-hd">
-        <i class="bi bi-car-front-fill v5-card-hd-icon"></i>
-        <span class="v5-card-title">Veículo</span>
-      </div>
-      <div class="v5-card-body">
-        <div class="v5-veh">
-          <div class="v5-veh-row">
-            <span class="v5-veh-lbl">Placa</span>
-            <span class="plate-tag" style="font-size:13px"><%= quotation.license_plate %></span>
-          </div>
-          <% if (quotation.make) { %>
-          <div class="v5-veh-row">
-            <span class="v5-veh-lbl">Marca</span>
-            <span class="v5-veh-val"><%= quotation.make %></span>
-          </div>
-          <% } %>
-          <div class="v5-veh-row">
-            <span class="v5-veh-lbl">Modelo</span>
-            <span class="v5-veh-val"><%= quotation.model||'—' %></span>
-          </div>
-          <% if (quotation.year_model) { %>
-          <div class="v5-veh-row">
-            <span class="v5-veh-lbl">Ano</span>
-            <span class="v5-veh-val"><%= quotation.year_model %></span>
-          </div>
-          <% } %>
-        </div>
-        <% if (quotation.photo_path) { %>
-        <a href="<%= quotation.photo_path %>" target="_blank" rel="noopener" style="display:block;margin-top:14px">
-          <img src="<%= quotation.photo_path %>" alt="Relatório Técnico"
-            style="width:100%;height:90px;object-fit:cover;border-radius:8px;border:1px solid #e2e8f0;cursor:zoom-in">
-        </a>
-        <p style="font-size:10px;color:#94a3b8;text-align:center;margin:5px 0 0">Relatório técnico</p>
-        <% } %>
-      </div>
-    </div>
-  </div>
-
-  <!-- Resumo Financeiro -->
-  <div class="v5-card">
-    <div class="v5-card-hd">
-      <i class="bi bi-receipt v5-card-hd-icon"></i>
-      <span class="v5-card-title">Resumo Financeiro</span>
-    </div>
-    <div class="v5-card-body">
-      <div class="v5-resumo">
-        <div class="v5-resumo-row">
-          <span>Subtotal peças</span>
-          <span class="val num"><%= fmtBRL(partsTotal) %></span>
-        </div>
-        <% if (laborTotal>0) { %>
-        <div class="v5-resumo-row">
-          <span>Mão de obra</span>
-          <span class="val num"><%= fmtBRL(laborTotal) %></span>
-        </div>
-        <% } %>
-        <div class="v5-resumo-total">
-          <span class="lbl">Total Geral</span>
-          <span class="val num"><%= fmtBRL(grandTotal) %></span>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Resposta do Cliente -->
-  <% if (showClientActions) { %>
-  <div class="v5-card">
-    <div class="v5-card-hd">
-      <i class="bi bi-person-check-fill v5-card-hd-icon"></i>
-      <span class="v5-card-title">Resposta do Cliente</span>
-    </div>
-    <div class="v5-card-body">
-      <% if (quotation.customer_approved===null||quotation.customer_approved===undefined) { %>
-        <% if (currentUser.role==='vendas'||currentUser.role==='admin') { %>
-        <p style="font-size:13px;color:#64748b;margin:0 0 14px">O cliente aprovou ou recusou a cotação?</p>
-        <div style="display:flex;gap:10px">
-          <form action="/cotacoes/<%= quotation.id %>/resposta-cliente" method="POST" style="flex:1">
-            <input type="hidden" name="approved" value="1">
-            <button type="submit" class="v5-btn-primary green full" style="padding:10px"
-              onclick="return confirm('Confirmar APROVAÇÃO?')">
-              <i class="bi bi-check-circle"></i> Aprovou
-            </button>
-          </form>
-          <form action="/cotacoes/<%= quotation.id %>/resposta-cliente" method="POST" style="flex:1">
-            <input type="hidden" name="approved" value="0">
-            <button type="submit" class="v5-btn-outline full" style="padding:10px"
-              onclick="return confirm('Confirmar RECUSA?')">
-              <i class="bi bi-x-circle"></i> Recusou
-            </button>
-          </form>
-        </div>
-        <% } else { %>
-        <div style="text-align:center;padding:20px;color:#94a3b8">
-          <i class="bi bi-hourglass-split" style="font-size:28px;display:block;margin-bottom:10px"></i>
-          <span style="font-size:13px">Aguardando resposta do cliente</span>
-        </div>
-        <% } %>
-      <% } else if (quotation.customer_approved==1) { %>
-        <div style="display:flex;align-items:center;gap:10px;padding:14px;background:#f0fdf4;border-radius:10px">
-          <i class="bi bi-check-circle-fill" style="color:#16a34a;font-size:22px;flex-shrink:0"></i>
-          <div>
-            <div style="font-weight:700;color:#16a34a;font-size:14px">Aprovado pelo cliente</div>
-            <div style="font-size:11px;color:#64748b"><%= fmtDT(quotation.customer_approved_at) %></div>
-          </div>
-        </div>
-      <% } else { %>
-        <div style="display:flex;align-items:center;gap:10px;padding:14px;background:#fef2f2;border-radius:10px">
-          <i class="bi bi-x-circle-fill" style="color:#dc2626;font-size:22px;flex-shrink:0"></i>
-          <div>
-            <div style="font-weight:700;color:#dc2626;font-size:14px">Recusado pelo cliente</div>
-            <div style="font-size:11px;color:#64748b"><%= fmtDT(quotation.customer_approved_at) %></div>
-          </div>
-        </div>
-      <% } %>
-    </div>
-  </div>
-  <% } %>
-</div>
-
-<!-- ══════════════════════════ ABA HISTÓRICO ══ -->
-<div id="vtab-historico" class="v5-panel">
-  <div class="v5-card">
-    <div class="v5-card-hd">
-      <i class="bi bi-clock-history v5-card-hd-icon"></i>
-      <span class="v5-card-title">Linha do Tempo</span>
-    </div>
-    <div class="v5-card-body">
-      <% if (timeline.length===0) { %>
-      <p style="font-size:13px;color:#94a3b8;text-align:center;padding:20px">Sem eventos registrados.</p>
-      <% } else { %>
-      <div class="v5-tl">
+    <div class="card-body">
+      <div class="timeline anim-stagger">
         <% timeline.forEach(ev => { %>
-        <div class="v5-tl-item">
-          <div class="v5-tl-dot <%= ev.type %>"></div>
-          <div class="v5-tl-label">
-            <% if (ev.type==='create') { %><i class="bi bi-plus-circle-fill" style="color:#94a3b8"></i>
-            <% } else if (ev.type==='whatsapp') { %><i class="bi bi-whatsapp" style="color:#16a34a"></i>
-            <% } else if (ev.type==='approved') { %><i class="bi bi-check-circle-fill" style="color:#16a34a"></i>
-            <% } else { %><i class="bi bi-x-circle-fill" style="color:#dc2626"></i><% } %>
-            <%= ev.label %>
+        <div class="tl-item">
+          <div class="tl-dot <%= ev.tone %>"></div>
+          <div class="tl-label">
+            <i class="bi bi-<%= ev.icon %>"></i> <%= ev.label %>
           </div>
-          <div class="v5-tl-date"><%= fmtDT(ev.date) %></div>
-          <% if (ev.by) { %><div class="v5-tl-by">por <%= ev.by %></div><% } %>
+          <% if (ev.by) { %><div class="tl-by">por <strong style="color:var(--text-2)"><%= ev.by %></strong></div><% } %>
+          <div class="tl-date"><%= fmtDT(ev.date) %></div>
         </div>
         <% }) %>
       </div>
-      <% } %>
     </div>
   </div>
 </div>
 
-<!-- ══════════════════════════ ZONA DE PERIGO ══ -->
-<% if (canAct) { %>
-<div class="v5-danger">
-  <div class="v5-danger-hd" onclick="vDanger(this)">
-    <span class="v5-danger-hd-label"><i class="bi bi-exclamation-triangle"></i> Outras Ações</span>
-    <i class="bi bi-chevron-down v5-danger-chevron"></i>
+</div>
+
+<!-- ─── SIDE PANEL ──────────────────────────────────────── -->
+<div id="side-panel" style="display:flex;flex-direction:column;gap:14px">
+  <div class="card">
+    <div class="card-head"><div class="card-title"><i class="bi bi-receipt"></i> Resumo</div></div>
+    <div class="card-body">
+      <div class="summary-row"><span>Subtotal peças</span><span class="val"><%= fmtBRL(partsTotal) %></span></div>
+      <% if (laborTotal > 0) { %>
+      <div class="summary-row"><span>Mão de obra</span><span class="val"><%= fmtBRL(laborTotal) %></span></div>
+      <% } %>
+      <div class="summary-total">
+        <span class="lbl">Total</span>
+        <span class="val"><%= fmtBRL(grandTotal) %></span>
+      </div>
+    </div>
   </div>
-  <div class="v5-danger-body">
-    <p style="font-size:12px;color:#64748b;margin:0 0 12px">Atenção: esta ação não pode ser desfeita.</p>
+</div>
+
+</div>
+
+<!-- ─── ZONA DE PERIGO ──────────────────────────────────── -->
+<% if (canAct) { %>
+<div style="border:1px solid var(--red-border);border-radius:var(--r-lg);overflow:hidden;margin-top:22px">
+  <div onclick="vDanger(this)" style="padding:13px 20px;background:var(--red-soft);display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none">
+    <span style="font-size:12px;font-weight:700;color:var(--red);display:flex;align-items:center;gap:7px">
+      <i class="bi bi-exclamation-triangle"></i> Outras Ações
+    </span>
+    <i class="bi bi-chevron-down" style="color:var(--red);font-size:13px;transition:transform .2s"></i>
+  </div>
+  <div style="padding:16px 20px;border-top:1px solid var(--red-border);display:none">
+    <p style="font-size:12px;color:var(--text-2);margin:0 0 12px">Atenção: esta ação não pode ser desfeita.</p>
     <form action="/cotacoes/<%= quotation.id %>/status" method="POST"
-          onsubmit="return confirm('Tem certeza que deseja cancelar esta cotação?')">
+          onsubmit="return confirm('Tem certeza que deseja cancelar esta cotação?')" style="margin:0">
       <input type="hidden" name="status" value="cancelado">
-      <button type="submit" class="v5-btn-danger">
+      <button type="submit" class="btn btn-danger-outline">
         <i class="bi bi-x-circle"></i> Cancelar Cotação
       </button>
     </form>
@@ -731,23 +459,34 @@
 </div>
 <% } %>
 
-</div><!-- /.v5 -->
+</div>
 
 <style>
-.v5-panel { display:none; }
-.v5-panel.active { display:block; }
+.vpanel { display: none; }
+.vpanel.active { display: block; }
+@media (max-width: 1024px) { #detail-grid { grid-template-columns: 1fr !important; } #side-panel { order: -1; } }
 </style>
 
 <script>
 function vTab(name, btn) {
-  document.querySelectorAll('.v5-panel').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.v5-tab').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.vpanel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
   document.getElementById('vtab-' + name).classList.add('active');
   btn.classList.add('active');
+  const grid = document.getElementById('detail-grid');
+  const side = document.getElementById('side-panel');
+  // Side panel só mostra nas abas pecas/valores
+  if (name === 'pecas' || name === 'valores') {
+    grid.style.gridTemplateColumns = '1fr 320px';
+    side.style.display = 'flex';
+  } else {
+    grid.style.gridTemplateColumns = '1fr';
+    side.style.display = 'none';
+  }
 }
 function vDanger(hd) {
   const body = hd.nextElementSibling;
-  const chev = hd.querySelector('.v5-danger-chevron');
+  const chev = hd.querySelector('.bi-chevron-down');
   const open = body.style.display === 'block';
   body.style.display = open ? 'none' : 'block';
   chev.style.transform = open ? '' : 'rotate(180deg)';
@@ -756,38 +495,37 @@ function vDanger(hd) {
 // Auto-calc unit × qty → total
 document.querySelectorAll('[name="unit_prices[]"]').forEach(input => {
   input.addEventListener('input', () => {
-    const idx = input.dataset.idx, qty = parseFloat(input.dataset.qty)||1;
-    const total = document.querySelector(`[name="total_prices[]"][data-idx="${idx}"]`);
-    if (total && !total._touched) total.value = (parseFloat(input.value||0)*qty).toFixed(2);
+    const idx = input.dataset.idx, qty = parseFloat(input.dataset.qty) || 1;
+    const total = document.querySelector('[name="total_prices[]"][data-idx="' + idx + '"]');
+    if (total && !total._touched) total.value = (parseFloat(input.value || 0) * qty).toFixed(2);
   });
 });
 document.querySelectorAll('[name="total_prices[]"]').forEach(input => {
-  input.addEventListener('input', () => { input._touched = parseFloat(input.value)>0; });
+  input.addEventListener('input', () => { input._touched = parseFloat(input.value) > 0; });
 });
 
-// WhatsApp
+// WhatsApp button
 const btnWa = document.getElementById('btn-whatsapp');
 if (btnWa) {
   btnWa.addEventListener('click', async () => {
     if (!confirm('Enviar resultado para <%= quotation.customer_name %> (<%= quotation.customer_phone %>)?')) return;
     btnWa.disabled = true;
-    btnWa.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Enviando...';
+    btnWa.innerHTML = '<i class="bi bi-arrow-clockwise"></i> Enviando...';
     try {
-      const r = await fetch('/api/whatsapp/enviar/<%= quotation.id %>', { method:'POST' });
+      const r = await fetch('/api/whatsapp/enviar/<%= quotation.id %>', { method: 'POST' });
       const j = await r.json();
       if (j.ok) {
-        btnWa.innerHTML = '<i class="bi bi-check-circle"></i> Enviado!';
-        btnWa.style.background = '#15803d';
-        showToast('WhatsApp', 'Mensagem enviada!', 'success');
+        btnWa.innerHTML = '<i class="bi bi-check2"></i> Enviado!';
+        btnWa.style.background = 'var(--green)';
       } else {
         btnWa.disabled = false;
         btnWa.innerHTML = '<i class="bi bi-whatsapp"></i> Enviar pelo WhatsApp';
-        showToast('Erro', j.message||'Erro ao enviar.', 'danger');
+        alert(j.message || 'Erro ao enviar.');
       }
     } catch {
       btnWa.disabled = false;
       btnWa.innerHTML = '<i class="bi bi-whatsapp"></i> Enviar pelo WhatsApp';
-      showToast('Erro', 'Falha de conexão.', 'danger');
+      alert('Falha de conexão.');
     }
   });
 }

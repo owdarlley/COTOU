@@ -8,7 +8,7 @@ router.use(requireAuth);
 router.get('/', (req, res) => {
   const { q = '', page = 1 } = req.query;
   const result = PartsCatalog.findAll({ q, page: parseInt(page) });
-  res.render('parts/index', { title: 'Catálogo de Peças', ...result, q });
+  res.render('parts/index', { title: 'Catálogo de Peças', parts: result.items, ...result, q });
 });
 
 router.post('/', (req, res) => {

@@ -5,10 +5,33 @@ const Notification = require('../models/Notification');
 
 router.use(requireAuth);
 
+function addTimeLabel(n) {
+  if (!n.created_at) return n;
+  const diff = Date.now() - new Date(n.created_at).getTime();
+  const mins = Math.floor(diff / 60000);
+  const hours = Math.floor(diff / 3600000);
+  const days = Math.floor(diff / 86400000);
+  let time_label;
+  if (mins < 1) time_label = 'agora há pouco';
+  else if (mins < 60) time_label = `${mins} min atrás`;
+  else if (hours < 24) time_label = `${hours}h atrás`;
+  else if (days === 1) time_label = 'ontem';
+  else time_label = `${days} dias atrás`;
+  return { ...n, time_label };
+}
+
 router.get('/', (req, res) => {
   const { page = 1 } = req.query;
   const result = Notification.findByUserId(req.session.userId, { page: parseInt(page) });
-  res.render('notifications/index', { title: 'Notificações', ...result });
+  const notifications = result.items.map(addTimeLabel);
+  res.render('notifications/index', { title: 'Notificações', notifications, ...result });
+});
+
+// suporte aos dois caminhos para compatibilidade
+router.post('/marcar-todas', (req, res) => {
+  Notification.markAllRead(req.session.userId);
+  req.session.flash = { success: 'Todas as notificações marcadas como lidas.' };
+  res.redirect('/notificacoes');
 });
 
 router.post('/todas-lidas', (req, res) => {

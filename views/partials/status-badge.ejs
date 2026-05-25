@@ -1,8 +1,10 @@
 <% const cfg = {
-  pendente:    { label: 'Aguardando',   cls: 'badge-pending'  },
-  em_cotacao:  { label: 'Em Cotação',  cls: 'badge-quotando' },
-  cotado:      { label: 'Cotado',       cls: 'badge-cotado'   },
-  peca_chegou: { label: 'Peça Chegou', cls: 'badge-chegou'   },
-  cancelado:   { label: 'Cancelado',    cls: 'badge-cancel'   }
-}[status] || { label: status, cls: 'badge-pending' }; %>
-<span class="badge <%= cfg.cls %>"><%= cfg.label %></span>
+  pendente:    { label: 'Aguardando',  cls: 'pendente'   },
+  em_cotacao:  { label: 'Em Cotação',  cls: 'em_cotacao' },
+  cotado:      { label: 'Cotado',      cls: 'cotado'     },
+  peca_chegou: { label: 'Peça Chegou', cls: 'peca_chegou'},
+  cancelado:   { label: 'Cancelado',   cls: 'cancelado'  }
+}[status] || { label: status, cls: 'pendente' }; %>
+<span class="status <%= cfg.cls %>">
+  <span class="dot"></span><%= cfg.label %>
+</span>

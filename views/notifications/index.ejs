@@ -1,60 +1,103 @@
-<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap;gap:10px">
+<div class="page page-narrow">
+
+<%
+  const tones = {
+    cotada: 'green', nova: 'amber', aprovada: 'green', chegou: 'violet',
+    whatsapp: 'green', cancelada: 'red', recusada: 'red'
+  };
+  const icons = {
+    cotada: 'check-circle', nova: 'plus-circle', aprovada: 'check2-circle',
+    chegou: 'box-seam', whatsapp: 'whatsapp', cancelada: 'x-circle', recusada: 'x-circle'
+  };
+  const totalCount = notifications.length;
+  const unreadCount2 = notifications.filter(n => !n.read_at).length;
+
+  // Bucket by recency
+  function bucketOf(n) {
+    const t = (n.time_label || '').toLowerCase();
+    if (t.includes('min') || t.includes('agora') || t.includes('h atrás') || t.includes('h ')) return 'hoje';
+    if (t.includes('ontem')) return 'ontem';
+    if (t.includes('dia')) return 'semana';
+    return 'antigo';
+  }
+  const buckets = { hoje: [], ontem: [], semana: [], antigo: [] };
+  notifications.forEach(n => buckets[bucketOf(n)].push(n));
+
+  const groups = [
+    { key: 'hoje',    title: 'Hoje' },
+    { key: 'ontem',   title: 'Ontem' },
+    { key: 'semana',  title: 'Esta semana' },
+    { key: 'antigo',  title: 'Antes' }
+  ];
+%>
+
+<div class="page-header">
   <div>
-    <h4 style="font-size:18px;font-weight:700;margin:0">Notificações</h4>
-    <% if (unreadCount > 0) { %>
-    <p style="font-size:13px;color:var(--text-muted);margin:2px 0 0"><%= unreadCount %> não lida<%= unreadCount > 1 ? 's' : '' %></p>
-    <% } %>
+    <h1 class="page-title">Notificações</h1>
+    <p class="page-subtitle"><%= unreadCount2 %> não lidas · <%= totalCount %> no total</p>
   </div>
-  <form action="/notificacoes/todas-lidas" method="POST">
-    <button type="submit" class="btn-cancel" style="padding:7px 14px;font-size:13px">
-      <i class="bi bi-check-all"></i>Marcar todas como lidas
+  <% if (unreadCount2 > 0) { %>
+  <form action="/notificacoes/marcar-todas" method="POST" style="margin:0">
+    <button type="submit" class="btn btn-secondary">
+      <i class="bi bi-check2"></i> Marcar todas como lidas
     </button>
   </form>
+  <% } %>
 </div>
 
-<% if (items.length === 0) { %>
-<div style="background:var(--card);border:1px solid var(--border);border-radius:12px;text-align:center;padding:56px 16px;color:var(--text-muted)">
-  <i class="bi bi-bell-slash" style="font-size:40px;display:block;margin-bottom:8px"></i>
-  Nenhuma notificação.
-</div>
-<% } else { %>
-
-<% const iconMap = {
-  nova_cotacao:       { icon: 'bi-plus-circle-fill',      cls: 'icon-blue'   },
-  cotacao_respondida: { icon: 'bi-check-circle-fill',     cls: 'icon-green'  },
-  peca_chegou:        { icon: 'bi-box-arrow-in-down',     cls: 'icon-purple' },
-  status_atualizado:  { icon: 'bi-arrow-clockwise',       cls: 'icon-amber'  },
-  cotacao_atualizada: { icon: 'bi-person-check-fill',     cls: 'icon-blue'   }
-}; %>
-
-<% items.forEach(n => {
-  const ic = iconMap[n.type] || { icon: 'bi-bell', cls: 'icon-blue' };
-%>
-<a href="<%= n.quotation_id ? '/cotacoes/' + n.quotation_id : '#' %>"
-   class="notif-card <%= n.read_at ? '' : 'unread' %>">
-  <div class="kpi-icon <%= ic.cls %>" style="width:40px;height:40px;border-radius:10px;font-size:17px;flex-shrink:0">
-    <i class="bi <%= ic.icon %>"></i>
+<div style="display:flex;gap:8px;margin-bottom:18px">
+  <div class="pills">
+    <a href="/notificacoes" class="pill <%= (locals.filter || 'todas') === 'todas' ? 'active' : '' %>">
+      Todas <span class="count"><%= totalCount %></span>
+    </a>
+    <a href="/notificacoes?filter=nao_lidas" class="pill <%= locals.filter === 'nao_lidas' ? 'active' : '' %>">
+      Não lidas <span class="count"><%= unreadCount2 %></span>
+    </a>
   </div>
-  <div style="flex:1;min-width:0">
-    <div style="font-weight:700;font-size:13.5px;color:<%= n.read_at ? 'var(--text-muted)' : 'var(--text)' %>"><%= n.title %></div>
-    <div style="font-size:12.5px;color:var(--text-muted);margin-top:3px;line-height:1.4"><%= n.message %></div>
-    <div style="font-size:11px;color:var(--text-muted);margin-top:5px">
-      <%= new Date(n.created_at).toLocaleString('pt-BR') %>
-      <% if (n.quote_number) { %> · Cotação #<%= n.quote_number %><% } %>
+</div>
+
+<% if (notifications.length === 0) { %>
+  <div class="card">
+    <div class="empty">
+      <i class="bi bi-check2-circle"></i>
+      <div class="ttl">Tudo em dia</div>
+      <div class="sub">Você está com todas as notificações lidas</div>
     </div>
   </div>
-  <% if (!n.read_at) { %>
-  <span class="badge badge-blue" style="flex-shrink:0">Nova</span>
-  <% } %>
-</a>
-<% }) %>
+<% } else { %>
+  <% groups.forEach(g => { if (buckets[g.key].length === 0) return; %>
+  <div style="margin-bottom:20px">
+    <div style="font-size:11px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;padding:0 4px">
+      <%= g.title %> <span style="color:var(--text-3);font-weight:500;margin-left:4px">(<%= buckets[g.key].length %>)</span>
+    </div>
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);overflow:hidden">
+      <% buckets[g.key].forEach((n, i, arr) => {
+        const tone = tones[n.type] || 'gray';
+        const icon = icons[n.type] || 'bell';
+        const unread = !n.read_at;
+      %>
+      <a href="<%= n.link || (n.quotation_id ? '/cotacoes/' + n.quotation_id : '/notificacoes') %>"
+         style="display:flex;align-items:flex-start;gap:12px;padding:14px 18px;border-bottom:<%= i < arr.length - 1 ? '1px solid var(--border)' : 'none' %>;text-decoration:none;color:inherit;transition:background .12s;border-left:3px solid <%= unread ? 'var(--' + tone + ')' : 'transparent' %>;padding-left:<%= unread ? '15px' : '18px' %>"
+         onmouseenter="this.style.background='var(--surface-2)'" onmouseleave="this.style.background='transparent'">
+        <div style="width:28px;height:28px;border-radius:8px;color:var(--<%= tone %>);display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px">
+          <i class="bi bi-<%= icon %>" style="font-size:16px"></i>
+        </div>
+        <div style="flex:1;min-width:0">
+          <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:2px">
+            <span style="font-size:13px;font-weight:<%= unread ? 700 : 500 %>;color:var(--text)"><%= n.title %></span>
+            <% if (unread) { %><span style="width:6px;height:6px;border-radius:50%;background:var(--accent);flex-shrink:0"></span><% } %>
+          </div>
+          <div style="font-size:12.5px;color:var(--text-2);line-height:1.5"><%= n.message %></div>
+          <div style="font-size:11px;color:var(--text-3);margin-top:4px;font-variant-numeric:tabular-nums">
+            <%= n.time_label || (n.created_at ? new Date(n.created_at).toLocaleString('pt-BR') : '') %>
+          </div>
+        </div>
+        <i class="bi bi-chevron-right" style="color:var(--text-3);font-size:13px;margin-top:6px;flex-shrink:0"></i>
+      </a>
+      <% }) %>
+    </div>
+  </div>
+  <% }) %>
+<% } %>
 
-<% if (pages > 1) { %>
-<div style="display:flex;justify-content:center;gap:4px;padding-top:8px">
-  <% for (let pg = 1; pg <= pages; pg++) { %>
-  <a href="?page=<%= pg %>" class="pag-btn <%= pg === page ? 'active' : '' %>"><%= pg %></a>
-  <% } %>
 </div>
-<% } %>
-
-<% } %>

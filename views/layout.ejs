@@ -1,87 +1,75 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-BR" data-theme="<%= locals.theme || 'light' %>">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title><%= title %> | COTOU</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
   <link href="/css/style.css" rel="stylesheet">
   <%- typeof style !== 'undefined' ? style : '' %>
 </head>
-<body>
+<body class="density-cozy">
 
-<%- include('partials/sidebar') %>
+<div class="app">
+  <%- include('partials/sidebar') %>
 
-<div class="main">
-  <div class="topbar">
-    <div class="topbar-left">
-      <i class="bi bi-list hamburger" id="hamburger" onclick="toggleSidebar()"></i>
-      <div class="topbar-title-wrap">
-        <span class="topbar-title"><%= title.replace(' — COTOU','').replace(' | COTOU','') %></span>
-        <% if (locals.topbarSubtitle) { %><span class="topbar-subtitle"><%= topbarSubtitle %></span><% } %>
-      </div>
-    </div>
-    <div class="topbar-right">
+  <div class="main">
+    <div class="topbar">
+      <nav class="tb-crumbs">
+        <a href="/">Dashboard</a>
+        <% if (locals.breadcrumb && breadcrumb.length) { %>
+          <% breadcrumb.forEach((c, i) => { %>
+            <i class="bi bi-chevron-right"></i>
+            <% if (i < breadcrumb.length - 1) { %>
+              <a href="<%= c.href %>"><%= c.label %></a>
+            <% } else { %>
+              <span class="here"><%= c.label %></span>
+            <% } %>
+          <% }) %>
+        <% } else { %>
+          <% if (title && title.toLowerCase() !== 'dashboard') { %>
+            <i class="bi bi-chevron-right"></i>
+            <span class="here"><%= title.replace(' — COTOU','').replace(' | COTOU','') %></span>
+          <% } %>
+        <% } %>
+      </nav>
+
       <% if (currentUser) { %>
-      <a href="/notificacoes" class="icon-btn">
-        <i class="bi bi-bell"></i>
-        <% if (unreadCount > 0) { %><span class="dot"></span><% } %>
-      </a>
-      <% const topInitials = currentUser.name.split(' ').slice(0,2).map(w=>w[0]).join('').toUpperCase(); %>
-      <div class="avatar-top" id="avatar-btn" onclick="toggleUserMenu()" title="<%= currentUser.name %>">
-        <%= topInitials %>
-      </div>
-      <div class="user-dropdown" id="user-dropdown">
-        <div class="user-dropdown-info">
-          <div class="user-dropdown-name"><%= currentUser.name %></div>
-          <div class="user-dropdown-role"><%= currentUser.email %></div>
-        </div>
-        <div class="user-dropdown-divider"></div>
-        <form action="/logout" method="POST">
-          <button type="submit" class="user-dropdown-item">
-            <i class="bi bi-box-arrow-right"></i>Sair
-          </button>
-        </form>
+      <form method="GET" action="/cotacoes" class="tb-search">
+        <i class="bi bi-search"></i>
+        <input type="text" name="q" placeholder="Buscar cotações, peças, clientes…"
+               value="<%= typeof q !== 'undefined' ? q : '' %>">
+        <span class="kbd">⌘K</span>
+      </form>
+
+      <div class="tb-actions">
+        <a href="/notificacoes" class="icon-btn" title="Notificações">
+          <i class="bi bi-bell"></i>
+          <% if (unreadCount > 0) { %><span class="dot"></span><% } %>
+        </a>
       </div>
       <% } %>
     </div>
-  </div>
 
-  <div class="page-content">
     <%- include('partials/flash') %>
     <%- body %>
   </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="/socket.io/socket.io.js"></script>
 <script>
   window.__USER_ID__ = '<%= currentUser ? currentUser.id : "" %>';
   window.__USER_ROLE__ = '<%= currentUser ? currentUser.role : "" %>';
   window.__HAS_RESPONDIDA__ = <%= currentUser && locals.hasRespondida ? 'true' : 'false' %>;
 
-  function toggleSidebar() {
-    document.getElementById('sidebar').classList.toggle('open');
-  }
-
-  function toggleUserMenu() {
-    document.getElementById('user-dropdown').classList.toggle('open');
-  }
-
-  document.addEventListener('click', function(e) {
-    const sidebar = document.getElementById('sidebar');
-    const hamburger = document.getElementById('hamburger');
-    if (sidebar && hamburger && !sidebar.contains(e.target) && !hamburger.contains(e.target)) {
-      sidebar.classList.remove('open');
-    }
-    const dropdown = document.getElementById('user-dropdown');
-    const avatarBtn = document.getElementById('avatar-btn');
-    if (dropdown && avatarBtn && !avatarBtn.contains(e.target) && !dropdown.contains(e.target)) {
-      dropdown.classList.remove('open');
-    }
+  // Keyboard shortcuts
+  document.addEventListener('keydown', (e) => {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') return;
+    if (e.key === '/') { e.preventDefault(); const i = document.querySelector('.tb-search input'); i && i.focus(); }
+    if (e.key === 'n') { window.location.href = '/cotacoes/nova'; }
   });
 </script>
 <script src="/js/socket-client.js"></script>

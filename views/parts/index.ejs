@@ -1,96 +1,143 @@
-<div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap">
-  <form method="GET" class="search-box">
-    <i class="bi bi-search"></i>
-    <input type="text" name="q" placeholder="Buscar por código ou nome..." value="<%= q %>">
-  </form>
-  <% if (q) { %>
-  <a href="/pecas" class="btn-cancel" style="padding:7px 12px;font-size:13px"><i class="bi bi-x"></i>Limpar</a>
+<div class="page">
+
+<%
+  function fmtNum(n) { return (n || 0).toLocaleString('pt-BR'); }
+  const categories = ['todas', ...new Set(parts.map(p => p.category).filter(Boolean))];
+  const totalUses = parts.reduce((s, p) => s + (p.uses_count || 0), 0);
+  const isAdmin = currentUser.role === 'admin';
+  const cat = locals.currentCategory || 'todas';
+  const view = locals.view || 'grid';
+%>
+
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Catálogo de Peças</h1>
+    <p class="page-subtitle">Acelera o autocomplete na hora de criar cotações</p>
+  </div>
+  <% if (isAdmin) { %>
+  <a href="/pecas/nova" class="btn btn-primary">
+    <i class="bi bi-plus-lg"></i> Adicionar Peça
+  </a>
   <% } %>
-  <button class="btn-primary" style="margin-left:auto" data-bs-toggle="modal" data-bs-target="#modalNovaPeca">
-    <i class="bi bi-plus-lg"></i>Nova Peça
-  </button>
 </div>
 
-<div class="table-wrap">
-  <% if (items.length === 0) { %>
-  <div style="text-align:center;padding:48px 16px;color:var(--gray)">
-    <i class="bi bi-box" style="font-size:40px;display:block;margin-bottom:8px"></i>Nenhuma peça encontrada.
-  </div>
-  <% } else { %>
-  <table class="data-table">
-    <thead>
-      <tr>
-        <th>Código</th><th>Nome</th><th>Descrição</th><th>Preço Ref.</th><th style="width:100px">Ações</th>
-      </tr>
-    </thead>
-    <tbody>
-      <% items.forEach(p => { %>
-      <tr>
-        <td><span class="plate-tag"><%= p.code %></span></td>
-        <td style="font-weight:600"><%= p.name %></td>
-        <td style="color:var(--gray);font-size:13px"><%= p.description || '—' %></td>
-        <td><%= p.default_price ? 'R$ ' + parseFloat(p.default_price).toFixed(2) : '—' %></td>
-        <td>
-          <div style="display:flex;gap:6px">
-            <button class="btn-icon blue" data-bs-toggle="modal" data-bs-target="#modalEditar-<%= p.id %>" title="Editar">
-              <i class="bi bi-pencil"></i>
-            </button>
-            <form action="/pecas/<%= p.id %>/excluir" method="POST" style="display:inline"
-              onsubmit="return confirm('Excluir esta peça do catálogo?')">
-              <button type="submit" class="btn-icon red" title="Excluir"><i class="bi bi-trash"></i></button>
-            </form>
-          </div>
-        </td>
-      </tr>
-      <!-- Modal editar -->
-      <div class="modal fade" id="modalEditar-<%= p.id %>" tabindex="-1">
-        <div class="modal-dialog"><div class="modal-content">
-          <form action="/pecas/<%= p.id %>/editar" method="POST">
-            <div class="modal-header"><h5 class="modal-title">Editar Peça</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
-            <div class="modal-body">
-              <div class="mb-3"><label class="form-label">Código</label><input type="text" name="code" class="form-control" value="<%= p.code %>" required></div>
-              <div class="mb-3"><label class="form-label">Nome</label><input type="text" name="name" class="form-control" value="<%= p.name %>" required></div>
-              <div class="mb-3"><label class="form-label">Descrição</label><textarea name="description" class="form-control" rows="2"><%= p.description || '' %></textarea></div>
-              <div class="mb-3"><label class="form-label">Preço de Referência</label><input type="number" name="default_price" class="form-control" value="<%= p.default_price || '' %>" step="0.01"></div>
-            </div>
-            <div class="modal-footer">
-              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-              <button type="submit" class="btn btn-primary">Salvar</button>
-            </div>
-          </form>
-        </div></div>
-      </div>
-      <% }) %>
-    </tbody>
-  </table>
-  <% if (pages > 1) { %>
-  <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-top:1px solid var(--border)">
-    <span style="color:var(--text-muted);font-size:13px">Página <%= page %> de <%= pages %></span>
-    <div style="display:flex;gap:4px">
-      <% for (let p2 = 1; p2 <= pages; p2++) { %>
-      <a href="?q=<%= q %>&page=<%= p2 %>" class="pag-btn <%= p2 === page ? 'active' : '' %>"><%= p2 %></a>
-      <% } %>
+<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:22px">
+  <div class="kpi">
+    <div class="kpi-top"><div class="kpi-icon blue"><i class="bi bi-box-seam"></i></div></div>
+    <div>
+      <div class="kpi-label">Peças cadastradas</div>
+      <div class="kpi-num"><%= fmtNum(parts.length) %></div>
     </div>
   </div>
-  <% } %>
-  <% } %>
+  <div class="kpi">
+    <div class="kpi-top"><div class="kpi-icon violet"><i class="bi bi-tag"></i></div></div>
+    <div>
+      <div class="kpi-label">Categorias</div>
+      <div class="kpi-num"><%= categories.length - 1 %></div>
+    </div>
+  </div>
+  <div class="kpi">
+    <div class="kpi-top"><div class="kpi-icon green"><i class="bi bi-graph-up"></i></div></div>
+    <div>
+      <div class="kpi-label">Usos este mês</div>
+      <div class="kpi-num"><%= fmtNum(totalUses) %></div>
+    </div>
+  </div>
+  <div class="kpi">
+    <div class="kpi-top"><div class="kpi-icon amber"><i class="bi bi-trophy"></i></div></div>
+    <div>
+      <div class="kpi-label">Mais cotada</div>
+      <div style="font-size:14px;font-weight:700;margin-top:4px;letter-spacing:-.01em;line-height:1.3">
+        <%= locals.topPart || '—' %>
+      </div>
+    </div>
+  </div>
 </div>
 
-<!-- Modal Nova Peça -->
-<div class="modal fade" id="modalNovaPeca" tabindex="-1">
-  <div class="modal-dialog"><div class="modal-content">
-    <form action="/pecas" method="POST">
-      <div class="modal-header"><h5 class="modal-title">Nova Peça</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
-      <div class="modal-body">
-        <div class="mb-3"><label class="form-label">Código <span class="text-danger">*</span></label><input type="text" name="code" class="form-control text-uppercase" required placeholder="Ex: FILTRO-AR-001"></div>
-        <div class="mb-3"><label class="form-label">Nome <span class="text-danger">*</span></label><input type="text" name="name" class="form-control" required placeholder="Ex: Filtro de Ar"></div>
-        <div class="mb-3"><label class="form-label">Descrição</label><textarea name="description" class="form-control" rows="2"></textarea></div>
-        <div class="mb-3"><label class="form-label">Preço de Referência (R$)</label><input type="number" name="default_price" class="form-control" step="0.01" min="0"></div>
+<div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;flex-wrap:wrap">
+  <div class="pills">
+    <% categories.forEach(c => {
+      const count = c === 'todas' ? parts.length : parts.filter(p => p.category === c).length;
+    %>
+    <a href="?cat=<%= c %><%= view !== 'grid' ? '&view=' + view : '' %>" class="pill <%= cat === c ? 'active' : '' %>">
+      <%= c === 'todas' ? 'Todas' : c %><span class="count"><%= count %></span>
+    </a>
+    <% }) %>
+  </div>
+  <form method="GET" class="input-with-icon" style="flex:1;max-width:320px;margin-left:auto">
+    <i class="bi bi-search"></i>
+    <input type="text" name="q" class="input" placeholder="Buscar por nome ou código…" value="<%= locals.q || '' %>">
+    <% if (cat !== 'todas') { %><input type="hidden" name="cat" value="<%= cat %>"><% } %>
+  </form>
+  <div class="view-switch">
+    <a href="?cat=<%= cat %>&view=grid" class="<%= view === 'grid' ? 'active' : '' %>" style="text-decoration:none"><i class="bi bi-grid"></i></a>
+    <a href="?cat=<%= cat %>&view=list" class="<%= view === 'list' ? 'active' : '' %>" style="text-decoration:none"><i class="bi bi-list-ul"></i></a>
+  </div>
+</div>
+
+<% if (parts.length === 0) { %>
+  <div class="card"><div class="empty"><i class="bi bi-inbox"></i><div class="ttl">Nenhuma peça encontrada</div><div class="sub">Ajuste os filtros ou cadastre uma nova</div></div></div>
+<% } else if (view === 'grid') { %>
+  <div style="display:grid;grid-template-columns:repeat(auto-fill, minmax(240px, 1fr));gap:14px" class="anim-stagger">
+    <% parts.forEach(p => { %>
+    <div class="card" style="padding:16px;transition:border-color .12s, transform .12s"
+         onmouseenter="this.style.borderColor='var(--border-strong)';this.style.transform='translateY(-1px)'"
+         onmouseleave="this.style.borderColor='var(--border)';this.style.transform='none'">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <span class="mono" style="font-size:11px;color:var(--text-3);font-weight:600"><%= p.code || '—' %></span>
+        <% if (p.category) { %>
+        <span style="font-size:10.5px;padding:2px 7px;background:var(--surface-2);border:1px solid var(--border);border-radius:99px;color:var(--text-2);font-weight:600">
+          <%= p.category %>
+        </span>
+        <% } %>
       </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-        <button type="submit" class="btn btn-primary">Adicionar</button>
+      <div style="font-size:14px;font-weight:700;line-height:1.4;margin-bottom:12px;min-height:38px"><%= p.name %></div>
+      <div style="display:flex;align-items:center;justify-content:space-between;padding-top:10px;border-top:1px solid var(--border)">
+        <span style="font-size:11.5px;color:var(--text-3)">
+          <i class="bi bi-graph-up" style="font-size:11px"></i>
+          <span class="num"><%= p.uses_count || 0 %></span> usos
+        </span>
+        <% if (isAdmin) { %>
+        <div style="display:flex;gap:4px">
+          <a href="/pecas/<%= p.id %>/editar" class="icon-btn" style="width:24px;height:24px" title="Editar"><i class="bi bi-pencil" style="font-size:12px"></i></a>
+          <form action="/pecas/<%= p.id %>/excluir" method="POST" style="margin:0;display:inline" onsubmit="return confirm('Excluir peça?')">
+            <button type="submit" class="icon-btn" style="width:24px;height:24px" title="Excluir"><i class="bi bi-trash" style="font-size:12px"></i></button>
+          </form>
+        </div>
+        <% } %>
       </div>
-    </form>
-  </div></div>
+    </div>
+    <% }) %>
+  </div>
+<% } else { %>
+  <div class="table-wrap">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Código</th><th>Peça</th><th>Categoria</th><th style="text-align:right">Usos</th>
+          <% if (isAdmin) { %><th style="width:90px;text-align:right">Ações</th><% } %>
+        </tr>
+      </thead>
+      <tbody>
+        <% parts.forEach(p => { %>
+        <tr>
+          <td><span class="mono" style="font-weight:600"><%= p.code || '—' %></span></td>
+          <td style="font-weight:600"><%= p.name %></td>
+          <td><% if (p.category) { %><span style="font-size:11.5px;padding:2px 8px;background:var(--surface-2);border-radius:99px"><%= p.category %></span><% } %></td>
+          <td style="text-align:right" class="num"><%= p.uses_count || 0 %></td>
+          <% if (isAdmin) { %>
+          <td style="text-align:right">
+            <a href="/pecas/<%= p.id %>/editar" class="icon-btn"><i class="bi bi-pencil"></i></a>
+            <form action="/pecas/<%= p.id %>/excluir" method="POST" style="margin:0;display:inline" onsubmit="return confirm('Excluir peça?')">
+              <button type="submit" class="icon-btn"><i class="bi bi-trash"></i></button>
+            </form>
+          </td>
+          <% } %>
+        </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+<% } %>
+
 </div>
