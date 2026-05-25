@@ -5,52 +5,71 @@ const User = require('../models/User');
 
 router.use(requireAuth, requireRole('admin'));
 
+// GET /admin/usuarios — lista usuários
 router.get('/usuarios', (req, res) => {
   const users = User.findAll();
-  res.render('admin/users/index', { title: 'Gestão de Usuários', users });
+  res.json({ ok: true, users });
 });
 
-router.get('/usuarios/novo', (req, res) => {
-  res.render('admin/users/new', { title: 'Novo Usuário', errors: [] });
-});
-
+// POST /admin/usuarios — criar usuário
 router.post('/usuarios', async (req, res) => {
   const { name, email, password, role, phone_whatsapp } = req.body;
   if (!name || !email || !password || !role) {
-    return res.render('admin/users/new', { title: 'Novo Usuário', errors: ['Preencha todos os campos obrigatórios.'], body: req.body });
+    return res.status(400).json({ ok: false, error: 'Preencha todos os campos obrigatórios.' });
+  }
+  if (!['vendas', 'compras', 'admin'].includes(role)) {
+    return res.status(400).json({ ok: false, error: 'Role inválida. Use: vendas, compras ou admin.' });
   }
   try {
-    await User.create({ name: name.trim(), email: email.trim().toLowerCase(), password, role, phone_whatsapp });
-    req.session.flash = { success: `Usuário ${name} criado com sucesso.` };
-    res.redirect('/admin/usuarios');
+    const user = await User.create({ name: name.trim(), email: email.trim().toLowerCase(), password, role, phone_whatsapp });
+    res.status(201).json({ ok: true, user: { id: user.id, name: user.name, role: user.role } });
   } catch (e) {
-    res.render('admin/users/new', { title: 'Novo Usuário', errors: ['E-mail já cadastrado.'], body: req.body });
+    res.status(409).json({ ok: false, error: 'E-mail já cadastrado.' });
   }
 });
 
-router.get('/usuarios/:id/editar', (req, res) => {
+// GET /admin/usuarios/:id — detalhe do usuário
+router.get('/usuarios/:id', (req, res) => {
   const user = User.findById(parseInt(req.params.id));
-  if (!user) return res.redirect('/admin/usuarios');
-  res.render('admin/users/edit', { title: 'Editar Usuário', user, errors: [] });
+  if (!user) return res.status(404).json({ ok: false, error: 'Usuário não encontrado.' });
+  res.json({ ok: true, user });
 });
 
-router.post('/usuarios/:id', async (req, res) => {
+// PUT /admin/usuarios/:id — atualizar usuário
+router.put('/usuarios/:id', async (req, res) => {
+  const id = parseInt(req.params.id);
   const { name, email, role, phone_whatsapp, active, new_password } = req.body;
-  User.update(parseInt(req.params.id), { name, email, role, phone_whatsapp, active: active === '1' ? 1 : 0 });
-  if (new_password) await User.updatePassword(parseInt(req.params.id), new_password);
-  req.session.flash = { success: 'Usuário atualizado.' };
-  res.redirect('/admin/usuarios');
+  const user = User.findById(id);
+  if (!user) return res.status(404).json({ ok: false, error: 'Usuário não encontrado.' });
+  User.update(id, { name, email, role, phone_whatsapp, active: active !== undefined ? (active ? 1 : 0) : user.active });
+  if (new_password) await User.updatePassword(id, new_password);
+  res.json({ ok: true });
 });
 
+// POST /admin/usuarios/:id/desativar — desativar usuário
 router.post('/usuarios/:id/desativar', (req, res) => {
   const id = parseInt(req.params.id);
   if (id === req.session.userId) {
-    req.session.flash = { error: 'Você não pode desativar seu próprio usuário.' };
-    return res.redirect('/admin/usuarios');
+    return res.status(400).json({ ok: false, error: 'Você não pode desativar seu próprio usuário.' });
   }
   User.deactivate(id);
-  req.session.flash = { success: 'Usuário desativado.' };
-  res.redirect('/admin/usuarios');
+  res.json({ ok: true });
+});
+
+// POST /admin/usuarios/:id/ativar — reativar usuário
+router.post('/usuarios/:id/ativar', (req, res) => {
+  User.update(parseInt(req.params.id), { active: 1 });
+  res.json({ ok: true });
+});
+
+// POST /admin/usuarios/:id/senha — redefinir senha
+router.post('/usuarios/:id/senha', async (req, res) => {
+  const { new_password } = req.body;
+  if (!new_password || new_password.length < 6) {
+    return res.status(400).json({ ok: false, error: 'Senha deve ter pelo menos 6 caracteres.' });
+  }
+  await User.updatePassword(parseInt(req.params.id), new_password);
+  res.json({ ok: true });
 });
 
 module.exports = router;

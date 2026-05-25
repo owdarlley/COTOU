@@ -20,24 +20,24 @@ function addTimeLabel(n) {
   return { ...n, time_label };
 }
 
+// GET /notificacoes — lista de notificações do usuário (query: page)
 router.get('/', (req, res) => {
   const { page = 1 } = req.query;
   const result = Notification.findByUserId(req.session.userId, { page: parseInt(page) });
   const notifications = result.items.map(addTimeLabel);
-  res.render('notifications/index', { title: 'Notificações', notifications, ...result });
+  res.json({ ok: true, ...result, items: notifications });
 });
 
-// suporte aos dois caminhos para compatibilidade
+// POST /notificacoes/marcar-todas — marcar todas como lidas
 router.post('/marcar-todas', (req, res) => {
   Notification.markAllRead(req.session.userId);
-  req.session.flash = { success: 'Todas as notificações marcadas como lidas.' };
-  res.redirect('/notificacoes');
+  res.json({ ok: true });
 });
 
+// POST /notificacoes/todas-lidas — alias para compatibilidade
 router.post('/todas-lidas', (req, res) => {
   Notification.markAllRead(req.session.userId);
-  req.session.flash = { success: 'Todas as notificações marcadas como lidas.' };
-  res.redirect('/notificacoes');
+  res.json({ ok: true });
 });
 
 module.exports = router;

@@ -13,7 +13,7 @@ const { notifyUser, notifyAllByRole } = require('../services/notificationService
 
 router.use(requireAuth);
 
-// Lista de cotações
+// GET /cotacoes — lista de cotações (query: status, page)
 router.get('/', (req, res) => {
   const { status = 'todos', page = 1 } = req.query;
   const result = Quotation.findAll({
@@ -23,34 +23,23 @@ router.get('/', (req, res) => {
     page: parseInt(page),
     limit: 15
   });
-  res.render('quotations/index', {
-    title: 'Cotações',
-    topbarSubtitle: 'Gerencie todas as solicitações',
-    ...result,
-    currentStatus: status
-  });
+  res.json({ ok: true, ...result, currentStatus: status });
 });
 
-// Formulário nova cotação (apenas vendas)
-router.get('/nova', requireRole('vendas', 'admin'), (req, res) => {
-  res.render('quotations/new', { title: 'Nova Cotação', errors: [] });
-});
-
-// Criar cotação
+// POST /cotacoes — criar cotação (vendas/admin)
 router.post('/', requireRole('vendas', 'admin'), async (req, res) => {
   const {
     customer_name, customer_phone,
     vehicle_plate, vehicle_model, vehicle_year_model,
     vehicle_year_manuf, vehicle_chassis,
     notes_vendas,
-    parts = [], part_names = [], part_codes = [], quantities = []
+    part_names = [], part_codes = [], quantities = []
   } = req.body;
 
   if (!customer_name || !customer_phone || !vehicle_plate) {
-    return res.render('quotations/new', {
-      title: 'Nova Cotação',
-      errors: ['Preencha os campos obrigatórios: cliente, telefone e placa.'],
-      body: req.body
+    return res.status(400).json({
+      ok: false,
+      error: 'Preencha os campos obrigatórios: cliente, telefone e placa.'
     });
   }
 
@@ -60,10 +49,9 @@ router.post('/', requireRole('vendas', 'admin'), async (req, res) => {
 
   const validItems = itemNames.filter(n => n && n.trim());
   if (validItems.length === 0) {
-    return res.render('quotations/new', {
-      title: 'Nova Cotação',
-      errors: ['Adicione pelo menos uma peça à cotação.'],
-      body: req.body
+    return res.status(400).json({
+      ok: false,
+      error: 'Adicione pelo menos uma peça à cotação.'
     });
   }
 
@@ -125,23 +113,20 @@ router.post('/', requireRole('vendas', 'admin'), async (req, res) => {
     message: `${quotation.creator_name} abriu cotação para ${customer_name} — ${vehicle_model || ''} ${vehicle_plate}`
   });
 
-  req.session.flash = { success: `Cotação #${quoteNumber} criada com sucesso!` };
-  res.redirect(`/cotacoes/${quotationId}`);
+  res.status(201).json({ ok: true, quotationId, quoteNumber });
 });
 
-// Detalhe da cotação
+// GET /cotacoes/:id — detalhe da cotação
 router.get('/:id', (req, res) => {
-  res.set('Cache-Control', 'no-store, no-cache, must-revalidate');
-  res.set('Pragma', 'no-cache');
   const quotation = Quotation.findById(parseInt(req.params.id));
-  if (!quotation) return res.status(404).render('errors/404', { title: 'Não encontrado' });
+  if (!quotation) return res.status(404).json({ ok: false, error: 'Cotação não encontrada.' });
 
   const items = QuotationItem.findByQuotationId(quotation.id);
   const partsTotal = items.reduce((s, i) => s + (i.total_price || 0), 0);
   const laborTotal = items.reduce((s, i) => s + (i.labor_cost_compras || i.labor_cost_vendas || 0), 0);
 
-  res.render('quotations/show', {
-    title: `Cotação #${quotation.quote_number}`,
+  res.json({
+    ok: true,
     quotation,
     items,
     partsTotal,
@@ -150,14 +135,16 @@ router.get('/:id', (req, res) => {
   });
 });
 
-// Mudar status (compras/admin)
+// POST /cotacoes/:id/status — mudar status (compras/admin)
 router.post('/:id/status', requireRole('compras', 'admin'), async (req, res) => {
   const quotation = Quotation.findById(parseInt(req.params.id));
-  if (!quotation) return res.status(404).json({ ok: false });
+  if (!quotation) return res.status(404).json({ ok: false, error: 'Cotação não encontrada.' });
 
   const { status } = req.body;
   const allowed = ['em_cotacao', 'cancelado'];
-  if (!allowed.includes(status)) return res.status(400).json({ ok: false, message: 'Status inválido.' });
+  if (!allowed.includes(status)) {
+    return res.status(400).json({ ok: false, error: 'Status inválido.' });
+  }
 
   Quotation.updateStatus(quotation.id, status, req.session.userId);
 
@@ -168,14 +155,13 @@ router.post('/:id/status', requireRole('compras', 'admin'), async (req, res) => 
     message: `Status alterado para "${status === 'em_cotacao' ? 'Em cotação' : 'Cancelado'}" por ${req.session.userName}`
   });
 
-  req.session.flash = { success: 'Status atualizado!' };
-  res.redirect(`/cotacoes/${quotation.id}`);
+  res.json({ ok: true, status });
 });
 
-// Compras responde a cotação (preenche valores)
+// POST /cotacoes/:id/responder — compras preenche valores
 router.post('/:id/responder', requireRole('compras', 'admin'), async (req, res) => {
   const quotation = Quotation.findById(parseInt(req.params.id));
-  if (!quotation) return res.status(404).render('errors/404', { title: 'Não encontrado' });
+  if (!quotation) return res.status(404).json({ ok: false, error: 'Cotação não encontrada.' });
 
   const {
     notes_compras,
@@ -215,16 +201,15 @@ router.post('/:id/responder', requireRole('compras', 'admin'), async (req, res) 
     message: `O setor de compras (${req.session.userName}) preencheu os valores. Verifique e envie ao cliente.`
   });
 
-  req.session.flash = { success: 'Cotação respondida! O vendedor foi notificado.' };
-  res.redirect(`/cotacoes/${quotation.id}`);
+  res.json({ ok: true });
 });
 
-// Vendas registra resposta do cliente
+// POST /cotacoes/:id/resposta-cliente — vendas registra resposta do cliente
 router.post('/:id/resposta-cliente', requireRole('vendas', 'admin'), async (req, res) => {
   const quotation = Quotation.findById(parseInt(req.params.id));
-  if (!quotation) return res.status(404).render('errors/404', { title: 'Não encontrado' });
+  if (!quotation) return res.status(404).json({ ok: false, error: 'Cotação não encontrada.' });
 
-  const approved = req.body.approved === '1';
+  const approved = req.body.approved === '1' || req.body.approved === true || req.body.approved === 1;
   Quotation.setCustomerApproval(quotation.id, approved);
 
   const verb = approved ? 'APROVOU' : 'RECUSOU';
@@ -237,18 +222,13 @@ router.post('/:id/resposta-cliente', requireRole('vendas', 'admin'), async (req,
       : `${req.session.userName} informou que o cliente recusou a cotação.`
   });
 
-  req.session.flash = {
-    success: approved
-      ? 'Aprovação registrada! O setor de compras foi notificado.'
-      : 'Recusa registrada. O setor de compras foi notificado.'
-  };
-  res.redirect(`/cotacoes/${quotation.id}`);
+  res.json({ ok: true, approved });
 });
 
-// Marcar peça chegou
+// POST /cotacoes/:id/peca-chegou — marcar chegada da peça (compras/admin)
 router.post('/:id/peca-chegou', requireRole('compras', 'admin'), async (req, res) => {
   const quotation = Quotation.findById(parseInt(req.params.id));
-  if (!quotation) return res.status(404).render('errors/404', { title: 'Não encontrado' });
+  if (!quotation) return res.status(404).json({ ok: false, error: 'Cotação não encontrada.' });
 
   const { item_id } = req.body;
   if (item_id) {
@@ -266,8 +246,7 @@ router.post('/:id/peca-chegou', requireRole('compras', 'admin'), async (req, res
     message: `O comprador ${req.session.userName} confirmou a chegada da peça. Avise o cliente!`
   });
 
-  req.session.flash = { success: 'Chegada registrada! O vendedor foi notificado.' };
-  res.redirect(`/cotacoes/${quotation.id}`);
+  res.json({ ok: true });
 });
 
 module.exports = router;

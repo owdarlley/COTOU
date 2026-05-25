@@ -1,7 +1,6 @@
 function requireAuth(req, res, next) {
   if (!req.session.userId) {
-    req.session.returnTo = req.originalUrl;
-    return res.redirect('/login');
+    return res.status(401).json({ ok: false, error: 'Não autenticado' });
   }
   next();
 }
@@ -9,7 +8,7 @@ function requireAuth(req, res, next) {
 function requireRole(...roles) {
   return (req, res, next) => {
     if (!roles.includes(req.session.userRole)) {
-      return res.status(403).render('errors/403', { title: 'Acesso Negado' });
+      return res.status(403).json({ ok: false, error: 'Sem permissão' });
     }
     next();
   };

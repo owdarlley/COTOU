@@ -1,8 +1,0 @@
-<% if (typeof messages !== 'undefined' && messages) { %>
-  <% if (messages.success) { %>
-    <div class="toast-stack"><div class="toast"><div class="toast-icon success"><i class="bi bi-check-lg"></i></div><div class="toast-body"><div class="toast-title">Sucesso</div><div class="toast-msg"><%= messages.success %></div></div></div></div>
-  <% } %>
-  <% if (messages.error) { %>
-    <div class="toast-stack"><div class="toast"><div class="toast-icon warn"><i class="bi bi-exclamation-triangle"></i></div><div class="toast-body"><div class="toast-title">Erro</div><div class="toast-msg"><%= messages.error %></div></div></div></div>
-  <% } %>
-<% } %>

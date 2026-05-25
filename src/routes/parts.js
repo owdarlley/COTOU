@@ -5,41 +5,65 @@ const PartsCatalog = require('../models/PartsCatalog');
 
 router.use(requireAuth);
 
+// GET /pecas — lista peças (query: q, page)
 router.get('/', (req, res) => {
   const { q = '', page = 1 } = req.query;
   const result = PartsCatalog.findAll({ q, page: parseInt(page) });
-  res.render('parts/index', { title: 'Catálogo de Peças', parts: result.items, ...result, q });
+  res.json({ ok: true, ...result, q });
 });
 
-router.post('/', (req, res) => {
+// POST /pecas — criar peça (admin/compras)
+router.post('/', requireRole('admin', 'compras'), (req, res) => {
   const { code, name, description, default_price } = req.body;
   if (!code || !name) {
-    req.session.flash = { error: 'Código e nome são obrigatórios.' };
-    return res.redirect('/pecas');
+    return res.status(400).json({ ok: false, error: 'Código e nome são obrigatórios.' });
   }
   try {
-    PartsCatalog.create({ code: code.trim().toUpperCase(), name: name.trim(), description, default_price: parseFloat(default_price) || null });
-    req.session.flash = { success: 'Peça adicionada ao catálogo.' };
+    const id = PartsCatalog.create({
+      code: code.trim().toUpperCase(),
+      name: name.trim(),
+      description,
+      default_price: parseFloat(default_price) || null
+    });
+    res.status(201).json({ ok: true, id });
   } catch (e) {
-    req.session.flash = { error: 'Código já existe no catálogo.' };
+    res.status(409).json({ ok: false, error: 'Código já existe no catálogo.' });
   }
-  res.redirect('/pecas');
 });
 
-router.post('/:id/editar', (req, res) => {
+// PUT /pecas/:id — atualizar peça
+router.put('/:id', requireRole('admin', 'compras'), (req, res) => {
   const { code, name, description, default_price } = req.body;
   PartsCatalog.update(parseInt(req.params.id), {
-    code: code.trim().toUpperCase(), name: name.trim(), description,
+    code: code ? code.trim().toUpperCase() : undefined,
+    name: name ? name.trim() : undefined,
+    description,
     default_price: parseFloat(default_price) || null
   });
-  req.session.flash = { success: 'Peça atualizada.' };
-  res.redirect('/pecas');
+  res.json({ ok: true });
+});
+
+// DELETE /pecas/:id — remover peça
+router.delete('/:id', requireRole('admin', 'compras'), (req, res) => {
+  PartsCatalog.delete(parseInt(req.params.id));
+  res.json({ ok: true });
+});
+
+// Manter compatibilidade com rotas POST legacy
+router.post('/:id/editar', requireRole('admin', 'compras'), (req, res) => {
+  const { code, name, description, default_price } = req.body;
+  PartsCatalog.update(parseInt(req.params.id), {
+    code: code ? code.trim().toUpperCase() : undefined,
+    name: name ? name.trim() : undefined,
+    description,
+    default_price: parseFloat(default_price) || null
+  });
+  res.json({ ok: true });
 });
 
 router.post('/:id/excluir', requireRole('admin', 'compras'), (req, res) => {
   PartsCatalog.delete(parseInt(req.params.id));
-  req.session.flash = { success: 'Peça removida.' };
-  res.redirect('/pecas');
+  res.json({ ok: true });
 });
 
 module.exports = router;
