@@ -1629,6 +1629,10 @@ const SEED_QUOTATIONS = [
     notes_vendas: 'Folga na suspensão traseira do lado direito. Cliente prefere peça original.',
     notes_compras: null, photo_path: null, customer_approved: null, whatsapp_sent_at: null,
     created_at: '2026-05-22T14:00:00Z',
+    messages: [
+      { id: 1, from: 2, text: 'Cliente precisa urgente, carro parado.', ts: '2026-05-22T14:05:00Z' },
+      { id: 2, from: 3, text: 'Entendido. Já estou verificando com fornecedores.', ts: '2026-05-22T14:10:00Z' },
+    ],
     items: [
       { id: 201, part_name: 'Amortecedor Traseiro', part_code: 'AT-2210', quantity: 2, unit_price: null, total_price: null, item_status: 'em_cotacao', supplier_name: null, delivery_days: null, labor_cost_compras: null, notes: null },
       { id: 202, part_name: 'Mola Helicoidal',      part_code: 'MO-1198', quantity: 2, unit_price: null, total_price: null, item_status: 'em_cotacao', supplier_name: null, delivery_days: null, labor_cost_compras: null, notes: null },
@@ -1644,6 +1648,10 @@ const SEED_QUOTATIONS = [
     notes_compras: 'Fornecedor AutoPeças Belo Horizonte. Prazo 3 dias úteis.',
     photo_path: null, customer_approved: null, whatsapp_sent_at: null,
     created_at: '2026-05-19T09:00:00Z',
+    messages: [
+      { id: 1, from: 2, text: 'Pode verificar se tem versão nacional?', ts: '2026-05-19T14:00:00Z' },
+      { id: 2, from: 3, text: 'Tem sim, inclusive mais barata. Coloquei na cotação.', ts: '2026-05-19T14:22:00Z' },
+    ],
     items: [
       { id: 301, part_name: 'Kit Embreagem Completo', part_code: 'KE-7731', quantity: 1, unit_price: 480.00, total_price: 480.00, labor_cost_compras: 120.00, delivery_days: 3, supplier_name: 'AutoPeças Belo', item_status: 'cotado', notes: 'Kit inclui disco, platô e rolamento' },
       { id: 302, part_name: 'Cabo de Embreagem',      part_code: 'CE-1104', quantity: 1, unit_price: 45.00,  total_price: 45.00,  labor_cost_compras: 0,      delivery_days: 3, supplier_name: 'AutoPeças Belo', item_status: 'cotado', notes: null },
@@ -1806,6 +1814,7 @@ function reducer(state, action) {
         customer_approved: null,
         whatsapp_sent_at: null,
         created_at: new Date().toISOString(),
+        messages: [],
         items,
       };
       // Add a notification for compras users
@@ -1949,6 +1958,29 @@ function reducer(state, action) {
       return { ...state, toasts: [...state.toasts, { id: Date.now(), type: action.tone || 'info', message: action.message }] };
     case 'dismiss_toast':
       return { ...state, toasts: state.toasts.filter(t => t.id !== action.id) };
+    case 'send_message': {
+      const { quotationId, text } = action;
+      const qt = state.quotations.find(q => q.id === quotationId);
+      const sender = state.users.find(u => u.id === state.currentUserId);
+      const newMsg = { id: Date.now(), from: state.currentUserId, text, ts: new Date().toISOString() };
+      const otherUserId = sender.role === 'vendas' ? qt.assigned_buyer_id : qt.created_by_user_id;
+      const notif = otherUserId ? {
+        id: nextId(state.notifications),
+        user_id: otherUserId,
+        type: 'nova_mensagem',
+        title: `Nova mensagem em ${qt.quote_number}`,
+        message: `${sender.name}: ${text.length > 60 ? text.slice(0, 57) + '…' : text}`,
+        read_at: null, quotation_id: quotationId,
+        created_at: newMsg.ts, time_label: 'agora',
+      } : null;
+      return {
+        ...state,
+        quotations: state.quotations.map(q =>
+          q.id === quotationId ? { ...q, messages: [...(q.messages || []), newMsg] } : q
+        ),
+        notifications: notif ? [notif, ...state.notifications] : state.notifications,
+      };
+    }
     default:
       return state;
   }
@@ -2430,7 +2462,8 @@ function NotificationsBell() {
                   <i className={`bi ${n.type === 'nova_cotacao' ? 'bi-plus-square' :
                                        n.type === 'cotacao_respondida' ? 'bi-currency-exchange' :
                                        n.type === 'peca_chegou' ? 'bi-box-seam' :
-                                       n.type === 'cotacao_atualizada' ? 'bi-arrow-repeat' : 'bi-bell'}`}></i>
+                                       n.type === 'cotacao_atualizada' ? 'bi-arrow-repeat' :
+                                       n.type === 'nova_mensagem' ? 'bi-chat-dots-fill' : 'bi-bell'}`}></i>
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div className="notif-title">{n.title}</div>
@@ -3103,6 +3136,9 @@ function QuotationDetail() {
               )}
             </div>
           </div>
+
+          {/* Chat */}
+          <ChatPanel quotation={qt} />
         </div>
       </div>
 
@@ -3134,6 +3170,76 @@ function MetaRow({ label, value, mono, icon, iconColor }) {
         {icon && <i className={`bi ${icon}`} style={{ color: iconColor || 'var(--text-muted)', fontSize: 12 }}></i>}
         {value}
       </span>
+    </div>
+  );
+}
+
+/* =========================================================
+   Chat panel
+   ========================================================= */
+function ChatPanel({ quotation }) {
+  const { state, dispatch } = useStore();
+  const [text, setText] = useState('');
+  const bottomRef = React.useRef(null);
+  const me = state.users.find(u => u.id === state.currentUserId);
+  const messages = quotation.messages || [];
+
+  React.useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages.length]);
+
+  function send() {
+    const t = text.trim();
+    if (!t) return;
+    dispatch({ type: 'send_message', quotationId: quotation.id, text: t });
+    setText('');
+  }
+
+  function getUserName(id) {
+    return state.users.find(u => u.id === id)?.name || 'Desconhecido';
+  }
+
+  return (
+    <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: 0, padding: 0, overflow: 'hidden' }}>
+      <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--border)', fontWeight: 600, fontSize: 13, display: 'flex', alignItems: 'center', gap: 8 }}>
+        <i className="bi bi-chat-dots" style={{ color: 'var(--brand)' }}></i>
+        Chat interno
+        {messages.length > 0 && <span className="badge" style={{ marginLeft: 'auto', fontSize: 10 }}>{messages.length}</span>}
+      </div>
+      <div style={{ overflowY: 'auto', maxHeight: 260, padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+        {messages.length === 0 && (
+          <div className="tiny faint" style={{ textAlign: 'center', padding: '18px 0' }}>Nenhuma mensagem ainda.</div>
+        )}
+        {messages.map(msg => {
+          const mine = msg.from === me.id;
+          return (
+            <div key={msg.id} style={{ display: 'flex', flexDirection: 'column', alignItems: mine ? 'flex-end' : 'flex-start' }}>
+              <div className="tiny faint" style={{ marginBottom: 3 }}>{mine ? 'Você' : getUserName(msg.from)}</div>
+              <div style={{
+                background: mine ? 'var(--brand)' : 'var(--surface-2)',
+                color: mine ? 'var(--brand-text)' : 'var(--text)',
+                borderRadius: mine ? '12px 12px 2px 12px' : '12px 12px 12px 2px',
+                padding: '7px 11px', fontSize: 13, maxWidth: '88%', wordBreak: 'break-word', lineHeight: 1.45,
+              }}>
+                {msg.text}
+              </div>
+              <div className="tiny faint" style={{ marginTop: 3 }}>{fmt.time(msg.ts)}</div>
+            </div>
+          );
+        })}
+        <div ref={bottomRef} />
+      </div>
+      <div style={{ padding: '10px 12px', borderTop: '1px solid var(--border)', display: 'flex', gap: 8 }}>
+        <input
+          className="input"
+          style={{ flex: 1, fontSize: 13 }}
+          placeholder="Mensagem… (Enter para enviar)"
+          value={text}
+          onChange={e => setText(e.target.value)}
+          onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } }}
+        />
+        <Button variant="primary" icon="bi-send" onClick={send} disabled={!text.trim()} />
+      </div>
     </div>
   );
 }
@@ -4165,7 +4271,8 @@ function NotifRow({ n, last }) {
           n.type === 'nova_cotacao' ? 'bi-plus-square' :
           n.type === 'cotacao_respondida' ? 'bi-currency-exchange' :
           n.type === 'peca_chegou' ? 'bi-box-seam' :
-          n.type === 'cotacao_atualizada' ? 'bi-arrow-repeat' : 'bi-bell'}`}></i>
+          n.type === 'cotacao_atualizada' ? 'bi-arrow-repeat' :
+          n.type === 'nova_mensagem' ? 'bi-chat-dots-fill' : 'bi-bell'}`}></i>
       </div>
       <div style={{ flex: 1, minWidth: 0 }}>
         <div className="row between">
