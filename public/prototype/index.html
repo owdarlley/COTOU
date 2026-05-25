@@ -2699,6 +2699,14 @@ function QuotationsList() {
       x.vehicle.model.toLowerCase().includes(needle)
     );
   }
+  list = [...list].sort((a, b) => {
+    const dir = sortDir === 'asc' ? 1 : -1;
+    const av = sortKey === 'total' ? calcTotals(a.items).grandTotal : a[sortKey];
+    const bv = sortKey === 'total' ? calcTotals(b.items).grandTotal : b[sortKey];
+    if (av == null) return dir;
+    if (bv == null) return -dir;
+    return av > bv ? dir : av < bv ? -dir : 0;
+  });
 
   const counts = useMemo(() => {
     const base = currentUser.role === 'vendas'
@@ -2772,13 +2780,13 @@ function QuotationsList() {
           <table className="tbl">
             <thead>
               <tr>
-                <th style={{ width: 130 }}>Número</th>
-                <th>Cliente</th>
+                <th style={{ width: 130, cursor: 'pointer' }} onClick={() => toggleSort('quote_number')}>Número{sortIcon('quote_number')}</th>
+                <th style={{ cursor: 'pointer' }} onClick={() => toggleSort('customer_name')}>Cliente{sortIcon('customer_name')}</th>
                 <th>Veículo</th>
                 <th>Itens</th>
-                <th>Total</th>
-                <th>Aberta em</th>
-                <th>Status</th>
+                <th style={{ cursor: 'pointer' }} onClick={() => toggleSort('total')}>Total{sortIcon('total')}</th>
+                <th style={{ cursor: 'pointer' }} onClick={() => toggleSort('created_at')}>Aberta em{sortIcon('created_at')}</th>
+                <th style={{ cursor: 'pointer' }} onClick={() => toggleSort('status')}>Status{sortIcon('status')}</th>
                 <th style={{ width: 44 }}></th>
               </tr>
             </thead>
@@ -3315,6 +3323,7 @@ function NewQuotation() {
   const [plate, setPlate] = useState('');
   const [plateLoading, setPlateLoading] = useState(false);
   const [plateFound, setPlateFound] = useState(false);
+  const [plateWarning, setPlateWarning] = useState('');
   const [vehicle, setVehicle] = useState({ make: '', model: '', year_model: '', year_manuf: '', color: '', fuel: '' });
   // items
   const [items, setItems] = useState([{ part_name: '', part_code: '', quantity: 1 }]);
@@ -3327,6 +3336,7 @@ function NewQuotation() {
   function lookupPlate() {
     const key = plate.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
     setPlateLoading(true);
+    setPlateWarning('');
     setTimeout(() => {
       const data = PLATE_DB[key];
       if (data) {
@@ -3336,6 +3346,13 @@ function NewQuotation() {
       } else {
         setPlateFound(false);
         dispatch({ type: 'toast', tone: 'error', message: 'Placa não encontrada — preencha manualmente' });
+      }
+      // Check for existing open quotation for this plate
+      const existing = state.quotations.find(
+        q => q.vehicle.plate.toUpperCase() === key && ['pendente', 'em_cotacao'].includes(q.status)
+      );
+      if (existing) {
+        setPlateWarning(`⚠️ Este veículo já possui a cotação ${existing.quote_number} em aberto (${STATUS_META[existing.status].label}).`);
       }
       setPlateLoading(false);
     }, 800);
@@ -3469,6 +3486,12 @@ function NewQuotation() {
             <div className="row" style={{ padding: 10, background: 'var(--st-cotado-bg)', color: 'var(--st-cotado)', borderRadius: 'var(--r-md)', gap: 8 }}>
               <i className="bi bi-check-circle-fill"></i>
               <span className="small semibold">Dados encontrados na base de placas (WDAPI)</span>
+            </div>
+          )}
+          {plateWarning && (
+            <div className="row" style={{ padding: 10, background: '#fef3c7', color: '#b45309', borderRadius: 'var(--r-md)', gap: 8, border: '1px solid #fde68a' }}>
+              <i className="bi bi-exclamation-triangle-fill"></i>
+              <span className="small">{plateWarning}</span>
             </div>
           )}
 
