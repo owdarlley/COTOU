@@ -3458,21 +3458,33 @@ function NewQuotation() {
   const [photo, setPhoto] = useState(null);
   const fileRef = useRef(null);
 
-  function lookupPlate() {
+  async function lookupPlate() {
     const key = plate.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
+    if (!key) return;
     setPlateLoading(true);
     setPlateWarning('');
-    setTimeout(() => {
-      const data = PLATE_DB[key];
-      if (data) {
-        setVehicle({ ...data, year_model: String(data.year_model), year_manuf: String(data.year_manuf) });
+    try {
+      const res = await fetch(`/api/placa/${key}`);
+      const json = await res.json();
+      if (json.ok && json.data) {
+        setVehicle({
+          make:       json.data.make || '',
+          model:      json.data.model || '',
+          year_model: String(json.data.year_model || ''),
+          year_manuf: String(json.data.year_manuf || ''),
+          color:      json.data.color || '',
+          fuel:       json.data.fuel || '',
+        });
         setPlateFound(true);
         dispatch({ type: 'toast', tone: 'success', message: 'Dados do veículo carregados' });
       } else {
         setPlateFound(false);
-        dispatch({ type: 'toast', tone: 'error', message: 'Placa não encontrada — preencha manualmente' });
+        dispatch({ type: 'toast', tone: 'error', message: json.message || 'Placa não encontrada — preencha manualmente' });
       }
-      // Check for existing open quotation for this plate
+    } catch (_err) {
+      setPlateFound(false);
+      dispatch({ type: 'toast', tone: 'error', message: 'Erro ao consultar placa. Preencha manualmente.' });
+    } finally {
       const existing = state.quotations.find(
         q => q.vehicle.plate.toUpperCase() === key && ['pendente', 'em_cotacao'].includes(q.status)
       );
@@ -3480,7 +3492,7 @@ function NewQuotation() {
         setPlateWarning(`⚠️ Este veículo já possui a cotação ${existing.quote_number} em aberto (${STATUS_META[existing.status].label}).`);
       }
       setPlateLoading(false);
-    }, 800);
+    }
   }
 
   function addItem(part) {

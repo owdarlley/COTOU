@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
-const { requireAuth } = require('../middleware/auth');
-const { lookupPlate } = require('../services/plateService');
+const { requireAuth, requireRole } = require('../middleware/auth');
+const { lookupPlate, getBalance, isValidPlate } = require('../services/plateService');
 const { sendQuoteMessage } = require('../services/whatsappService');
 const PartsCatalog = require('../models/PartsCatalog');
 const Notification = require('../models/Notification');
@@ -12,17 +12,28 @@ router.use(requireAuth);
 
 // Consulta placa
 router.get('/placa/:plate', async (req, res) => {
+  if (!isValidPlate(req.params.plate)) {
+    return res.status(400).json({ ok: false, code: 'INVALID_FORMAT', message: 'Formato de placa inválido. Use AAA9999 ou AAA0X00.' });
+  }
+  const token = process.env.PLATE_API_TOKEN || process.env.APIPLACAS_TOKEN;
+  if (!token) {
+    return res.status(503).json({ ok: false, code: 'NO_TOKEN', message: 'Token da API de placa não configurado no .env' });
+  }
   try {
     const data = await lookupPlate(req.params.plate);
-    if (!data) {
-      const token = process.env.PLATE_API_TOKEN;
-      if (!token) return res.json({ ok: false, message: 'Token da API de placa não configurado no .env' });
-      return res.json({ ok: false, message: 'Placa não encontrada ou sem dados disponíveis.' });
-    }
+    if (!data) return res.status(404).json({ ok: false, code: 'NOT_FOUND', message: 'Placa não encontrada ou sem dados disponíveis.' });
     res.json({ ok: true, data });
   } catch (err) {
-    res.json({ ok: false, message: err.message });
+    const status = err.code === 'RATE_LIMIT' ? 429 : err.code === 'INVALID_TOKEN' ? 502 : 404;
+    res.status(status).json({ ok: false, code: err.code || 'ERROR', message: err.message });
   }
+});
+
+// Saldo de consultas (somente admin)
+router.get('/saldo', requireRole('admin'), async (req, res) => {
+  const balance = await getBalance();
+  if (!balance) return res.status(503).json({ ok: false, message: 'Não foi possível consultar o saldo.' });
+  res.json({ ok: true, data: balance });
 });
 
 // Autocomplete de peças
