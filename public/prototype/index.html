@@ -2011,6 +2011,9 @@ const fmt = {
   plate: (p) => p ? String(p).toUpperCase() : '—',
 };
 
+function plural(n, sing, plur) { return `${n} ${n === 1 ? sing : plur}`; }
+window.plural = plural;
+
 const STATUS_META = {
   pendente:    { label: 'Pendente',     icon: 'bi-hourglass-split', order: 0 },
   em_cotacao:  { label: 'Em cotação',   icon: 'bi-currency-exchange', order: 1 },
@@ -2342,6 +2345,8 @@ function Sidebar() {
               key={key}
               className={`nav-item ${active ? 'active' : ''}`}
               onClick={() => dispatch({ type: 'navigate', name: key })}
+              title={meta.label}
+              aria-label={meta.label}
             >
               <i className={`bi ${meta.icon} nav-icon`}></i>
               <span>{meta.label}</span>
@@ -2667,6 +2672,13 @@ function QuotationsList() {
   const { state, dispatch, currentUser } = useStore();
   const [filter, setFilter] = useState(state.route.params.filter || 'todos');
   const [q, setQ] = useState('');
+  const [sortKey, setSortKey] = useState('created_at');
+  const [sortDir, setSortDir] = useState('desc');
+  const toggleSort = (key) => {
+    if (sortKey === key) setSortDir(d => d === 'asc' ? 'desc' : 'asc');
+    else { setSortKey(key); setSortDir('desc'); }
+  };
+  const sortIcon = (key) => sortKey === key ? (sortDir === 'asc' ? ' ▲' : ' ▼') : '';
 
   useEffect(() => {
     if (state.route.params.filter) setFilter(state.route.params.filter);
@@ -3136,7 +3148,7 @@ function RespondModal({ quotation, onClose }) {
   function update(idx, field, v) {
     setItems(prev => prev.map((it, i) => i === idx ? { ...it, [field]: v } : it));
   }
-  const allFilled = items.every(it => it.unit_price && it.delivery_days);
+  const allFilled = items.every(it => Number(it.unit_price) > 0 && Number(it.delivery_days) > 0);
 
   function submit() {
     if (!allFilled) return;
@@ -3186,8 +3198,9 @@ function RespondModal({ quotation, onClose }) {
               <Field label="Preço unit. *">
                 <div className="input-group">
                   <span className="input-icon mono">R$</span>
-                  <input className="input mono" type="number" step="0.01" placeholder="0,00"
-                    value={items[i].unit_price} onChange={e => update(i, 'unit_price', e.target.value)} />
+                  <input className="input mono" type="number" step="0.01" placeholder="0,00" min="0.01"
+                    value={items[i].unit_price} onChange={e => update(i, 'unit_price', e.target.value)}
+                    style={items[i].unit_price !== '' && Number(items[i].unit_price) <= 0 ? { borderColor: '#dc2626' } : {}} />
                 </div>
               </Field>
               <Field label="Mão de obra">
@@ -3198,8 +3211,9 @@ function RespondModal({ quotation, onClose }) {
                 </div>
               </Field>
               <Field label="Prazo (dias) *">
-                <input className="input mono" type="number" placeholder="3"
-                  value={items[i].delivery_days} onChange={e => update(i, 'delivery_days', e.target.value)} />
+                <input className="input mono" type="number" placeholder="3" min="1"
+                  value={items[i].delivery_days} onChange={e => update(i, 'delivery_days', e.target.value)}
+                  style={items[i].delivery_days !== '' && Number(items[i].delivery_days) <= 0 ? { borderColor: '#dc2626' } : {}} />
               </Field>
               <Field label="Fornecedor">
                 <input className="input" placeholder="Nome do fornecedor"
@@ -3296,6 +3310,7 @@ function NewQuotation() {
   // customer
   const [customerName, setCustomerName] = useState('');
   const [customerPhone, setCustomerPhone] = useState('');
+  const [step1Touched, setStep1Touched] = useState(false);
   // vehicle
   const [plate, setPlate] = useState('');
   const [plateLoading, setPlateLoading] = useState(false);
@@ -3352,7 +3367,8 @@ function NewQuotation() {
     reader.readAsDataURL(f);
   }
 
-  const canStep1 = customerName && customerPhone.replace(/\D/g, '').length >= 10;
+  const phoneDigits = customerPhone.replace(/\D/g, '');
+  const canStep1 = customerName.trim() && (phoneDigits.length === 10 || phoneDigits.length === 11);
   const canStep2 = plate && vehicle.make && vehicle.model;
   const validItems = items.filter(i => i.part_name && i.quantity > 0);
   const canSubmit = canStep1 && canStep2 && validItems.length > 0;
@@ -3411,18 +3427,18 @@ function NewQuotation() {
         <div className="card card-pad" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           <h3 style={{ margin: 0 }}>Dados do cliente</h3>
           <div className="grid-2">
-            <Field label="Nome completo *">
-              <input className="input" value={customerName} onChange={e => setCustomerName(e.target.value)} placeholder="Carlos Eduardo Mendes" autoFocus />
+            <Field label="Nome completo *" error={step1Touched && !customerName.trim() ? 'Nome é obrigatório' : ''}>
+              <input className="input" value={customerName} onChange={e => setCustomerName(e.target.value)} placeholder="Carlos Eduardo Mendes" autoFocus style={step1Touched && !customerName.trim() ? { borderColor: '#dc2626' } : {}} />
             </Field>
-            <Field label="WhatsApp *" hint="Com DDD, sem espaços">
+            <Field label="WhatsApp *" hint="Com DDD, sem espaços" error={step1Touched && !(phoneDigits.length === 10 || phoneDigits.length === 11) ? 'Informe DDD + número (10 ou 11 dígitos)' : ''}>
               <div className="input-group">
                 <i className="bi bi-whatsapp input-icon" style={{ color: '#16a34a' }}></i>
-                <input className="input mono" value={customerPhone} onChange={e => setCustomerPhone(e.target.value)} placeholder="11987654321" />
+                <input className="input mono" value={customerPhone} onChange={e => setCustomerPhone(e.target.value)} placeholder="11987654321" style={step1Touched && !(phoneDigits.length === 10 || phoneDigits.length === 11) ? { borderColor: '#dc2626' } : {}} />
               </div>
             </Field>
           </div>
           <div className="row" style={{ justifyContent: 'flex-end' }}>
-            <Button variant="primary" iconRight="bi-arrow-right" disabled={!canStep1} onClick={() => setStep(2)}>Próximo</Button>
+            <Button variant="primary" iconRight="bi-arrow-right" onClick={() => { setStep1Touched(true); if (canStep1) setStep(2); }}>Próximo</Button>
           </div>
         </div>
       )}
@@ -3676,9 +3692,9 @@ function Dashboard() {
         <div>
           <h2 className="page-title">{greet}, {currentUser.name.split(' ')[0]}.</h2>
           <p className="page-sub">
-            {currentUser.role === 'vendas' && `Você tem ${counts.pendente} cotações pendentes e ${counts.cotado} aguardando envio ao cliente.`}
-            {currentUser.role === 'compras' && `${counts.pendente} cotações esperando você assumir.`}
-            {currentUser.role === 'admin' && `${total} cotações no sistema, ${active} ativas.`}
+            {currentUser.role === 'vendas' && `Você tem ${plural(counts.pendente, 'cotação pendente', 'cotações pendentes')} e ${plural(counts.cotado, 'cotação aguardando', 'cotações aguardando')} envio ao cliente.`}
+            {currentUser.role === 'compras' && `${plural(counts.pendente, 'cotação esperando', 'cotações esperando')} você assumir.`}
+            {currentUser.role === 'admin' && `${plural(total, 'cotação no sistema', 'cotações no sistema')}, ${plural(active, 'ativa', 'ativas')}.`}
           </p>
         </div>
         <div className="row" style={{ gap: 8 }}>
@@ -3998,7 +4014,7 @@ function CatalogScreen() {
         )}
       </div>
 
-      {editing && <PartModal part={editing === 'new' ? null : editing} onClose={() => setEditing(null)} />}
+      {editing && <PartModal key={editing === 'new' ? 'new' : editing.id} part={editing === 'new' ? null : editing} onClose={() => setEditing(null)} />}
       <ConfirmDialog
         open={!!deleting}
         onClose={() => setDeleting(null)}
@@ -4065,7 +4081,7 @@ function NotificationsScreen() {
       <div className="page-head">
         <div>
           <h2 className="page-title">Notificações</h2>
-          <p className="page-sub">{unread.length > 0 ? `${unread.length} novas notificações` : 'Tudo em dia'}</p>
+          <p className="page-sub">{unread.length > 0 ? plural(unread.length, 'nova notificação', 'novas notificações') : 'Tudo em dia'}</p>
         </div>
         {unread.length > 0 && (
           <Button variant="secondary" icon="bi-check2-all" onClick={() => dispatch({ type: 'mark_all_read' })}>
@@ -4213,7 +4229,7 @@ function AdminUsersScreen() {
         </table>
       </div>
 
-      {editing && <UserModal user={editing === 'new' ? null : editing} onClose={() => setEditing(null)} />}
+      {editing && <UserModal key={editing === 'new' ? 'new' : editing.id} user={editing === 'new' ? null : editing} onClose={() => setEditing(null)} />}
     </div>
   );
 }
@@ -4286,7 +4302,7 @@ function Router() {
     case 'dashboard':         screen = <Dashboard />; break;
     case 'quotations':        screen = <QuotationsList />; break;
     case 'quotation-detail':  screen = <QuotationDetail />; break;
-    case 'new-quotation':     screen = <NewQuotation />; break;
+    case 'new-quotation':     screen = <NewQuotation key={state.route.name + JSON.stringify(state.route.params)} />; break;
     case 'catalog':           screen = <CatalogScreen />; break;
     case 'notifications':     screen = <NotificationsScreen />; break;
     case 'admin-users':       screen = <AdminUsersScreen />; break;
