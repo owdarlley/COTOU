@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>COTOU — Catálogo de Peças</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <script>tailwind.config = { theme: { extend: { fontFamily: { sans: ['Inter','sans-serif'] } } } }</script>
+  <style>body { font-family: 'Inter', sans-serif; }</style>
+</head>
+<body class="bg-slate-50 min-h-screen flex">
+
+  <!-- Sidebar -->
+  <aside class="w-56 bg-white border-r border-slate-200 flex flex-col h-screen sticky top-0 flex-shrink-0">
+    <div class="px-4 py-5 border-b border-slate-200">
+      <div class="text-xl font-black text-blue-600 tracking-tight">COTOU</div>
+      <div class="text-xs text-slate-400 mt-0.5 uppercase tracking-widest">ERP Autopeças</div>
+    </div>
+    <nav class="flex-1 p-3 space-y-0.5 overflow-y-auto">
+      <a href="dashboard.html" class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-slate-50 text-slate-600 text-sm font-medium transition-colors">
+        <i class="bi bi-grid-1x2-fill text-base"></i> Dashboard
+      </a>
+      <a href="cotacoes.html" class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-slate-50 text-slate-600 text-sm font-medium transition-colors">
+        <i class="bi bi-clipboard-data text-base"></i> Cotações
+      </a>
+      <a href="nova-cotacao.html" class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-slate-50 text-slate-600 text-sm font-medium transition-colors">
+        <i class="bi bi-plus-circle text-base"></i> Nova Cotação
+      </a>
+      <a href="catalogo.html" class="flex items-center gap-3 px-3 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium">
+        <i class="bi bi-box-seam text-base"></i> Catálogo de Peças
+      </a>
+      <a href="notificacoes.html" class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-slate-50 text-slate-600 text-sm font-medium transition-colors">
+        <i class="bi bi-bell text-base"></i> Notificações
+        <span class="ml-auto bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold">2</span>
+      </a>
+      <div class="pt-3 pb-1">
+        <div class="text-xs text-slate-400 font-semibold uppercase tracking-widest px-3 mb-1">Administração</div>
+      </div>
+      <a href="admin-usuarios.html" class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-slate-50 text-slate-600 text-sm font-medium transition-colors">
+        <i class="bi bi-people text-base"></i> Usuários
+      </a>
+    </nav>
+    <div class="border-t border-slate-200 p-3">
+      <div class="flex items-center gap-3 px-2 py-2">
+        <div class="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0">JV</div>
+        <div class="flex-1 min-w-0">
+          <div class="text-sm font-semibold text-slate-800 truncate">João Vendas</div>
+          <div class="text-xs text-slate-400 truncate">Vendas</div>
+        </div>
+        <a href="index.html" class="text-slate-400 hover:text-red-500 transition-colors" title="Sair">
+          <i class="bi bi-box-arrow-right"></i>
+        </a>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <div class="flex-1 flex flex-col min-w-0">
+    <!-- Topbar -->
+    <header class="h-14 bg-white border-b border-slate-200 flex items-center px-6 gap-4 sticky top-0 z-10">
+      <div class="flex items-center gap-2 text-sm text-slate-500 flex-shrink-0">
+        <span class="font-semibold text-slate-800">Catálogo de Peças</span>
+      </div>
+      <div class="flex-1 max-w-md mx-auto">
+        <div class="relative">
+          <span class="absolute inset-y-0 left-3 flex items-center text-slate-400"><i class="bi bi-search text-sm"></i></span>
+          <input type="text" id="search-input" placeholder="Buscar por nome, código ou categoria..." class="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-lg text-sm text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition" oninput="renderGrid()" />
+        </div>
+      </div>
+      <div class="flex items-center gap-3 flex-shrink-0">
+        <a href="notificacoes.html" class="relative p-2 text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors">
+          <i class="bi bi-bell text-lg"></i>
+          <span class="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+        </a>
+        <div class="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white text-xs font-bold cursor-pointer">JV</div>
+      </div>
+    </header>
+
+    <!-- Content -->
+    <main class="flex-1 p-6 space-y-5">
+
+      <!-- Header -->
+      <div class="flex items-center justify-between">
+        <div>
+          <h1 class="text-2xl font-bold text-slate-900">Catálogo de Peças</h1>
+          <p class="text-sm text-slate-500 mt-0.5">Peças cadastradas disponíveis para cotação</p>
+        </div>
+        <button onclick="openModal('modal-part')" class="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors shadow-sm shadow-blue-200">
+          <i class="bi bi-plus-lg"></i> Adicionar Peça
+        </button>
+      </div>
+
+      <!-- KPI cards -->
+      <div class="grid grid-cols-3 gap-4" id="kpi-cards"></div>
+
+      <!-- Category Pills -->
+      <div class="flex items-center gap-2 flex-wrap" id="category-pills"></div>
+
+      <!-- Parts Grid -->
+      <div class="grid grid-cols-4 gap-4" id="parts-grid"></div>
+
+      <!-- Empty state -->
+      <div id="empty-state" class="hidden text-center py-16 bg-white rounded-xl border border-slate-200">
+        <i class="bi bi-box text-4xl text-slate-300"></i>
+        <p class="text-slate-500 font-medium mt-3">Nenhuma peça encontrada</p>
+        <p class="text-slate-400 text-sm mt-1">Tente outro filtro ou adicione uma nova peça</p>
+      </div>
+
+    </main>
+  </div>
+
+  <!-- Modal: Add Part -->
+  <div id="modal-part" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" onclick="closeModal('modal-part')"></div>
+    <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 z-10">
+      <div class="flex items-center justify-between mb-5">
+        <h3 class="text-lg font-bold text-slate-900">Adicionar Peça ao Catálogo</h3>
+        <button onclick="closeModal('modal-part')" class="p-1.5 hover:bg-slate-100 rounded-lg text-slate-400 hover:text-slate-600 transition-colors">
+          <i class="bi bi-x-lg text-sm"></i>
+        </button>
+      </div>
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-semibold text-slate-700 mb-1.5">Código *</label>
+            <input id="modal-code" type="text" placeholder="Ex: PF-1023" class="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500 transition" />
+          </div>
+          <div>
+            <label class="block text-sm font-semibold text-slate-700 mb-1.5">Categoria *</label>
+            <select id="modal-category" class="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition bg-white">
+              <option value="">Selecionar</option>
+              <option>Freios</option>
+              <option>Suspensão</option>
+              <option>Motor</option>
+              <option>Embreagem</option>
+              <option>Elétrica</option>
+              <option>Carroceria</option>
+              <option>Transmissão</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-slate-700 mb-1.5">Nome da Peça *</label>
+          <input id="modal-name" type="text" placeholder="Ex: Pastilha de Freio Dianteira" class="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition" />
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-slate-700 mb-1.5">Descrição</label>
+          <input id="modal-desc" type="text" placeholder="Ex: Kit com 4 pastilhas" class="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition" />
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-slate-700 mb-1.5">Preço de Referência</label>
+          <div class="relative">
+            <span class="absolute inset-y-0 left-3 flex items-center text-slate-400 text-sm">R$</span>
+            <input id="modal-price" type="number" min="0" step="0.01" placeholder="0,00" class="w-full pl-10 pr-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition" />
+          </div>
+        </div>
+      </div>
+      <div class="flex gap-3 mt-6">
+        <button onclick="closeModal('modal-part')" class="flex-1 py-2.5 text-sm font-semibold text-slate-600 hover:text-slate-800 border border-slate-200 hover:bg-slate-50 rounded-xl transition-colors">
+          Cancelar
+        </button>
+        <button onclick="savePart()" class="flex-1 py-2.5 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-xl transition-colors">
+          Salvar Peça
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script src="shared/mock-data.js"></script>
+  <script src="shared/ui.js"></script>
+  <script>
+    let activeCategory = 'Todas';
+
+    const categoryColors = {
+      'Freios':      { bg: 'bg-red-100',    text: 'text-red-700',    dot: 'bg-red-500' },
+      'Suspensão':   { bg: 'bg-amber-100',  text: 'text-amber-700',  dot: 'bg-amber-500' },
+      'Motor':       { bg: 'bg-blue-100',   text: 'text-blue-700',   dot: 'bg-blue-500' },
+      'Embreagem':   { bg: 'bg-purple-100', text: 'text-purple-700', dot: 'bg-purple-500' },
+      'Elétrica':    { bg: 'bg-yellow-100', text: 'text-yellow-700', dot: 'bg-yellow-500' },
+      'Carroceria':  { bg: 'bg-green-100',  text: 'text-green-700',  dot: 'bg-green-500' },
+      'Transmissão': { bg: 'bg-cyan-100',   text: 'text-cyan-700',   dot: 'bg-cyan-500' },
+    };
+
+    function categoryBadge(cat) {
+      const c = categoryColors[cat] || { bg:'bg-slate-100', text:'text-slate-600', dot:'bg-slate-400' };
+      return `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-semibold ${c.bg} ${c.text}"><span class="w-1.5 h-1.5 rounded-full ${c.dot}"></span>${cat}</span>`;
+    }
+
+    function renderKPIs() {
+      const cats = [...new Set(MOCK.parts.map(p => p.category))];
+      const mostUsed = 'Freios';
+      document.getElementById('kpi-cards').innerHTML = `
+        <div class="bg-white rounded-xl border border-slate-200 p-5">
+          <div class="flex items-start justify-between mb-4">
+            <div class="w-10 h-10 bg-blue-50 border border-blue-200 rounded-xl flex items-center justify-center">
+              <i class="bi bi-box-seam text-blue-600 text-lg"></i>
+            </div>
+          </div>
+          <div class="text-3xl font-black text-slate-900 mb-1">${MOCK.parts.length}</div>
+          <div class="text-sm text-slate-500 font-medium">Total de Peças</div>
+        </div>
+        <div class="bg-white rounded-xl border border-slate-200 p-5">
+          <div class="flex items-start justify-between mb-4">
+            <div class="w-10 h-10 bg-green-50 border border-green-200 rounded-xl flex items-center justify-center">
+              <i class="bi bi-tags text-green-600 text-lg"></i>
+            </div>
+          </div>
+          <div class="text-3xl font-black text-slate-900 mb-1">${cats.length}</div>
+          <div class="text-sm text-slate-500 font-medium">Categorias</div>
+        </div>
+        <div class="bg-white rounded-xl border border-slate-200 p-5">
+          <div class="flex items-start justify-between mb-4">
+            <div class="w-10 h-10 bg-amber-50 border border-amber-200 rounded-xl flex items-center justify-center">
+              <i class="bi bi-star text-amber-600 text-lg"></i>
+            </div>
+          </div>
+          <div class="text-lg font-black text-slate-900 mb-1">${mostUsed}</div>
+          <div class="text-sm text-slate-500 font-medium">Categoria Mais Usada</div>
+        </div>
+      `;
+    }
+
+    function renderPills() {
+      const cats = ['Todas', ...new Set(MOCK.parts.map(p => p.category))];
+      document.getElementById('category-pills').innerHTML = cats.map(cat => {
+        const isActive = cat === activeCategory;
+        return `<button onclick="setCategory('${cat}', this)" class="cat-pill px-4 py-1.5 rounded-full text-sm font-medium border transition-colors ${isActive ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300'}">${cat}</button>`;
+      }).join('');
+    }
+
+    function setCategory(cat, btn) {
+      activeCategory = cat;
+      document.querySelectorAll('.cat-pill').forEach(el => {
+        el.classList.remove('bg-blue-600','text-white','border-blue-600');
+        el.classList.add('bg-white','text-slate-600','border-slate-200');
+      });
+      btn.classList.add('bg-blue-600','text-white','border-blue-600');
+      btn.classList.remove('bg-white','text-slate-600','border-slate-200');
+      renderGrid();
+    }
+
+    function renderGrid() {
+      const term = (document.getElementById('search-input').value || '').toLowerCase();
+      const filtered = MOCK.parts.filter(p => {
+        const matchCat = activeCategory === 'Todas' || p.category === activeCategory;
+        const matchSearch = !term || p.name.toLowerCase().includes(term) || p.code.toLowerCase().includes(term) || p.category.toLowerCase().includes(term);
+        return matchCat && matchSearch;
+      });
+
+      const grid = document.getElementById('parts-grid');
+      const empty = document.getElementById('empty-state');
+
+      if (filtered.length === 0) {
+        grid.innerHTML = '';
+        empty.classList.remove('hidden');
+        return;
+      }
+      empty.classList.add('hidden');
+
+      grid.innerHTML = filtered.map(p => `
+        <div class="bg-white rounded-xl border border-slate-200 p-4 hover:shadow-md hover:border-blue-200 transition-all group">
+          <div class="flex items-start justify-between mb-3">
+            ${categoryBadge(p.category)}
+            <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+              <button onclick="editPart(${p.id})" class="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="Editar">
+                <i class="bi bi-pencil text-xs"></i>
+              </button>
+              <button onclick="deletePart(${p.id})" class="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Excluir">
+                <i class="bi bi-trash text-xs"></i>
+              </button>
+            </div>
+          </div>
+          <div class="font-mono text-xs text-slate-400 mb-1">${p.code}</div>
+          <div class="font-bold text-slate-800 text-sm leading-snug mb-1">${p.name}</div>
+          <div class="text-xs text-slate-500 mb-3 line-clamp-2">${p.description}</div>
+          <div class="flex items-center justify-between pt-3 border-t border-slate-100">
+            <span class="text-xs text-slate-500">Preço ref.</span>
+            <span class="font-bold text-blue-600 text-sm">${formatBRL(p.default_price)}</span>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function editPart(id) {
+      showToast('Modo de edição em desenvolvimento', 'info');
+    }
+
+    function deletePart(id) {
+      if (confirm('Deseja remover esta peça do catálogo?')) {
+        showToast('Peça removida do catálogo.', 'error');
+      }
+    }
+
+    function savePart() {
+      const code = document.getElementById('modal-code').value.trim();
+      const name = document.getElementById('modal-name').value.trim();
+      const category = document.getElementById('modal-category').value;
+      if (!code || !name || !category) { showToast('Preencha os campos obrigatórios (*)', 'error'); return; }
+      showToast('Peça adicionada ao catálogo!');
+      closeModal('modal-part');
+    }
+
+    renderKPIs();
+    renderPills();
+    renderGrid();
+  </script>
+</body>
+</html>

@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>COTOU — Nova Cotação</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <script>tailwind.config = { theme: { extend: { fontFamily: { sans: ['Inter','sans-serif'] } } } }</script>
+  <style>body { font-family: 'Inter', sans-serif; }</style>
+</head>
+<body class="bg-slate-50 min-h-screen flex">
+
+  <!-- Sidebar -->
+  <aside class="w-56 bg-white border-r border-slate-200 flex flex-col h-screen sticky top-0 flex-shrink-0">
+    <div class="px-4 py-5 border-b border-slate-200">
+      <div class="text-xl font-black text-blue-600 tracking-tight">COTOU</div>
+      <div class="text-xs text-slate-400 mt-0.5 uppercase tracking-widest">ERP Autopeças</div>
+    </div>
+    <nav class="flex-1 p-3 space-y-0.5 overflow-y-auto">
+      <a href="dashboard.html" class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-slate-50 text-slate-600 text-sm font-medium transition-colors">
+        <i class="bi bi-grid-1x2-fill text-base"></i> Dashboard
+      </a>
+      <a href="cotacoes.html" class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-slate-50 text-slate-600 text-sm font-medium transition-colors">
+        <i class="bi bi-clipboard-data text-base"></i> Cotações
+      </a>
+      <a href="nova-cotacao.html" class="flex items-center gap-3 px-3 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium">
+        <i class="bi bi-plus-circle text-base"></i> Nova Cotação
+      </a>
+      <a href="catalogo.html" class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-slate-50 text-slate-600 text-sm font-medium transition-colors">
+        <i class="bi bi-box-seam text-base"></i> Catálogo de Peças
+      </a>
+      <a href="notificacoes.html" class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-slate-50 text-slate-600 text-sm font-medium transition-colors">
+        <i class="bi bi-bell text-base"></i> Notificações
+        <span class="ml-auto bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold">2</span>
+      </a>
+      <div class="pt-3 pb-1">
+        <div class="text-xs text-slate-400 font-semibold uppercase tracking-widest px-3 mb-1">Administração</div>
+      </div>
+      <a href="admin-usuarios.html" class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-slate-50 text-slate-600 text-sm font-medium transition-colors">
+        <i class="bi bi-people text-base"></i> Usuários
+      </a>
+    </nav>
+    <div class="border-t border-slate-200 p-3">
+      <div class="flex items-center gap-3 px-2 py-2">
+        <div class="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0">JV</div>
+        <div class="flex-1 min-w-0">
+          <div class="text-sm font-semibold text-slate-800 truncate">João Vendas</div>
+          <div class="text-xs text-slate-400 truncate">Vendas</div>
+        </div>
+        <a href="index.html" class="text-slate-400 hover:text-red-500 transition-colors" title="Sair">
+          <i class="bi bi-box-arrow-right"></i>
+        </a>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <div class="flex-1 flex flex-col min-w-0">
+    <!-- Topbar -->
+    <header class="h-14 bg-white border-b border-slate-200 flex items-center px-6 gap-4 sticky top-0 z-10">
+      <div class="flex items-center gap-2 text-sm text-slate-500 flex-shrink-0">
+        <a href="cotacoes.html" class="hover:text-blue-600 transition-colors">Cotações</a>
+        <span class="text-slate-300">/</span>
+        <span class="font-semibold text-slate-800">Nova Cotação</span>
+      </div>
+      <div class="flex-1 max-w-md mx-auto"></div>
+      <div class="flex items-center gap-3 flex-shrink-0">
+        <a href="notificacoes.html" class="relative p-2 text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors">
+          <i class="bi bi-bell text-lg"></i>
+          <span class="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+        </a>
+        <div class="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white text-xs font-bold cursor-pointer">JV</div>
+      </div>
+    </header>
+
+    <!-- Content -->
+    <main class="flex-1 p-6">
+
+      <!-- Header -->
+      <div class="mb-6">
+        <h1 class="text-2xl font-bold text-slate-900">Nova Cotação</h1>
+        <p class="text-sm text-slate-500 mt-0.5">Preencha os dados para abrir uma cotação de peças</p>
+      </div>
+
+      <!-- Stepper -->
+      <div class="flex items-center mb-8 max-w-2xl">
+        <div class="flex items-center gap-3">
+          <div class="step-indicator w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold bg-blue-600 text-white transition-all">1</div>
+          <span class="step-label text-sm font-semibold text-blue-600 whitespace-nowrap">Cliente &amp; Veículo</span>
+        </div>
+        <div class="flex-1 h-0.5 bg-slate-200 mx-4"></div>
+        <div class="flex items-center gap-3">
+          <div class="step-indicator w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold bg-slate-200 text-slate-500 transition-all">2</div>
+          <span class="step-label text-sm font-medium text-slate-400 whitespace-nowrap">Peças a Cotar</span>
+        </div>
+        <div class="flex-1 h-0.5 bg-slate-200 mx-4"></div>
+        <div class="flex items-center gap-3">
+          <div class="step-indicator w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold bg-slate-200 text-slate-500 transition-all">3</div>
+          <span class="step-label text-sm font-medium text-slate-400 whitespace-nowrap">Revisão</span>
+        </div>
+      </div>
+
+      <!-- Step 1: Cliente & Veiculo -->
+      <div id="step-1" class="step-panel max-w-2xl">
+        <div class="bg-white rounded-xl border border-slate-200 p-6 space-y-5">
+          <h2 class="text-base font-bold text-slate-800 mb-4 flex items-center gap-2">
+            <i class="bi bi-person-circle text-blue-600"></i> Dados do Cliente
+          </h2>
+
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-semibold text-slate-700 mb-1.5">Nome do Cliente *</label>
+              <input id="f-customer-name" type="text" placeholder="Ex: Carlos Eduardo Mendes" class="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition" />
+            </div>
+            <div>
+              <label class="block text-sm font-semibold text-slate-700 mb-1.5">Telefone / WhatsApp *</label>
+              <input id="f-phone" type="tel" placeholder="(11) 99999-9999" class="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition" />
+            </div>
+          </div>
+
+          <hr class="border-slate-100 my-2" />
+          <h2 class="text-base font-bold text-slate-800 mb-4 flex items-center gap-2">
+            <i class="bi bi-car-front text-blue-600"></i> Dados do Veículo
+          </h2>
+
+          <div>
+            <label class="block text-sm font-semibold text-slate-700 mb-1.5">Placa do Veículo *</label>
+            <div class="flex gap-3">
+              <input id="f-plate" type="text" placeholder="ABC1D23" maxlength="7" class="flex-1 px-3 py-2.5 border border-slate-200 rounded-xl text-sm font-mono uppercase focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition" oninput="this.value=this.value.toUpperCase()" />
+              <button onclick="consultarPlaca()" class="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-white text-sm font-semibold rounded-xl transition-colors flex items-center gap-2">
+                <i class="bi bi-search"></i> Consultar
+              </button>
+            </div>
+            <div id="plate-result" class="hidden mt-3 p-3 bg-blue-50 border border-blue-200 rounded-xl text-sm text-blue-800">
+              <i class="bi bi-check-circle-fill text-blue-500 mr-1.5"></i>
+              Veículo localizado: <strong id="plate-vehicle-info"></strong>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-3 gap-4">
+            <div class="col-span-3">
+              <label class="block text-sm font-semibold text-slate-700 mb-1.5">Modelo / Versão *</label>
+              <input id="f-model" type="text" placeholder="Ex: Volkswagen Gol 1.0 Trendline" class="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition" />
+            </div>
+            <div>
+              <label class="block text-sm font-semibold text-slate-700 mb-1.5">Ano Modelo *</label>
+              <input id="f-year-model" type="number" placeholder="2023" min="1990" max="2030" class="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition" />
+            </div>
+            <div>
+              <label class="block text-sm font-semibold text-slate-700 mb-1.5">Ano Fabricação</label>
+              <input id="f-year-fab" type="number" placeholder="2022" min="1990" max="2030" class="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition" />
+            </div>
+            <div>
+              <label class="block text-sm font-semibold text-slate-700 mb-1.5">Combustível</label>
+              <select id="f-fuel" class="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition bg-white">
+                <option value="">Selecionar</option>
+                <option>Flex</option>
+                <option>Gasolina</option>
+                <option>Diesel</option>
+                <option>Elétrico</option>
+                <option>Híbrido</option>
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-sm font-semibold text-slate-700 mb-1.5">Observações do Vendedor</label>
+            <textarea id="f-notes-sales" rows="3" placeholder="Descreva o problema relatado pelo cliente, sintomas observados..." class="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition resize-none"></textarea>
+          </div>
+
+          <div class="flex justify-end pt-2">
+            <button onclick="goToStep2()" class="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-2.5 rounded-xl transition-colors">
+              Próximo <i class="bi bi-arrow-right"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 2: Peças -->
+      <div id="step-2" class="step-panel max-w-3xl hidden">
+        <div class="bg-white rounded-xl border border-slate-200 p-6 space-y-5">
+          <div class="flex items-center justify-between">
+            <h2 class="text-base font-bold text-slate-800 flex items-center gap-2">
+              <i class="bi bi-tools text-blue-600"></i> Peças a Cotar
+            </h2>
+            <button onclick="addPartRow()" class="inline-flex items-center gap-2 text-sm font-semibold text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-lg transition-colors">
+              <i class="bi bi-plus-lg"></i> Adicionar Peça
+            </button>
+          </div>
+
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+              <thead>
+                <tr class="border-b border-slate-100 bg-slate-50">
+                  <th class="text-left text-xs font-semibold text-slate-500 uppercase tracking-wider px-3 py-3">Nome da Peça *</th>
+                  <th class="text-left text-xs font-semibold text-slate-500 uppercase tracking-wider px-3 py-3 w-36">Código / Referência</th>
+                  <th class="text-left text-xs font-semibold text-slate-500 uppercase tracking-wider px-3 py-3 w-24">Quantidade</th>
+                  <th class="w-10 py-3"></th>
+                </tr>
+              </thead>
+              <tbody id="parts-table-body">
+                <!-- rows inserted by JS -->
+              </tbody>
+            </table>
+          </div>
+
+          <div>
+            <label class="block text-sm font-semibold text-slate-700 mb-1.5">Observações para Compras</label>
+            <textarea id="f-notes-buying" rows="3" placeholder="Informações adicionais para o setor de compras: urgência, fornecedor sugerido, qualidade esperada..." class="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition resize-none"></textarea>
+          </div>
+
+          <div class="flex justify-between pt-2">
+            <button onclick="stepTo(1)" class="inline-flex items-center gap-2 text-slate-600 hover:text-slate-800 font-semibold px-5 py-2.5 rounded-xl border border-slate-200 hover:bg-slate-50 transition-colors">
+              <i class="bi bi-arrow-left"></i> Voltar
+            </button>
+            <button onclick="goToStep3()" class="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-2.5 rounded-xl transition-colors">
+              Próximo <i class="bi bi-arrow-right"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 3: Revisão -->
+      <div id="step-3" class="step-panel max-w-2xl hidden">
+        <div class="bg-white rounded-xl border border-slate-200 p-6 space-y-5">
+          <div class="flex items-center gap-3 p-4 bg-green-50 border border-green-200 rounded-xl">
+            <i class="bi bi-check-circle-fill text-green-600 text-xl"></i>
+            <div>
+              <div class="font-semibold text-green-800 text-sm">Revisão antes de enviar</div>
+              <div class="text-xs text-green-600 mt-0.5">Confirme os dados antes de criar a cotação</div>
+            </div>
+          </div>
+
+          <!-- Customer review -->
+          <div>
+            <div class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Cliente &amp; Veículo</div>
+            <div class="grid grid-cols-2 gap-3">
+              <div class="bg-slate-50 rounded-xl p-3">
+                <div class="text-xs text-slate-500 mb-1">Nome do Cliente</div>
+                <div class="font-semibold text-slate-800 text-sm" id="rev-name">—</div>
+              </div>
+              <div class="bg-slate-50 rounded-xl p-3">
+                <div class="text-xs text-slate-500 mb-1">Telefone</div>
+                <div class="font-semibold text-slate-800 text-sm" id="rev-phone">—</div>
+              </div>
+              <div class="bg-slate-50 rounded-xl p-3">
+                <div class="text-xs text-slate-500 mb-1">Placa</div>
+                <div class="font-mono font-bold text-slate-800" id="rev-plate">—</div>
+              </div>
+              <div class="bg-slate-50 rounded-xl p-3">
+                <div class="text-xs text-slate-500 mb-1">Modelo / Ano</div>
+                <div class="font-semibold text-slate-800 text-sm" id="rev-model">—</div>
+              </div>
+            </div>
+            <div id="rev-notes-wrap" class="hidden mt-3 bg-amber-50 border border-amber-200 rounded-xl p-3">
+              <div class="text-xs text-slate-500 mb-1">Observações</div>
+              <div class="text-sm text-slate-800" id="rev-notes"></div>
+            </div>
+          </div>
+
+          <!-- Parts review -->
+          <div>
+            <div class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Peças a Cotar</div>
+            <div class="border border-slate-200 rounded-xl overflow-hidden">
+              <table class="w-full text-sm">
+                <thead class="bg-slate-50 border-b border-slate-200">
+                  <tr>
+                    <th class="text-left text-xs font-semibold text-slate-500 px-4 py-2.5">Peça</th>
+                    <th class="text-left text-xs font-semibold text-slate-500 px-4 py-2.5">Código</th>
+                    <th class="text-right text-xs font-semibold text-slate-500 px-4 py-2.5">Qtd</th>
+                  </tr>
+                </thead>
+                <tbody id="rev-parts-body"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="flex justify-between pt-2">
+            <button onclick="stepTo(2)" class="inline-flex items-center gap-2 text-slate-600 hover:text-slate-800 font-semibold px-5 py-2.5 rounded-xl border border-slate-200 hover:bg-slate-50 transition-colors">
+              <i class="bi bi-arrow-left"></i> Voltar
+            </button>
+            <button onclick="createQuotation()" class="inline-flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white font-semibold px-6 py-2.5 rounded-xl transition-colors shadow-sm shadow-green-200">
+              <i class="bi bi-check2-circle"></i> Criar Cotação
+            </button>
+          </div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <script src="shared/mock-data.js"></script>
+  <script src="shared/ui.js"></script>
+  <script>
+    let partRowCount = 0;
+
+    function addPartRow(name='', code='', qty=1) {
+      partRowCount++;
+      const tbody = document.getElementById('parts-table-body');
+      const tr = document.createElement('tr');
+      tr.className = 'part-row border-b border-slate-50';
+      tr.dataset.id = partRowCount;
+      tr.innerHTML = `
+        <td class="px-3 py-2.5">
+          <input type="text" value="${name}" placeholder="Nome da peça" class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition" />
+        </td>
+        <td class="px-3 py-2.5">
+          <input type="text" value="${code}" placeholder="Ex: KE-7731" class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500 transition" />
+        </td>
+        <td class="px-3 py-2.5">
+          <input type="number" value="${qty}" min="1" class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm text-center focus:outline-none focus:ring-2 focus:ring-blue-500 transition" />
+        </td>
+        <td class="px-3 py-2.5">
+          <button onclick="removePartRow(${partRowCount})" class="p-1.5 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors">
+            <i class="bi bi-trash text-sm"></i>
+          </button>
+        </td>
+      `;
+      tbody.appendChild(tr);
+    }
+
+    function removePartRow(id) {
+      const rows = document.querySelectorAll('.part-row');
+      if (rows.length <= 1) { showToast('A cotação precisa ter ao menos uma peça.', 'error'); return; }
+      document.querySelector(`.part-row[data-id="${id}"]`)?.remove();
+    }
+
+    function consultarPlaca() {
+      const plate = document.getElementById('f-plate').value.trim();
+      if (!plate || plate.length < 7) { showToast('Informe uma placa válida', 'error'); return; }
+      const fakeData = { vehicle: 'Volkswagen Gol 1.0 MSI (Flex) 2019/2020' };
+      document.getElementById('plate-vehicle-info').textContent = fakeData.vehicle;
+      document.getElementById('plate-result').classList.remove('hidden');
+      document.getElementById('f-model').value = 'Volkswagen Gol 1.0';
+      document.getElementById('f-year-model').value = '2020';
+      document.getElementById('f-year-fab').value = '2019';
+    }
+
+    function goToStep2() {
+      const name = document.getElementById('f-customer-name').value.trim();
+      const phone = document.getElementById('f-phone').value.trim();
+      const plate = document.getElementById('f-plate').value.trim();
+      const model = document.getElementById('f-model').value.trim();
+      if (!name || !phone || !plate || !model) {
+        showToast('Preencha todos os campos obrigatórios (*)', 'error'); return;
+      }
+      stepTo(2);
+      if (document.querySelectorAll('.part-row').length === 0) addPartRow();
+    }
+
+    function goToStep3() {
+      const rows = document.querySelectorAll('.part-row');
+      const valid = Array.from(rows).every(r => r.querySelector('input').value.trim());
+      if (!valid) { showToast('Informe o nome de todas as peças', 'error'); return; }
+
+      // Populate review
+      document.getElementById('rev-name').textContent = document.getElementById('f-customer-name').value || '—';
+      document.getElementById('rev-phone').textContent = document.getElementById('f-phone').value || '—';
+      document.getElementById('rev-plate').textContent = document.getElementById('f-plate').value || '—';
+      const model = document.getElementById('f-model').value;
+      const yr = document.getElementById('f-year-model').value;
+      document.getElementById('rev-model').textContent = model + (yr ? ' ' + yr : '');
+
+      const notes = document.getElementById('f-notes-sales').value.trim();
+      if (notes) {
+        document.getElementById('rev-notes').textContent = notes;
+        document.getElementById('rev-notes-wrap').classList.remove('hidden');
+      }
+
+      const partsBody = document.getElementById('rev-parts-body');
+      partsBody.innerHTML = Array.from(rows).map(r => {
+        const inputs = r.querySelectorAll('input');
+        return `<tr class="border-b border-slate-50"><td class="px-4 py-2.5 font-medium text-slate-800">${inputs[0].value}</td><td class="px-4 py-2.5 font-mono text-xs text-slate-500">${inputs[1].value || '—'}</td><td class="px-4 py-2.5 text-right font-semibold text-slate-700">${inputs[2].value}</td></tr>`;
+      }).join('');
+
+      stepTo(3);
+    }
+
+    function createQuotation() {
+      showToast('Cotação criada com sucesso!');
+      setTimeout(() => window.location.href = 'cotacao-detalhe.html', 1200);
+    }
+
+    // Init
+    stepTo(1);
+    addPartRow();
+  </script>
+</body>
+</html>

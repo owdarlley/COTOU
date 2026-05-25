@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>COTOU — Detalhe da Cotação</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <script>tailwind.config = { theme: { extend: { fontFamily: { sans: ['Inter','sans-serif'] } } } }</script>
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    .tab-btn { border-bottom: 2px solid transparent; }
+    .tab-btn.active { border-bottom-color: #2563EB; color: #2563EB; }
+  </style>
+</head>
+<body class="bg-slate-50 min-h-screen flex">
+
+  <!-- Sidebar -->
+  <aside class="w-56 bg-white border-r border-slate-200 flex flex-col h-screen sticky top-0 flex-shrink-0">
+    <div class="px-4 py-5 border-b border-slate-200">
+      <div class="text-xl font-black text-blue-600 tracking-tight">COTOU</div>
+      <div class="text-xs text-slate-400 mt-0.5 uppercase tracking-widest">ERP Autopeças</div>
+    </div>
+    <nav class="flex-1 p-3 space-y-0.5 overflow-y-auto">
+      <a href="dashboard.html" class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-slate-50 text-slate-600 text-sm font-medium transition-colors">
+        <i class="bi bi-grid-1x2-fill text-base"></i> Dashboard
+      </a>
+      <a href="cotacoes.html" class="flex items-center gap-3 px-3 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium">
+        <i class="bi bi-clipboard-data text-base"></i> Cotações
+      </a>
+      <a href="nova-cotacao.html" class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-slate-50 text-slate-600 text-sm font-medium transition-colors">
+        <i class="bi bi-plus-circle text-base"></i> Nova Cotação
+      </a>
+      <a href="catalogo.html" class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-slate-50 text-slate-600 text-sm font-medium transition-colors">
+        <i class="bi bi-box-seam text-base"></i> Catálogo de Peças
+      </a>
+      <a href="notificacoes.html" class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-slate-50 text-slate-600 text-sm font-medium transition-colors">
+        <i class="bi bi-bell text-base"></i> Notificações
+        <span class="ml-auto bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold">2</span>
+      </a>
+      <div class="pt-3 pb-1">
+        <div class="text-xs text-slate-400 font-semibold uppercase tracking-widest px-3 mb-1">Administração</div>
+      </div>
+      <a href="admin-usuarios.html" class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-slate-50 text-slate-600 text-sm font-medium transition-colors">
+        <i class="bi bi-people text-base"></i> Usuários
+      </a>
+    </nav>
+    <div class="border-t border-slate-200 p-3">
+      <div class="flex items-center gap-3 px-2 py-2">
+        <div class="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0">JV</div>
+        <div class="flex-1 min-w-0">
+          <div class="text-sm font-semibold text-slate-800 truncate">João Vendas</div>
+          <div class="text-xs text-slate-400 truncate">Vendas</div>
+        </div>
+        <a href="index.html" class="text-slate-400 hover:text-red-500 transition-colors" title="Sair">
+          <i class="bi bi-box-arrow-right"></i>
+        </a>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <div class="flex-1 flex flex-col min-w-0">
+    <!-- Topbar -->
+    <header class="h-14 bg-white border-b border-slate-200 flex items-center px-6 gap-4 sticky top-0 z-10">
+      <div class="flex items-center gap-2 text-sm text-slate-500 flex-shrink-0">
+        <a href="cotacoes.html" class="hover:text-blue-600 transition-colors">Cotações</a>
+        <span class="text-slate-300">/</span>
+        <span class="font-semibold text-slate-800">COT-2026-0003</span>
+      </div>
+      <div class="flex-1"></div>
+      <div class="flex items-center gap-3 flex-shrink-0">
+        <a href="notificacoes.html" class="relative p-2 text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors">
+          <i class="bi bi-bell text-lg"></i>
+          <span class="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+        </a>
+        <div class="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white text-xs font-bold cursor-pointer">JV</div>
+      </div>
+    </header>
+
+    <!-- Content -->
+    <main class="flex-1 p-6 space-y-5" id="detail-content">
+      <!-- Rendered by JS -->
+    </main>
+  </div>
+
+  <!-- Modal: Aprovação -->
+  <div id="modal-approval" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" onclick="closeModal('modal-approval')"></div>
+    <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 z-10">
+      <div class="flex items-center justify-between mb-5">
+        <h3 class="text-lg font-bold text-slate-900">Atualizar Aprovação do Cliente</h3>
+        <button onclick="closeModal('modal-approval')" class="p-1.5 hover:bg-slate-100 rounded-lg text-slate-400 hover:text-slate-600 transition-colors">
+          <i class="bi bi-x-lg text-sm"></i>
+        </button>
+      </div>
+      <p class="text-sm text-slate-600 mb-5">Selecione o que o cliente decidiu em relação à cotação COT-2026-0003:</p>
+      <div class="space-y-3 mb-6">
+        <button onclick="setApproval(true)" class="w-full flex items-center gap-4 p-4 border-2 border-green-500 bg-green-50 rounded-xl hover:bg-green-100 transition-colors">
+          <div class="w-10 h-10 bg-green-500 rounded-xl flex items-center justify-center flex-shrink-0">
+            <i class="bi bi-check2-circle text-white text-xl"></i>
+          </div>
+          <div class="text-left">
+            <div class="font-bold text-green-800">Cliente Aprovou</div>
+            <div class="text-xs text-green-600">Compras pode encomendar as peças</div>
+          </div>
+        </button>
+        <button onclick="setApproval(false)" class="w-full flex items-center gap-4 p-4 border-2 border-red-200 bg-red-50 rounded-xl hover:bg-red-100 transition-colors">
+          <div class="w-10 h-10 bg-red-400 rounded-xl flex items-center justify-center flex-shrink-0">
+            <i class="bi bi-x-circle text-white text-xl"></i>
+          </div>
+          <div class="text-left">
+            <div class="font-bold text-red-800">Cliente Recusou</div>
+            <div class="text-xs text-red-600">Cotação será marcada como cancelada</div>
+          </div>
+        </button>
+      </div>
+      <button onclick="closeModal('modal-approval')" class="w-full py-2.5 text-sm text-slate-600 hover:text-slate-800 font-medium transition-colors">Cancelar</button>
+    </div>
+  </div>
+
+  <script src="shared/mock-data.js"></script>
+  <script src="shared/ui.js"></script>
+  <script>
+    const q = MOCK.quotations.find(x => x.id === 3);
+    const items = MOCK.quotationItems.filter(x => x.quotation_id === 3);
+
+    function renderDetail() {
+      const content = document.getElementById('detail-content');
+      const waPhone = q.customer_phone.replace(/\D/g, '');
+
+      content.innerHTML = `
+        <!-- Hero Header -->
+        <div class="bg-slate-900 rounded-2xl p-6 text-white">
+          <div class="flex items-start justify-between gap-4">
+            <div class="flex-1">
+              <div class="flex items-center gap-3 mb-3">
+                <a href="cotacoes.html" class="text-slate-400 hover:text-white transition-colors text-sm flex items-center gap-1">
+                  <i class="bi bi-arrow-left"></i> Cotações
+                </a>
+                <span class="text-slate-600">/</span>
+                <span class="font-mono font-bold text-white text-base">${q.quote_number}</span>
+                ${statusBadge(q.status)}
+              </div>
+              <h1 class="text-2xl font-black text-white mb-1">${q.customer_name}</h1>
+              <a href="https://wa.me/55${waPhone}" target="_blank" class="inline-flex items-center gap-2 text-green-400 hover:text-green-300 text-sm font-medium transition-colors">
+                <i class="bi bi-whatsapp"></i> ${q.customer_phone} — Enviar mensagem
+              </a>
+              <div class="flex flex-wrap items-center gap-5 mt-4">
+                <div class="flex items-center gap-2 text-slate-400 text-xs">
+                  <i class="bi bi-calendar3"></i>
+                  <span>Aberta em ${formatDT(q.created_at)}</span>
+                </div>
+                <div class="flex items-center gap-2 text-slate-400 text-xs">
+                  <i class="bi bi-person"></i>
+                  <span>Vendedor: <span class="text-slate-200 font-medium">${q.creator_name}</span></span>
+                </div>
+                ${q.buyer_name ? `
+                <div class="flex items-center gap-2 text-slate-400 text-xs">
+                  <i class="bi bi-bag"></i>
+                  <span>Comprador: <span class="text-slate-200 font-medium">${q.buyer_name}</span></span>
+                </div>` : ''}
+                <div class="flex items-center gap-2 text-slate-400 text-xs">
+                  <i class="bi bi-car-front"></i>
+                  <span>${q.model} · <span class="font-mono font-semibold text-slate-200">${q.license_plate}</span></span>
+                </div>
+              </div>
+            </div>
+            <div class="flex flex-col gap-2 flex-shrink-0">
+              <button onclick="openModal('modal-approval')" class="inline-flex items-center gap-2 bg-green-500 hover:bg-green-400 text-white font-semibold text-sm px-4 py-2.5 rounded-xl transition-colors">
+                <i class="bi bi-person-check"></i> Resposta do Cliente
+              </button>
+              <button class="inline-flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white font-semibold text-sm px-4 py-2 rounded-xl transition-colors">
+                <i class="bi bi-share"></i> Compartilhar
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Totals summary bar -->
+        <div class="grid grid-cols-3 gap-4">
+          <div class="bg-white rounded-xl border border-slate-200 p-4 text-center">
+            <div class="text-xs text-slate-500 mb-1">Subtotal Peças</div>
+            <div class="text-xl font-black text-slate-800">${formatBRL(q.parts_total)}</div>
+          </div>
+          <div class="bg-white rounded-xl border border-slate-200 p-4 text-center">
+            <div class="text-xs text-slate-500 mb-1">Mão de Obra</div>
+            <div class="text-xl font-black text-slate-800">${formatBRL(q.grand_total - q.parts_total)}</div>
+          </div>
+          <div class="bg-blue-600 rounded-xl p-4 text-center">
+            <div class="text-xs text-blue-200 mb-1">Total Geral</div>
+            <div class="text-xl font-black text-white">${formatBRL(q.grand_total)}</div>
+          </div>
+        </div>
+
+        <!-- Tabs -->
+        <div class="bg-white rounded-xl border border-slate-200 overflow-hidden">
+          <div class="border-b border-slate-200 px-5 flex gap-0" id="tab-strip">
+            <button class="tab-btn detail-tab px-5 py-3.5 text-sm font-semibold text-slate-500 hover:text-slate-700 transition-colors active" onclick="switchTab('tab-pecas', this)">
+              <i class="bi bi-tools mr-1.5"></i>Peças
+            </button>
+            <button class="tab-btn detail-tab px-5 py-3.5 text-sm font-semibold text-slate-500 hover:text-slate-700 transition-colors" onclick="switchTab('tab-valores', this)">
+              <i class="bi bi-currency-dollar mr-1.5"></i>Valores
+            </button>
+            <button class="tab-btn detail-tab px-5 py-3.5 text-sm font-semibold text-slate-500 hover:text-slate-700 transition-colors" onclick="switchTab('tab-cliente', this)">
+              <i class="bi bi-car-front mr-1.5"></i>Cliente/Veículo
+            </button>
+            <button class="tab-btn detail-tab px-5 py-3.5 text-sm font-semibold text-slate-500 hover:text-slate-700 transition-colors" onclick="switchTab('tab-historico', this)">
+              <i class="bi bi-clock-history mr-1.5"></i>Histórico
+            </button>
+          </div>
+
+          <!-- Tab: Peças -->
+          <div id="tab-pecas" class="detail-panel p-5">
+            <div class="overflow-x-auto">
+              <table class="w-full text-sm">
+                <thead>
+                  <tr class="border-b border-slate-100 bg-slate-50">
+                    <th class="text-left text-xs font-semibold text-slate-500 uppercase tracking-wider px-4 py-3">Peça</th>
+                    <th class="text-left text-xs font-semibold text-slate-500 uppercase tracking-wider px-4 py-3">Código</th>
+                    <th class="text-center text-xs font-semibold text-slate-500 uppercase tracking-wider px-4 py-3">Qtd</th>
+                    <th class="text-right text-xs font-semibold text-slate-500 uppercase tracking-wider px-4 py-3">Preço Unit.</th>
+                    <th class="text-right text-xs font-semibold text-slate-500 uppercase tracking-wider px-4 py-3">Total</th>
+                    <th class="text-left text-xs font-semibold text-slate-500 uppercase tracking-wider px-4 py-3">Fornecedor</th>
+                    <th class="text-center text-xs font-semibold text-slate-500 uppercase tracking-wider px-4 py-3">Prazo</th>
+                    <th class="text-left text-xs font-semibold text-slate-500 uppercase tracking-wider px-4 py-3">Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${items.map(item => `
+                    <tr class="border-b border-slate-50 hover:bg-slate-50 transition-colors">
+                      <td class="px-4 py-3.5">
+                        <div class="font-semibold text-slate-800">${item.part_name}</div>
+                        ${item.notes ? `<div class="text-xs text-slate-400 mt-0.5">${item.notes}</div>` : ''}
+                      </td>
+                      <td class="px-4 py-3.5"><span class="font-mono text-xs bg-slate-100 px-2 py-1 rounded">${item.part_code}</span></td>
+                      <td class="px-4 py-3.5 text-center font-semibold text-slate-700">${item.quantity}</td>
+                      <td class="px-4 py-3.5 text-right text-slate-600">${formatBRL(item.unit_price)}</td>
+                      <td class="px-4 py-3.5 text-right font-bold text-slate-800">${formatBRL(item.total_price)}</td>
+                      <td class="px-4 py-3.5 text-slate-600 text-xs">${item.supplier_name}</td>
+                      <td class="px-4 py-3.5 text-center">
+                        <span class="inline-flex items-center gap-1 text-xs text-slate-600 bg-slate-100 px-2 py-1 rounded">
+                          <i class="bi bi-truck"></i> ${item.delivery_days}d
+                        </span>
+                      </td>
+                      <td class="px-4 py-3.5">${statusBadge(item.item_status)}</td>
+                    </tr>
+                  `).join('')}
+                </tbody>
+                <tfoot class="border-t-2 border-slate-200 bg-slate-50">
+                  <tr>
+                    <td colspan="4" class="px-4 py-3.5 text-right font-semibold text-slate-600 text-sm">Subtotal Peças:</td>
+                    <td class="px-4 py-3.5 text-right font-bold text-slate-800">${formatBRL(q.parts_total)}</td>
+                    <td colspan="3"></td>
+                  </tr>
+                  <tr>
+                    <td colspan="4" class="px-4 py-1.5 text-right font-semibold text-slate-600 text-sm">Mão de Obra:</td>
+                    <td class="px-4 py-1.5 text-right font-bold text-slate-800">${formatBRL(q.grand_total - q.parts_total)}</td>
+                    <td colspan="3"></td>
+                  </tr>
+                  <tr>
+                    <td colspan="4" class="px-4 py-2.5 text-right font-bold text-blue-700 text-base">Total Geral:</td>
+                    <td class="px-4 py-2.5 text-right font-black text-blue-700 text-base">${formatBRL(q.grand_total)}</td>
+                    <td colspan="3"></td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          </div>
+
+          <!-- Tab: Valores -->
+          <div id="tab-valores" class="detail-panel p-5 hidden">
+            <div class="mb-4 p-4 bg-amber-50 border border-amber-200 rounded-xl flex items-center gap-3">
+              <i class="bi bi-info-circle text-amber-600"></i>
+              <span class="text-sm text-amber-700 font-medium">Estes valores foram preenchidos pelo setor de compras.</span>
+            </div>
+            <div class="space-y-4">
+              ${items.map((item, idx) => `
+                <div class="border border-slate-200 rounded-xl p-4">
+                  <div class="flex items-center gap-3 mb-4">
+                    <span class="w-7 h-7 bg-blue-600 text-white text-xs font-bold rounded-full flex items-center justify-center">${idx+1}</span>
+                    <span class="font-bold text-slate-800">${item.part_name}</span>
+                    <span class="font-mono text-xs text-slate-500 bg-slate-100 px-2 py-1 rounded">${item.part_code}</span>
+                  </div>
+                  <div class="grid grid-cols-4 gap-4">
+                    <div>
+                      <label class="block text-xs font-semibold text-slate-500 mb-1.5">Preço Unitário</label>
+                      <div class="relative">
+                        <span class="absolute inset-y-0 left-3 flex items-center text-slate-400 text-sm">R$</span>
+                        <input type="number" value="${item.unit_price.toFixed(2)}" class="w-full pl-8 pr-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition" />
+                      </div>
+                    </div>
+                    <div>
+                      <label class="block text-xs font-semibold text-slate-500 mb-1.5">Mão de Obra</label>
+                      <div class="relative">
+                        <span class="absolute inset-y-0 left-3 flex items-center text-slate-400 text-sm">R$</span>
+                        <input type="number" value="${item.labor_cost_compras.toFixed(2)}" class="w-full pl-8 pr-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition" />
+                      </div>
+                    </div>
+                    <div>
+                      <label class="block text-xs font-semibold text-slate-500 mb-1.5">Prazo de Entrega</label>
+                      <div class="relative">
+                        <input type="number" value="${item.delivery_days}" class="w-full pr-8 pl-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition" />
+                        <span class="absolute inset-y-0 right-3 flex items-center text-slate-400 text-xs">dias</span>
+                      </div>
+                    </div>
+                    <div>
+                      <label class="block text-xs font-semibold text-slate-500 mb-1.5">Fornecedor</label>
+                      <input type="text" value="${item.supplier_name}" class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition" />
+                    </div>
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+            <div class="flex justify-end mt-5">
+              <button onclick="showToast('Valores salvos com sucesso!')" class="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold px-5 py-2.5 rounded-xl transition-colors">
+                <i class="bi bi-floppy"></i> Salvar Valores
+              </button>
+            </div>
+          </div>
+
+          <!-- Tab: Cliente/Veículo -->
+          <div id="tab-cliente" class="detail-panel p-5 hidden">
+            <div class="grid grid-cols-2 gap-5">
+              <div class="space-y-4">
+                <h3 class="font-bold text-slate-800 flex items-center gap-2"><i class="bi bi-person-circle text-blue-600"></i> Dados do Cliente</h3>
+                <div class="space-y-3">
+                  <div class="flex items-start gap-3 p-3 bg-slate-50 rounded-xl">
+                    <i class="bi bi-person text-slate-400 mt-0.5 w-4 text-center"></i>
+                    <div>
+                      <div class="text-xs text-slate-500">Nome</div>
+                      <div class="font-semibold text-slate-800">${q.customer_name}</div>
+                    </div>
+                  </div>
+                  <div class="flex items-start gap-3 p-3 bg-slate-50 rounded-xl">
+                    <i class="bi bi-telephone text-slate-400 mt-0.5 w-4 text-center"></i>
+                    <div>
+                      <div class="text-xs text-slate-500">Telefone</div>
+                      <div class="font-semibold text-slate-800">${q.customer_phone}</div>
+                    </div>
+                  </div>
+                </div>
+                <h3 class="font-bold text-slate-800 flex items-center gap-2 pt-2"><i class="bi bi-car-front text-blue-600"></i> Dados do Veículo</h3>
+                <div class="space-y-3">
+                  <div class="flex items-start gap-3 p-3 bg-slate-50 rounded-xl">
+                    <i class="bi bi-credit-card text-slate-400 mt-0.5 w-4 text-center"></i>
+                    <div>
+                      <div class="text-xs text-slate-500">Placa</div>
+                      <div class="font-mono font-bold text-slate-800 text-lg">${q.license_plate}</div>
+                    </div>
+                  </div>
+                  <div class="flex items-start gap-3 p-3 bg-slate-50 rounded-xl">
+                    <i class="bi bi-truck text-slate-400 mt-0.5 w-4 text-center"></i>
+                    <div>
+                      <div class="text-xs text-slate-500">Modelo</div>
+                      <div class="font-semibold text-slate-800">${q.model}</div>
+                    </div>
+                  </div>
+                  <div class="flex items-start gap-3 p-3 bg-slate-50 rounded-xl">
+                    <i class="bi bi-calendar3 text-slate-400 mt-0.5 w-4 text-center"></i>
+                    <div>
+                      <div class="text-xs text-slate-500">Ano Modelo</div>
+                      <div class="font-semibold text-slate-800">${q.year_model}</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="space-y-4">
+                <h3 class="font-bold text-slate-800 flex items-center gap-2"><i class="bi bi-chat-square-text text-blue-600"></i> Observações</h3>
+                <div class="p-4 bg-blue-50 border border-blue-200 rounded-xl">
+                  <div class="text-xs font-semibold text-blue-600 mb-2 uppercase tracking-wider">Vendedor</div>
+                  <p class="text-sm text-slate-700">${q.notes_vendas || '—'}</p>
+                </div>
+                <div class="p-4 bg-green-50 border border-green-200 rounded-xl">
+                  <div class="text-xs font-semibold text-green-600 mb-2 uppercase tracking-wider">Compras</div>
+                  <p class="text-sm text-slate-700">${q.notes_compras || '—'}</p>
+                </div>
+
+                <h3 class="font-bold text-slate-800 flex items-center gap-2 pt-2"><i class="bi bi-receipt text-blue-600"></i> Resumo Financeiro</h3>
+                <div class="border border-slate-200 rounded-xl overflow-hidden">
+                  <div class="flex justify-between items-center px-4 py-3 border-b border-slate-100">
+                    <span class="text-sm text-slate-600">Subtotal Peças</span>
+                    <span class="font-semibold text-slate-800">${formatBRL(q.parts_total)}</span>
+                  </div>
+                  <div class="flex justify-between items-center px-4 py-3 border-b border-slate-100">
+                    <span class="text-sm text-slate-600">Mão de Obra</span>
+                    <span class="font-semibold text-slate-800">${formatBRL(q.grand_total - q.parts_total)}</span>
+                  </div>
+                  <div class="flex justify-between items-center px-4 py-3 bg-blue-50">
+                    <span class="text-sm font-bold text-blue-700">Total Geral</span>
+                    <span class="font-black text-blue-700 text-base">${formatBRL(q.grand_total)}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tab: Histórico -->
+          <div id="tab-historico" class="detail-panel p-5 hidden">
+            <div class="relative">
+              <div class="absolute left-5 top-0 bottom-0 w-0.5 bg-slate-200"></div>
+              <div class="space-y-6 pl-14">
+                <div class="relative">
+                  <div class="absolute -left-9 w-8 h-8 bg-green-100 border-2 border-green-400 rounded-full flex items-center justify-center">
+                    <i class="bi bi-clipboard-check text-green-600 text-sm"></i>
+                  </div>
+                  <div class="bg-white border border-slate-200 rounded-xl p-4">
+                    <div class="flex items-start justify-between">
+                      <div>
+                        <div class="font-semibold text-slate-800">Cotação respondida</div>
+                        <div class="text-sm text-slate-500 mt-0.5">Maria Compras preencheu os valores da cotação.</div>
+                      </div>
+                      <span class="text-xs text-slate-400 whitespace-nowrap ml-4">25/05/2026 às 09:00</span>
+                    </div>
+                    <div class="mt-2 text-xs text-slate-400 flex items-center gap-1.5">
+                      ${avatarCircle('Maria Compras', 'w-5 h-5', 'text-xs')} <span>Maria Compras</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="relative">
+                  <div class="absolute -left-9 w-8 h-8 bg-blue-100 border-2 border-blue-400 rounded-full flex items-center justify-center">
+                    <i class="bi bi-arrow-repeat text-blue-600 text-sm"></i>
+                  </div>
+                  <div class="bg-white border border-slate-200 rounded-xl p-4">
+                    <div class="flex items-start justify-between">
+                      <div>
+                        <div class="font-semibold text-slate-800">Status alterado para <span class="text-blue-600">Em Cotação</span></div>
+                        <div class="text-sm text-slate-500 mt-0.5">Cotação encaminhada ao setor de compras.</div>
+                      </div>
+                      <span class="text-xs text-slate-400 whitespace-nowrap ml-4">20/05/2026 às 14:30</span>
+                    </div>
+                    <div class="mt-2 text-xs text-slate-400 flex items-center gap-1.5">
+                      ${avatarCircle('Maria Compras', 'w-5 h-5', 'text-xs')} <span>Maria Compras</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="relative">
+                  <div class="absolute -left-9 w-8 h-8 bg-amber-100 border-2 border-amber-400 rounded-full flex items-center justify-center">
+                    <i class="bi bi-plus-circle text-amber-600 text-sm"></i>
+                  </div>
+                  <div class="bg-white border border-slate-200 rounded-xl p-4">
+                    <div class="flex items-start justify-between">
+                      <div>
+                        <div class="font-semibold text-slate-800">Cotação criada</div>
+                        <div class="text-sm text-slate-500 mt-0.5">Roberto Souza Lima — Chevrolet Onix Plus 2023 (MNO3F89)</div>
+                      </div>
+                      <span class="text-xs text-slate-400 whitespace-nowrap ml-4">18/05/2026 às 09:00</span>
+                    </div>
+                    <div class="mt-2 text-xs text-slate-400 flex items-center gap-1.5">
+                      ${avatarCircle('João Vendas', 'w-5 h-5', 'text-xs')} <span>João Vendas</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Zona de Perigo -->
+        <div class="bg-white rounded-xl border border-slate-200 overflow-hidden">
+          <button onclick="toggleDanger()" class="w-full flex items-center justify-between px-5 py-4 text-left hover:bg-slate-50 transition-colors" id="danger-toggle">
+            <div class="flex items-center gap-3">
+              <i class="bi bi-exclamation-triangle text-red-500"></i>
+              <span class="text-sm font-semibold text-slate-700">Outras Ações</span>
+            </div>
+            <i class="bi bi-chevron-down text-slate-400 transition-transform" id="danger-chevron"></i>
+          </button>
+          <div id="danger-zone" class="hidden border-t border-slate-100 p-5">
+            <div class="flex items-start gap-4">
+              <div class="flex-1">
+                <div class="font-semibold text-slate-800 mb-1">Cancelar Cotação</div>
+                <p class="text-sm text-slate-500">Esta ação não pode ser desfeita. A cotação será marcada como cancelada e o cliente será notificado.</p>
+              </div>
+              <button onclick="cancelQuotation()" class="flex-shrink-0 inline-flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white font-semibold text-sm px-4 py-2.5 rounded-xl transition-colors">
+                <i class="bi bi-x-circle"></i> Cancelar Cotação
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function switchTab(tabId, btn) {
+      document.querySelectorAll('.detail-panel').forEach(el => el.classList.add('hidden'));
+      document.getElementById(tabId).classList.remove('hidden');
+      document.querySelectorAll('.detail-tab').forEach(el => {
+        el.classList.remove('active', 'text-blue-600');
+        el.classList.add('text-slate-500');
+      });
+      btn.classList.add('active', 'text-blue-600');
+      btn.classList.remove('text-slate-500');
+    }
+
+    function toggleDanger() {
+      const zone = document.getElementById('danger-zone');
+      const chevron = document.getElementById('danger-chevron');
+      const isHidden = zone.classList.contains('hidden');
+      zone.classList.toggle('hidden', !isHidden);
+      chevron.style.transform = isHidden ? 'rotate(180deg)' : '';
+    }
+
+    function setApproval(approved) {
+      closeModal('modal-approval');
+      showToast(approved ? 'Cliente aprovado! Compras pode encomendar.' : 'Cotação marcada como recusada.');
+    }
+
+    function cancelQuotation() {
+      if (confirm('Tem certeza que deseja cancelar esta cotação?')) {
+        showToast('Cotação cancelada.', 'error');
+      }
+    }
+
+    renderDetail();
+  </script>
+</body>
+</html>
