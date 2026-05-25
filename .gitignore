@@ -1,0 +1,9 @@
+node_modules/
+data/
+.env
+src/
+scripts/
+migrations/
+package*.json
+server.js
+database/
