@@ -3522,25 +3522,37 @@ function WhatsAppConnectModal({ userId, onClose }) {
     let cancelled = false;
     const instanceName = `cotou-user-${userId}`;
 
+    function enterDemoMode() {
+      if (cancelled) return;
+      setPhase('qr');
+      timerRef.current = setTimeout(() => {
+        if (!cancelled) {
+          dispatch({ type: 'whatsapp_connect', userId });
+          setPhase('connected');
+        }
+      }, 5000);
+    }
+
     async function start() {
       try {
-        const res = await fetch(`${PLATE_PROXY_URL}/api/whatsapp/connect`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ instanceName }),
-        });
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 4000);
+        let res;
+        try {
+          res = await fetch(`${PLATE_PROXY_URL}/api/whatsapp/connect`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ instanceName }),
+            signal: controller.signal,
+          });
+        } finally {
+          clearTimeout(timeout);
+        }
         const json = await res.json();
         if (cancelled) return;
 
         if (json.demo || !json.ok) {
-          // Demo mode: show placeholder QR and auto-connect after 5s
-          setPhase('qr');
-          timerRef.current = setTimeout(() => {
-            if (!cancelled) {
-              dispatch({ type: 'whatsapp_connect', userId });
-              setPhase('connected');
-            }
-          }, 5000);
+          enterDemoMode();
           return;
         }
 
@@ -3567,16 +3579,8 @@ function WhatsAppConnectModal({ userId, onClose }) {
           }, 3000);
         }
       } catch (_) {
-        // Network error → demo mode
-        if (!cancelled) {
-          setPhase('qr');
-          timerRef.current = setTimeout(() => {
-            if (!cancelled) {
-              dispatch({ type: 'whatsapp_connect', userId });
-              setPhase('connected');
-            }
-          }, 5000);
-        }
+        // Network error or timeout → demo mode
+        enterDemoMode();
       }
     }
 
