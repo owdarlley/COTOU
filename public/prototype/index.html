@@ -3513,8 +3513,10 @@ function WhatsAppModal({ quotation, onClose }) {
 
 function WhatsAppConnectModal({ userId, onClose }) {
   const { dispatch } = useStore();
-  const [phase, setPhase] = useState('loading'); // loading | qr | connected
+  const [phase, setPhase] = useState('loading'); // loading | qr | connected | error
   const [qrSrc, setQrSrc] = useState(null);
+  const [errorMsg, setErrorMsg] = useState('');
+  const [retryCount, setRetryCount] = useState(0);
   const timerRef = React.useRef(null);
   const pollRef = React.useRef(null);
 
@@ -3536,7 +3538,7 @@ function WhatsAppConnectModal({ userId, onClose }) {
     async function start() {
       try {
         const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), 4000);
+        const timeout = setTimeout(() => controller.abort(), 20000);
         let res;
         try {
           res = await fetch(`${PLATE_PROXY_URL}/api/whatsapp/connect`, {
@@ -3551,36 +3553,38 @@ function WhatsAppConnectModal({ userId, onClose }) {
         const json = await res.json();
         if (cancelled) return;
 
-        if (json.demo || !json.ok) {
-          enterDemoMode();
+        // Sem API configurada → demo
+        if (json.demo) { enterDemoMode(); return; }
+
+        // Erro real da API → mostra mensagem
+        if (!json.ok || !json.qrcode) {
+          setPhase('error');
+          setErrorMsg(json.message || 'Não foi possível gerar o QR Code.');
           return;
         }
 
-        if (json.qrcode) {
-          // v2 já retorna com prefixo data:image/png;base64, incluso
-          setQrSrc(json.qrcode);
-          setPhase('qr');
-          // Poll for connection
-          let attempts = 0;
-          pollRef.current = setInterval(async () => {
-            if (cancelled) return;
-            attempts++;
-            if (attempts > 40) { clearInterval(pollRef.current); return; }
-            try {
-              const sr = await fetch(`${PLATE_PROXY_URL}/api/whatsapp/status/${instanceName}`);
-              const s = await sr.json();
-              if (s.connected) {
-                clearInterval(pollRef.current);
-                if (!cancelled) {
-                  dispatch({ type: 'whatsapp_connect', userId });
-                  setPhase('connected');
-                }
+        // QR Code real — v2 já retorna com prefixo data:image/png;base64,
+        setQrSrc(json.qrcode);
+        setPhase('qr');
+        let attempts = 0;
+        pollRef.current = setInterval(async () => {
+          if (cancelled) return;
+          attempts++;
+          if (attempts > 60) { clearInterval(pollRef.current); return; }
+          try {
+            const sr = await fetch(`${PLATE_PROXY_URL}/api/whatsapp/status/${instanceName}`);
+            const s = await sr.json();
+            if (s.connected) {
+              clearInterval(pollRef.current);
+              if (!cancelled) {
+                dispatch({ type: 'whatsapp_connect', userId });
+                setPhase('connected');
               }
-            } catch (_) {}
-          }, 3000);
-        }
+            }
+          } catch (_) {}
+        }, 3000);
       } catch (_) {
-        // Network error or timeout → demo mode
+        // Timeout ou erro de rede → demo
         enterDemoMode();
       }
     }
@@ -3591,7 +3595,7 @@ function WhatsAppConnectModal({ userId, onClose }) {
       clearTimeout(timerRef.current);
       clearInterval(pollRef.current);
     };
-  }, [userId]);
+  }, [userId, retryCount]);
 
   React.useEffect(() => {
     if (phase === 'connected') {
@@ -3631,6 +3635,18 @@ function WhatsAppConnectModal({ userId, onClose }) {
               <i className="bi bi-check-lg" style={{ fontSize: 32, color: '#16a34a' }}></i>
             </div>
             <div style={{ fontWeight: 600, color: '#16a34a' }}>WhatsApp conectado!</div>
+          </>
+        )}
+        {phase === 'error' && (
+          <>
+            <div style={{ width: 64, height: 64, borderRadius: 99, background: '#fee2e2', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <i className="bi bi-exclamation-triangle" style={{ fontSize: 28, color: '#dc2626' }}></i>
+            </div>
+            <div style={{ fontWeight: 600, color: '#dc2626', fontSize: 13 }}>Erro ao conectar</div>
+            <div className="muted tiny" style={{ textAlign: 'center', maxWidth: 280 }}>{errorMsg}</div>
+            <Button variant="primary" size="sm" onClick={() => { setPhase('loading'); setErrorMsg(''); setRetryCount(c => c + 1); }}>
+              Tentar novamente
+            </Button>
           </>
         )}
       </div>

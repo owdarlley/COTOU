@@ -16,6 +16,8 @@ module.exports = async function handler(req, res) {
   const { instanceName } = req.body || {};
   if (!instanceName) return res.status(400).json({ ok: false, message: 'instanceName obrigatório.' });
 
+  const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+
   try {
     // Tenta criar a instância — ignora erro se já existir
     await fetch(`${apiUrl}/instance/create`, {
@@ -23,6 +25,9 @@ module.exports = async function handler(req, res) {
       headers: { 'Content-Type': 'application/json', apikey: apiKey },
       body: JSON.stringify({ instanceName, qrcode: true, integration: 'WHATSAPP-BAILEYS' }),
     });
+
+    // Aguarda instância inicializar antes de pedir o QR
+    await sleep(1500);
 
     // Busca QR Code — v2 retorna { base64: "data:image/png;base64,..." }
     const qrRes = await fetch(`${apiUrl}/instance/connect/${instanceName}`, {
