@@ -39,7 +39,11 @@ module.exports = async function handler(req, res) {
     const qrcode = qrData.base64 || null;
 
     if (!qrcode) {
-      return res.json({ ok: false, message: 'QR Code não disponível. Instância pode já estar conectada.' });
+      return res.json({
+        ok: false,
+        message: 'QR Code não disponível. Instância pode já estar conectada.',
+        debug: { status: qrRes.status, fields: Object.keys(qrData) },
+      });
     }
 
     return res.json({ ok: true, qrcode });
