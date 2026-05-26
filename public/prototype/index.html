@@ -3445,7 +3445,7 @@ function NewQuotation() {
   const [plateWarning, setPlateWarning] = useState('');
   const [vehicle, setVehicle] = useState({ make: '', model: '', year_model: '', year_manuf: '', color: '', fuel: '' });
   // items
-  const [items, setItems] = useState([{ part_name: '', part_code: '', quantity: 1 }]);
+  const [items, setItems] = useState([]);
   const [partQuery, setPartQuery] = useState('');
   // notes + photo
   const [notesVendas, setNotesVendas] = useState('');
@@ -3675,10 +3675,10 @@ function NewQuotation() {
                   </tr>
                 </thead>
                 <tbody>
-                  {items.map((it, i) => it.part_name || it.part_code ? (
+                  {items.map((it, i) => (
                     <tr key={i}>
                       <td>
-                        <input className="input" value={it.part_name} onChange={e => updateItem(i, 'part_name', e.target.value)} placeholder="Nome da peça" />
+                        <input className="input" value={it.part_name} onChange={e => updateItem(i, 'part_name', e.target.value)} placeholder="Nome da peça" autoFocus={i === items.length - 1 && !it.part_name && !it.part_code} />
                       </td>
                       <td>
                         <input className="input mono small" value={it.part_code || ''} onChange={e => updateItem(i, 'part_code', e.target.value)} placeholder="—" style={{ width: 110 }} />
@@ -3690,12 +3690,6 @@ function NewQuotation() {
                         <button className="icon-btn" onClick={() => removeItem(i)} title="Remover">
                           <i className="bi bi-trash3" style={{ fontSize: 14, color: 'var(--text-faint)' }}></i>
                         </button>
-                      </td>
-                    </tr>
-                  ) : (
-                    <tr key={i}>
-                      <td colSpan={4}>
-                        <input className="input" value={it.part_name} onChange={e => updateItem(i, 'part_name', e.target.value)} placeholder="Nome da peça (manual)" autoFocus />
                       </td>
                     </tr>
                   ))}
