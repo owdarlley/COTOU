@@ -1,4 +1,4 @@
-// Vercel serverless — cria instância WhatsApp e retorna QR Code
+// Vercel serverless — cria instância WhatsApp e retorna QR Code (Evolution API v2)
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
@@ -17,19 +17,27 @@ module.exports = async function handler(req, res) {
   if (!instanceName) return res.status(400).json({ ok: false, message: 'instanceName obrigatório.' });
 
   try {
-    const createRes = await fetch(`${apiUrl}/instance/create`, {
+    // Tenta criar a instância — ignora erro se já existir
+    await fetch(`${apiUrl}/instance/create`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', apikey: apiKey },
       body: JSON.stringify({ instanceName, qrcode: true, integration: 'WHATSAPP-BAILEYS' }),
     });
-    await createRes.json();
 
+    // Busca QR Code — v2 retorna { base64: "data:image/png;base64,..." }
     const qrRes = await fetch(`${apiUrl}/instance/connect/${instanceName}`, {
       headers: { apikey: apiKey },
     });
     const qrData = await qrRes.json();
 
-    return res.json({ ok: true, qrcode: qrData.base64 || qrData.qrcode?.base64 || null });
+    // base64 em v2 já vem com o prefixo data:image/png;base64,
+    const qrcode = qrData.base64 || null;
+
+    if (!qrcode) {
+      return res.json({ ok: false, message: 'QR Code não disponível. Instância pode já estar conectada.' });
+    }
+
+    return res.json({ ok: true, qrcode });
   } catch (err) {
     return res.status(502).json({ ok: false, message: err.message });
   }

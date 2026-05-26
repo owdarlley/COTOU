@@ -1,4 +1,4 @@
-// Vercel serverless — retorna status de conexão da instância
+// Vercel serverless — retorna status de conexão da instância (Evolution API v2)
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
@@ -16,12 +16,22 @@ module.exports = async function handler(req, res) {
   if (!instance) return res.status(400).json({ connected: false, message: 'instance obrigatório.' });
 
   try {
-    const r = await fetch(`${apiUrl}/instance/connectionState/${instance}`, {
+    // v2: usa fetchInstances com filtro por nome
+    const r = await fetch(`${apiUrl}/instance/fetchInstances?instanceName=${encodeURIComponent(instance)}`, {
       headers: { apikey: apiKey },
     });
     const data = await r.json();
-    const connected = data?.instance?.state === 'open';
-    return res.json({ connected, state: data?.instance?.state });
+
+    // Resposta é um array de instâncias
+    const instances = Array.isArray(data) ? data : [];
+    const found = instances.find(i =>
+      i.instance?.instanceName === instance || i.instanceName === instance
+    );
+
+    const status = found?.instance?.connectionStatus || found?.connectionStatus || 'close';
+    const connected = status === 'open';
+
+    return res.json({ connected, state: status });
   } catch (err) {
     return res.json({ connected: false, message: err.message });
   }
