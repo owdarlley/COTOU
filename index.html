@@ -1755,6 +1755,7 @@ const initialState = {
   notifications: SEED_NOTIFICATIONS,
   toasts: [],
   loggedIn: false,
+  waConnectOpen: false,
   route: { name: 'login', params: {} },
 };
 
@@ -1921,9 +1922,14 @@ function reducer(state, action) {
         quotations: state.quotations.map(q => q.id === action.id ? { ...q, whatsapp_sent_at: new Date().toISOString() } : q),
         toasts: [...state.toasts, { id: Date.now(), type: 'success', message: 'Mensagem enviada via WhatsApp' }],
       };
+    case 'open_wa_connect':
+      return { ...state, waConnectOpen: true };
+    case 'close_wa_connect':
+      return { ...state, waConnectOpen: false };
     case 'whatsapp_connect':
       return {
         ...state,
+        waConnectOpen: false,
         users: state.users.map(u => u.id === action.userId
           ? { ...u, whatsapp_connected: true, whatsapp_instance: `cotou-user-${action.userId}` }
           : u
@@ -2368,7 +2374,6 @@ const NAV_META = {
 function Sidebar() {
   const { state, dispatch, currentUser, unreadCount } = useStore();
   const visible = NAV_ITEMS_BY_ROLE[currentUser.role] || [];
-  const [showWaConnect, setShowWaConnect] = useState(false);
   const connected = currentUser.whatsapp_connected;
   return (
     <aside className="sidebar">
@@ -2420,7 +2425,7 @@ function Sidebar() {
         <button
           onClick={() => connected
             ? dispatch({ type: 'whatsapp_disconnect', userId: currentUser.id })
-            : setShowWaConnect(true)
+            : dispatch({ type: 'open_wa_connect' })
           }
           style={{
             width: '100%', display: 'flex', alignItems: 'center', gap: 9,
@@ -2455,9 +2460,6 @@ function Sidebar() {
         </button>
       </div>
 
-      {showWaConnect && (
-        <WhatsAppConnectModal userId={currentUser.id} onClose={() => setShowWaConnect(false)} />
-      )}
     </aside>
   );
 }
@@ -4668,7 +4670,7 @@ const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
 }/*EDITMODE-END*/;
 
 function Router() {
-  const { state } = useStore();
+  const { state, dispatch, currentUser } = useStore();
   if (!state.loggedIn) return <LoginScreen />;
 
   let screen = null;
@@ -4701,6 +4703,12 @@ function Router() {
         <Topbar title={t.title} subtitle={t.subtitle} />
         {screen}
       </main>
+      {state.waConnectOpen && (
+        <WhatsAppConnectModal
+          userId={currentUser.id}
+          onClose={() => dispatch({ type: 'close_wa_connect' })}
+        />
+      )}
     </div>
   );
 }
