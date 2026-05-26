@@ -3661,7 +3661,7 @@ function NewQuotation() {
           <PartAutocomplete value={partQuery} onChange={setPartQuery} onPick={addItem} />
 
           <div className="card" style={{ background: 'var(--surface-2)' }}>
-            {items.filter(i => i.part_name).length === 0 ? (
+            {items.length === 0 ? (
               <EmptyState icon="bi-gear" title="Nenhuma peça adicionada"
                 message="Busque no catálogo acima ou clique em 'Item manual'." />
             ) : (
