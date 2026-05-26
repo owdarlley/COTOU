@@ -2367,6 +2367,8 @@ const NAV_META = {
 function Sidebar() {
   const { state, dispatch, currentUser, unreadCount } = useStore();
   const visible = NAV_ITEMS_BY_ROLE[currentUser.role] || [];
+  const [showWaConnect, setShowWaConnect] = useState(false);
+  const connected = currentUser.whatsapp_connected;
   return (
     <aside className="sidebar">
       <div className="sidebar-brand">
@@ -2411,6 +2413,34 @@ function Sidebar() {
           <span>Cotadas</span>
         </button>
       </nav>
+
+      {/* WhatsApp connection strip */}
+      <div style={{ padding: '8px 12px', borderTop: '1px solid var(--border)' }}>
+        <button
+          onClick={() => connected
+            ? dispatch({ type: 'whatsapp_disconnect', userId: currentUser.id })
+            : setShowWaConnect(true)
+          }
+          style={{
+            width: '100%', display: 'flex', alignItems: 'center', gap: 9,
+            background: 'none', border: '1px solid var(--border)', borderRadius: 8,
+            padding: '7px 10px', cursor: 'pointer', transition: 'background 0.15s',
+          }}
+          title={connected ? 'Desconectar WhatsApp' : 'Conectar meu WhatsApp'}
+        >
+          <i className="bi bi-whatsapp" style={{ fontSize: 15, color: connected ? '#16a34a' : 'var(--text-faint)', flexShrink: 0 }}></i>
+          <div style={{ flex: 1, minWidth: 0, textAlign: 'left' }}>
+            <div style={{ fontSize: 11.5, fontWeight: 600, color: 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              Meu WhatsApp
+            </div>
+            <div style={{ fontSize: 10.5, color: connected ? '#16a34a' : 'var(--text-faint)', fontFamily: 'var(--mono)' }}>
+              {connected ? '● Conectado' : '○ Desconectado'}
+            </div>
+          </div>
+          <i className={`bi ${connected ? 'bi-x-circle' : 'bi-qr-code-scan'}`} style={{ fontSize: 13, color: 'var(--text-faint)', flexShrink: 0 }}></i>
+        </button>
+      </div>
+
       <div className="sidebar-user">
         <div className="avatar brand">
           {currentUser.name.split(' ').map(s => s[0]).slice(0, 2).join('')}
@@ -2423,6 +2453,10 @@ function Sidebar() {
           <i className="bi bi-box-arrow-right" style={{ fontSize: 14 }}></i>
         </button>
       </div>
+
+      {showWaConnect && (
+        <WhatsAppConnectModal userId={currentUser.id} onClose={() => setShowWaConnect(false)} />
+      )}
     </aside>
   );
 }
