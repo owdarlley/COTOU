@@ -19,7 +19,15 @@ module.exports = async function handler(req, res) {
   const sleep = (ms) => new Promise(r => setTimeout(r, ms));
 
   try {
-    // Tenta criar a instância — ignora erro se já existir
+    // Deleta instância anterior (se existir) para garantir QR fresco
+    await fetch(`${apiUrl}/instance/delete/${instanceName}`, {
+      method: 'DELETE',
+      headers: { apikey: apiKey },
+    }).catch(() => {});
+
+    await sleep(1000);
+
+    // Cria instância nova
     await fetch(`${apiUrl}/instance/create`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', apikey: apiKey },
