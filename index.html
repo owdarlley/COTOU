@@ -1738,14 +1738,8 @@ const SEED_NOTIFICATIONS = [
   { id: 5, user_id: 2, type: 'cotacao_atualizada', title: 'Cliente APROVOU — Cotação #COT-2026-0004', message: 'Ricardo informou que o cliente aprovou. Pode encomendar!', read_at: '2026-05-21T12:00:00Z', quotation_id: 4, created_at: '2026-05-21T11:30:00Z', time_label: '4 dias' },
 ];
 
-// Plate-API mock — quick lookup by plate
-const PLATE_DB = {
-  'ABC1D23':  { make:'VOLKSWAGEN', model:'Gol 1.0', year_model:2019, year_manuf:2018, color:'PRATA',   fuel:'FLEX' },
-  'XYZ5E67':  { make:'TOYOTA',     model:'Corolla 2.0 XEi', year_model:2022, year_manuf:2021, color:'PRETO', fuel:'FLEX' },
-  'BRA2E19':  { make:'JEEP',       model:'Compass Limited', year_model:2024, year_manuf:2023, color:'PRATA', fuel:'FLEX' },
-  'RIO3F45':  { make:'NISSAN',     model:'Kicks 1.6 Advance', year_model:2023, year_manuf:2022, color:'AZUL', fuel:'FLEX' },
-  'SAO1G88':  { make:'CHEVROLET',  model:'Tracker Premier 1.2T', year_model:2024, year_manuf:2024, color:'BRANCO', fuel:'FLEX' },
-};
+// Proxy Vercel para consulta de placas (token seguro server-side)
+const PLATE_PROXY_URL = 'https://cotou.vercel.app';
 
 /* =========================================================
    Store (reducer)
@@ -1992,7 +1986,7 @@ function StoreProvider({ children }) {
     const currentUser = state.users.find(u => u.id === state.currentUserId);
     const myNotifs = state.notifications.filter(n => n.user_id === state.currentUserId);
     const unreadCount = myNotifs.filter(n => !n.read_at).length;
-    return { state, dispatch, currentUser, myNotifs, unreadCount, calcTotals, PLATE_DB };
+    return { state, dispatch, currentUser, myNotifs, unreadCount, calcTotals };
   }, [state]);
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>;
 }
@@ -3464,7 +3458,7 @@ function NewQuotation() {
     setPlateLoading(true);
     setPlateWarning('');
     try {
-      const res = await fetch(`/api/placa/${key}`);
+      const res = await fetch(`${PLATE_PROXY_URL}/api/placa/${key}`);
       const json = await res.json();
       if (json.ok && json.data) {
         setVehicle({
