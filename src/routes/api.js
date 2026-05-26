@@ -2,7 +2,8 @@ const express = require('express');
 const router = express.Router();
 const { requireAuth, requireRole } = require('../middleware/auth');
 const { lookupPlate, getBalance, isValidPlate } = require('../services/plateService');
-const { sendQuoteMessage } = require('../services/whatsappService');
+const { sendQuoteMessage, createInstance, getQRCode, getStatus, deleteInstance } = require('../services/whatsappService');
+const User = require('../models/User');
 const PartsCatalog = require('../models/PartsCatalog');
 const Notification = require('../models/Notification');
 const Quotation = require('../models/Quotation');
@@ -60,6 +61,49 @@ router.post('/notificacoes/todas-lidas', (req, res) => {
   res.json({ ok: true });
 });
 
+// WhatsApp — gerenciamento de instância por usuário
+router.post('/whatsapp/instancia/criar', async (req, res) => {
+  const instanceName = `cotou-user-${req.session.userId}`;
+  try {
+    await createInstance(instanceName);
+    User.setWhatsappInstance(req.session.userId, instanceName);
+    res.json({ ok: true, instanceName });
+  } catch (err) {
+    res.status(502).json({ ok: false, message: err.message });
+  }
+});
+
+router.get('/whatsapp/instancia/qrcode', async (req, res) => {
+  const user = User.findById(req.session.userId);
+  if (!user?.whatsapp_instance_name) return res.status(400).json({ ok: false, message: 'Instância não criada. Chame /criar primeiro.' });
+  try {
+    const data = await getQRCode(user.whatsapp_instance_name);
+    res.json({ ok: true, data });
+  } catch (err) {
+    res.status(502).json({ ok: false, message: err.message });
+  }
+});
+
+router.get('/whatsapp/instancia/status', async (req, res) => {
+  const user = User.findById(req.session.userId);
+  if (!user?.whatsapp_instance_name) return res.json({ ok: true, connected: false });
+  try {
+    const status = await getStatus(user.whatsapp_instance_name);
+    res.json({ ok: true, ...status });
+  } catch (err) {
+    res.json({ ok: true, connected: false });
+  }
+});
+
+router.delete('/whatsapp/instancia/desconectar', async (req, res) => {
+  const user = User.findById(req.session.userId);
+  if (user?.whatsapp_instance_name) {
+    try { await deleteInstance(user.whatsapp_instance_name); } catch (_) {}
+    User.clearWhatsappInstance(req.session.userId);
+  }
+  res.json({ ok: true });
+});
+
 // Envio WhatsApp
 router.post('/whatsapp/enviar/:id', async (req, res) => {
   const quotation = Quotation.findById(parseInt(req.params.id));
@@ -68,9 +112,10 @@ router.post('/whatsapp/enviar/:id', async (req, res) => {
     return res.json({ ok: false, message: 'Cotação ainda não foi respondida pelo setor de compras.' });
   }
 
+  const user = User.findById(req.session.userId);
   const items = QuotationItem.findByQuotationId(quotation.id);
   try {
-    await sendQuoteMessage(quotation.customer_phone, quotation, items);
+    await sendQuoteMessage(quotation.customer_phone, quotation, items, user?.whatsapp_instance_name || null);
     Quotation.markWhatsappSent(quotation.id, req.session.userId);
     res.json({ ok: true, message: 'Mensagem enviada com sucesso!' });
   } catch (err) {

@@ -3,7 +3,7 @@ const bcrypt = require('bcryptjs');
 
 class User {
   static findById(id) {
-    return db.prepare('SELECT id, name, email, role, phone_whatsapp, active, created_at FROM users WHERE id = ?').get(id);
+    return db.prepare('SELECT id, name, email, role, phone_whatsapp, whatsapp_instance_name, whatsapp_connected_at, active, created_at FROM users WHERE id = ?').get(id);
   }
 
   static findByEmail(email) {
@@ -11,11 +11,11 @@ class User {
   }
 
   static findAllByRole(role) {
-    return db.prepare('SELECT id, name, email, role, phone_whatsapp, active FROM users WHERE role = ? AND active = 1').all(role);
+    return db.prepare('SELECT id, name, email, role, phone_whatsapp, whatsapp_instance_name, whatsapp_connected_at, active FROM users WHERE role = ? AND active = 1').all(role);
   }
 
   static findAll() {
-    return db.prepare('SELECT id, name, email, role, phone_whatsapp, active, created_at FROM users ORDER BY name').all();
+    return db.prepare('SELECT id, name, email, role, phone_whatsapp, whatsapp_instance_name, whatsapp_connected_at, active, created_at FROM users ORDER BY name').all();
   }
 
   static async create({ name, email, password, role, phone_whatsapp }) {
@@ -36,6 +36,24 @@ class User {
       updated_at = datetime('now')
       WHERE id = ?
     `).run(name, email, role, phone_whatsapp, active, id);
+  }
+
+  static setWhatsappInstance(id, instanceName) {
+    db.prepare(`UPDATE users SET
+      whatsapp_instance_name = ?,
+      whatsapp_connected_at = datetime('now'),
+      updated_at = datetime('now')
+      WHERE id = ?
+    `).run(instanceName, id);
+  }
+
+  static clearWhatsappInstance(id) {
+    db.prepare(`UPDATE users SET
+      whatsapp_instance_name = NULL,
+      whatsapp_connected_at = NULL,
+      updated_at = datetime('now')
+      WHERE id = ?
+    `).run(id);
   }
 
   static async updatePassword(id, newPassword) {

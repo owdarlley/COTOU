@@ -38,14 +38,17 @@ ${prazoTexto}
 Qualquer dúvida, estamos à disposição! 😊`;
 }
 
-async function sendQuoteMessage(customerPhone, quotation, items) {
+function getClient() {
   const apiUrl = process.env.WHATSAPP_API_URL;
   const apiKey = process.env.WHATSAPP_API_KEY;
-  const instance = process.env.WHATSAPP_INSTANCE_NAME;
+  if (!apiUrl || !apiKey) throw new Error('WhatsApp API não configurada. Verifique WHATSAPP_API_URL e WHATSAPP_API_KEY no .env');
+  return { apiUrl, apiKey };
+}
 
-  if (!apiUrl || !apiKey || !instance) {
-    throw new Error('WhatsApp API não configurada. Verifique as variáveis de ambiente.');
-  }
+async function sendQuoteMessage(customerPhone, quotation, items, instanceName) {
+  const { apiUrl, apiKey } = getClient();
+  const instance = instanceName || process.env.WHATSAPP_INSTANCE_NAME;
+  if (!instance) throw new Error('Instância WhatsApp não definida. Conecte seu WhatsApp nas configurações.');
 
   const number = formatPhone(customerPhone);
   const text = buildMessage(quotation, items);
@@ -59,4 +62,41 @@ async function sendQuoteMessage(customerPhone, quotation, items) {
   return { ok: true, data };
 }
 
-module.exports = { sendQuoteMessage, buildMessage };
+async function createInstance(instanceName) {
+  const { apiUrl, apiKey } = getClient();
+  const { data } = await axios.post(
+    `${apiUrl}/instance/create`,
+    { instanceName, qrcode: true, integration: 'WHATSAPP-BAILEYS' },
+    { headers: { apikey: apiKey }, timeout: 15000 }
+  );
+  return data;
+}
+
+async function getQRCode(instanceName) {
+  const { apiUrl, apiKey } = getClient();
+  const { data } = await axios.get(
+    `${apiUrl}/instance/connect/${instanceName}`,
+    { headers: { apikey: apiKey }, timeout: 15000 }
+  );
+  return data;
+}
+
+async function getStatus(instanceName) {
+  const { apiUrl, apiKey } = getClient();
+  const { data } = await axios.get(
+    `${apiUrl}/instance/connectionState/${instanceName}`,
+    { headers: { apikey: apiKey }, timeout: 10000 }
+  );
+  const connected = data?.instance?.state === 'open';
+  return { connected, state: data?.instance?.state };
+}
+
+async function deleteInstance(instanceName) {
+  const { apiUrl, apiKey } = getClient();
+  await axios.delete(
+    `${apiUrl}/instance/delete/${instanceName}`,
+    { headers: { apikey: apiKey }, timeout: 10000 }
+  );
+}
+
+module.exports = { sendQuoteMessage, buildMessage, createInstance, getQRCode, getStatus, deleteInstance };
