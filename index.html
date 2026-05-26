@@ -3557,7 +3557,8 @@ function WhatsAppConnectModal({ userId, onClose }) {
         }
 
         if (json.qrcode) {
-          setQrSrc(`data:image/png;base64,${json.qrcode}`);
+          // v2 já retorna com prefixo data:image/png;base64, incluso
+          setQrSrc(json.qrcode);
           setPhase('qr');
           // Poll for connection
           let attempts = 0;
