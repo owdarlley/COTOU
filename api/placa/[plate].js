@@ -1,8 +1,8 @@
 // Vercel serverless function — proxy seguro para a API de placas
-// O token fica server-side; o GitHub Pages chama este endpoint com CORS liberado.
+// CommonJS (sem "type":"module" no package.json do projeto)
 
-export default async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', 'https://owdarlley.github.io');
+module.exports = async function handler(req, res) {
+  res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
@@ -75,4 +75,4 @@ export default async function handler(req, res) {
   } catch (err) {
     return res.status(500).json({ ok: false, code: 'ERROR', message: err.message });
   }
-}
+};
