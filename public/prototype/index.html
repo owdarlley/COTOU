@@ -3556,6 +3556,13 @@ function WhatsAppConnectModal({ userId, onClose }) {
         // Sem API configurada → demo
         if (json.demo) { enterDemoMode(); return; }
 
+        // Já estava conectada na Evolution API — confirma sem QR
+        if (json.alreadyConnected) {
+          dispatch({ type: 'whatsapp_connect', userId });
+          setPhase('connected');
+          return;
+        }
+
         // Erro real da API → mostra mensagem
         if (!json.ok || !json.qrcode) {
           setPhase('error');

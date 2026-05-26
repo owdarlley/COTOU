@@ -19,7 +19,25 @@ module.exports = async function handler(req, res) {
   const sleep = (ms) => new Promise(r => setTimeout(r, ms));
 
   try {
-    // Deleta instância anterior (se existir) para garantir QR fresco
+    // Verifica se instância já existe e está conectada
+    const checkRes = await fetch(
+      `${apiUrl}/instance/fetchInstances?instanceName=${encodeURIComponent(instanceName)}`,
+      { headers: { apikey: apiKey } }
+    ).catch(() => null);
+
+    if (checkRes?.ok) {
+      const instances = await checkRes.json().catch(() => []);
+      const found = Array.isArray(instances) && instances.find(
+        i => i.instance?.instanceName === instanceName || i.instanceName === instanceName
+      );
+      const status = found?.instance?.connectionStatus || found?.connectionStatus;
+      if (status === 'open') {
+        // Já está conectada — não deletar, apenas confirmar
+        return res.json({ ok: true, alreadyConnected: true });
+      }
+    }
+
+    // Não está conectada — deleta (se existir) e recria para QR fresco
     await fetch(`${apiUrl}/instance/delete/${instanceName}`, {
       method: 'DELETE',
       headers: { apikey: apiKey },
@@ -27,31 +45,22 @@ module.exports = async function handler(req, res) {
 
     await sleep(1000);
 
-    // Cria instância nova
     await fetch(`${apiUrl}/instance/create`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', apikey: apiKey },
       body: JSON.stringify({ instanceName, qrcode: true, integration: 'WHATSAPP-BAILEYS' }),
     });
 
-    // Aguarda instância inicializar antes de pedir o QR
     await sleep(1500);
 
-    // Busca QR Code — v2 retorna { base64: "data:image/png;base64,..." }
     const qrRes = await fetch(`${apiUrl}/instance/connect/${instanceName}`, {
       headers: { apikey: apiKey },
     });
     const qrData = await qrRes.json();
 
-    // base64 em v2 já vem com o prefixo data:image/png;base64,
     const qrcode = qrData.base64 || null;
-
     if (!qrcode) {
-      return res.json({
-        ok: false,
-        message: 'QR Code não disponível. Instância pode já estar conectada.',
-        debug: { status: qrRes.status, fields: Object.keys(qrData) },
-      });
+      return res.json({ ok: false, message: 'QR Code não disponível após recriar a instância.' });
     }
 
     return res.json({ ok: true, qrcode });
