@@ -1563,11 +1563,11 @@ const { createContext, useContext, useReducer, useEffect, useMemo, useState, use
    ========================================================= */
 
 const SEED_USERS = [
-  { id: 1, name: 'Admin Sistema',   email: 'admin@cotou.com.br',   role: 'admin',   active: true,  phone_whatsapp: '11999990001', created_at: '2025-11-04T10:00:00Z' },
-  { id: 2, name: 'João Vendas',     email: 'vendas@cotou.com.br',  role: 'vendas',  active: true,  phone_whatsapp: '11988887777', created_at: '2025-11-12T10:00:00Z' },
-  { id: 3, name: 'Maria Compras',   email: 'compras@cotou.com.br', role: 'compras', active: true,  phone_whatsapp: '11977776666', created_at: '2025-11-12T10:00:00Z' },
-  { id: 4, name: 'Ricardo Atende',  email: 'ricardo@cotou.com.br', role: 'vendas',  active: true,  phone_whatsapp: '11966665555', created_at: '2026-01-15T10:00:00Z' },
-  { id: 5, name: 'Lucia Suprimentos', email: 'lucia@cotou.com.br', role: 'compras', active: false, phone_whatsapp: '11955554444', created_at: '2026-02-04T10:00:00Z' },
+  { id: 1, name: 'Admin Sistema',   email: 'admin@cotou.com.br',   role: 'admin',   active: true,  phone_whatsapp: '11999990001', whatsapp_instance: 'cotou-user-1', whatsapp_connected: true,  created_at: '2025-11-04T10:00:00Z' },
+  { id: 2, name: 'João Vendas',     email: 'vendas@cotou.com.br',  role: 'vendas',  active: true,  phone_whatsapp: '11988887777', whatsapp_instance: 'cotou-user-2', whatsapp_connected: true,  created_at: '2025-11-12T10:00:00Z' },
+  { id: 3, name: 'Maria Compras',   email: 'compras@cotou.com.br', role: 'compras', active: true,  phone_whatsapp: '11977776666', whatsapp_instance: null,            whatsapp_connected: false, created_at: '2025-11-12T10:00:00Z' },
+  { id: 4, name: 'Ricardo Atende',  email: 'ricardo@cotou.com.br', role: 'vendas',  active: true,  phone_whatsapp: '11966665555', whatsapp_instance: null,            whatsapp_connected: false, created_at: '2026-01-15T10:00:00Z' },
+  { id: 5, name: 'Lucia Suprimentos', email: 'lucia@cotou.com.br', role: 'compras', active: false, phone_whatsapp: '11955554444', whatsapp_instance: null,            whatsapp_connected: false, created_at: '2026-02-04T10:00:00Z' },
 ];
 
 const SEED_PARTS = [
@@ -1920,6 +1920,22 @@ function reducer(state, action) {
         ...state,
         quotations: state.quotations.map(q => q.id === action.id ? { ...q, whatsapp_sent_at: new Date().toISOString() } : q),
         toasts: [...state.toasts, { id: Date.now(), type: 'success', message: 'Mensagem enviada via WhatsApp' }],
+      };
+    case 'whatsapp_connect':
+      return {
+        ...state,
+        users: state.users.map(u => u.id === action.userId
+          ? { ...u, whatsapp_connected: true, whatsapp_instance: `cotou-user-${action.userId}` }
+          : u
+        ),
+      };
+    case 'whatsapp_disconnect':
+      return {
+        ...state,
+        users: state.users.map(u => u.id === action.userId
+          ? { ...u, whatsapp_connected: false, whatsapp_instance: null }
+          : u
+        ),
       };
     case 'mark_notification_read':
       return {
@@ -3377,7 +3393,9 @@ function RespondModal({ quotation, onClose }) {
    WhatsApp preview modal
    ========================================================= */
 function WhatsAppModal({ quotation, onClose }) {
-  const { dispatch } = useStore();
+  const { state, dispatch } = useStore();
+  const [sending, setSending] = useState(false);
+  const me = state.currentUser;
   const totals = calcTotals(quotation.items);
   const msg = [
     `*COTOU — Cotação ${quotation.quote_number}*`,
@@ -3396,13 +3414,35 @@ function WhatsAppModal({ quotation, onClose }) {
     'Confirma para encomendarmos? 🔧',
   ].join('\n');
 
+  async function send() {
+    setSending(true);
+    try {
+      await fetch(`${PLATE_PROXY_URL}/api/whatsapp/send`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          phone: quotation.customer_phone,
+          message: msg,
+          instanceName: me?.whatsapp_instance || null,
+        }),
+      });
+    } catch (_) {}
+    dispatch({ type: 'send_whatsapp', id: quotation.id });
+    dispatch({ type: 'toast', tone: 'success', message: 'WhatsApp enviado!' });
+    setSending(false);
+    onClose();
+  }
+
+  const canSend = me?.whatsapp_connected;
+
   return (
     <Modal open={true} onClose={onClose} title="Enviar cotação por WhatsApp" icon="bi-whatsapp"
       footer={
         <>
           <Button variant="ghost" onClick={onClose}>Cancelar</Button>
-          <Button variant="whatsapp" icon="bi-send" onClick={() => { dispatch({ type: 'send_whatsapp', id: quotation.id }); onClose(); }}>
-            Enviar agora
+          <Button variant="whatsapp" icon={sending ? 'bi-arrow-clockwise' : 'bi-send'}
+            onClick={send} disabled={sending || !canSend}>
+            {sending ? 'Enviando…' : 'Enviar agora'}
           </Button>
         </>
       }
@@ -3415,6 +3455,12 @@ function WhatsAppModal({ quotation, onClose }) {
             <div className="tiny faint mono">{fmt.phone(quotation.customer_phone)}</div>
           </div>
         </div>
+        {!canSend && (
+          <div style={{ background: 'var(--st-pendente-bg)', color: 'var(--st-pendente)', borderRadius: 8, padding: '8px 12px', fontSize: 13, display: 'flex', alignItems: 'center', gap: 8 }}>
+            <i className="bi bi-exclamation-triangle-fill"></i>
+            Conecte seu WhatsApp em <strong>Usuários</strong> para enviar.
+          </div>
+        )}
         <div style={{ background: '#e5ddd5', borderRadius: 12, padding: 16, minHeight: 200 }}>
           <div style={{ background: '#dcf8c6', borderRadius: 8, padding: 12, fontSize: 13, lineHeight: 1.5, whiteSpace: 'pre-wrap', maxWidth: 360, marginLeft: 'auto', color: '#111' }}>
             {msg}
@@ -3423,6 +3469,128 @@ function WhatsAppModal({ quotation, onClose }) {
             </div>
           </div>
         </div>
+      </div>
+    </Modal>
+  );
+}
+
+function WhatsAppConnectModal({ userId, onClose }) {
+  const { dispatch } = useStore();
+  const [phase, setPhase] = useState('loading'); // loading | qr | connected
+  const [qrSrc, setQrSrc] = useState(null);
+  const timerRef = React.useRef(null);
+  const pollRef = React.useRef(null);
+
+  React.useEffect(() => {
+    let cancelled = false;
+    const instanceName = `cotou-user-${userId}`;
+
+    async function start() {
+      try {
+        const res = await fetch(`${PLATE_PROXY_URL}/api/whatsapp/connect`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ instanceName }),
+        });
+        const json = await res.json();
+        if (cancelled) return;
+
+        if (json.demo || !json.ok) {
+          // Demo mode: show placeholder QR and auto-connect after 5s
+          setPhase('qr');
+          timerRef.current = setTimeout(() => {
+            if (!cancelled) {
+              dispatch({ type: 'whatsapp_connect', userId });
+              setPhase('connected');
+            }
+          }, 5000);
+          return;
+        }
+
+        if (json.qrcode) {
+          setQrSrc(`data:image/png;base64,${json.qrcode}`);
+          setPhase('qr');
+          // Poll for connection
+          let attempts = 0;
+          pollRef.current = setInterval(async () => {
+            if (cancelled) return;
+            attempts++;
+            if (attempts > 40) { clearInterval(pollRef.current); return; }
+            try {
+              const sr = await fetch(`${PLATE_PROXY_URL}/api/whatsapp/status/${instanceName}`);
+              const s = await sr.json();
+              if (s.connected) {
+                clearInterval(pollRef.current);
+                if (!cancelled) {
+                  dispatch({ type: 'whatsapp_connect', userId });
+                  setPhase('connected');
+                }
+              }
+            } catch (_) {}
+          }, 3000);
+        }
+      } catch (_) {
+        // Network error → demo mode
+        if (!cancelled) {
+          setPhase('qr');
+          timerRef.current = setTimeout(() => {
+            if (!cancelled) {
+              dispatch({ type: 'whatsapp_connect', userId });
+              setPhase('connected');
+            }
+          }, 5000);
+        }
+      }
+    }
+
+    start();
+    return () => {
+      cancelled = true;
+      clearTimeout(timerRef.current);
+      clearInterval(pollRef.current);
+    };
+  }, [userId]);
+
+  React.useEffect(() => {
+    if (phase === 'connected') {
+      const t = setTimeout(onClose, 1500);
+      return () => clearTimeout(t);
+    }
+  }, [phase]);
+
+  return (
+    <Modal open={true} onClose={onClose} title="Conectar WhatsApp" icon="bi-whatsapp"
+      footer={<Button variant="ghost" onClick={onClose}>Fechar</Button>}
+    >
+      <div className="col" style={{ alignItems: 'center', gap: 20, padding: '8px 0' }}>
+        {phase === 'loading' && (
+          <>
+            <i className="bi bi-arrow-clockwise" style={{ fontSize: 32, color: 'var(--brand)', animation: 'spin 1s linear infinite' }}></i>
+            <div className="muted">Gerando QR Code…</div>
+          </>
+        )}
+        {phase === 'qr' && (
+          <>
+            {qrSrc
+              ? <img src={qrSrc} alt="QR Code WhatsApp" style={{ width: 220, height: 220, borderRadius: 12, border: '1px solid var(--border)' }} />
+              : (
+                <div style={{ width: 220, height: 220, borderRadius: 12, border: '2px dashed var(--border)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12, background: 'var(--surface-2)' }}>
+                  <i className="bi bi-qr-code" style={{ fontSize: 64, color: 'var(--text-faint)' }}></i>
+                  <div className="tiny muted" style={{ textAlign: 'center', lineHeight: 1.4 }}>QR Code (modo demo)<br/>Conectando em 5s…</div>
+                </div>
+              )
+            }
+            <div className="muted tiny">Abra o WhatsApp → Dispositivos conectados → Conectar dispositivo</div>
+          </>
+        )}
+        {phase === 'connected' && (
+          <>
+            <div style={{ width: 64, height: 64, borderRadius: 99, background: '#dcfce7', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <i className="bi bi-check-lg" style={{ fontSize: 32, color: '#16a34a' }}></i>
+            </div>
+            <div style={{ fontWeight: 600, color: '#16a34a' }}>WhatsApp conectado!</div>
+          </>
+        )}
       </div>
     </Modal>
   );
@@ -4317,6 +4485,7 @@ function NotifRow({ n, last }) {
 function AdminUsersScreen() {
   const { state, dispatch } = useStore();
   const [editing, setEditing] = useState(null);
+  const [connectUserId, setConnectUserId] = useState(null);
   const [q, setQ] = useState('');
   const list = q.trim()
     ? state.users.filter(u => u.name.toLowerCase().includes(q.toLowerCase()) || u.email.toLowerCase().includes(q.toLowerCase()))
@@ -4342,7 +4511,7 @@ function AdminUsersScreen() {
               <th>Usuário</th>
               <th>E-mail</th>
               <th>Função</th>
-              <th>WhatsApp</th>
+              <th>WhatsApp pessoal</th>
               <th>Status</th>
               <th>Criado</th>
               <th style={{ width: 90 }}></th>
@@ -4361,7 +4530,21 @@ function AdminUsersScreen() {
                 </td>
                 <td><span className="mono small">{u.email}</span></td>
                 <td><RoleBadge role={u.role} /></td>
-                <td><span className="mono small">{fmt.phone(u.phone_whatsapp)}</span></td>
+                <td>
+                  {u.whatsapp_connected
+                    ? <div className="row" style={{ gap: 6, alignItems: 'center' }}>
+                        <Badge className="badge-cotado" style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                          <span className="dot-sm" style={{ background: '#16a34a' }}></span> Conectado
+                        </Badge>
+                        <button className="icon-btn" title="Desconectar"
+                          onClick={() => dispatch({ type: 'whatsapp_disconnect', userId: u.id })}>
+                          <i className="bi bi-x-circle" style={{ fontSize: 14, color: 'var(--text-faint)' }}></i>
+                        </button>
+                      </div>
+                    : <Button variant="ghost" size="sm" icon="bi-whatsapp"
+                        onClick={() => setConnectUserId(u.id)}>Conectar</Button>
+                  }
+                </td>
                 <td>
                   {u.active
                     ? <Badge className="badge-cotado"><span className="dot-sm"></span> Ativo</Badge>
@@ -4385,6 +4568,7 @@ function AdminUsersScreen() {
       </div>
 
       {editing && <UserModal key={editing === 'new' ? 'new' : editing.id} user={editing === 'new' ? null : editing} onClose={() => setEditing(null)} />}
+      {connectUserId && <WhatsAppConnectModal userId={connectUserId} onClose={() => setConnectUserId(null)} />}
     </div>
   );
 }
