@@ -2163,7 +2163,7 @@ function Modal({ open, onClose, title, icon, children, footer, size }) {
     };
   }, [open, onClose]);
   if (!open) return null;
-  return (
+  return ReactDOM.createPortal(
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal" style={size === 'lg' ? { maxWidth: 960 } : null} onClick={e => e.stopPropagation()}>
         {title && (
@@ -2178,7 +2178,8 @@ function Modal({ open, onClose, title, icon, children, footer, size }) {
         <div className="modal-body">{children}</div>
         {footer && <div className="modal-foot">{footer}</div>}
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 
