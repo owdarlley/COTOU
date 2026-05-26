@@ -3490,10 +3490,7 @@ function NewQuotation() {
   }
 
   function addItem(part) {
-    setItems(prev => {
-      const blanks = prev.filter(i => i.part_name);
-      return [...blanks, { part_name: part.name, part_code: part.code, quantity: 1 }];
-    });
+    setItems(prev => [...prev, { part_name: part.name, part_code: part.code, quantity: 1 }]);
     setPartQuery('');
   }
 
@@ -3678,7 +3675,7 @@ function NewQuotation() {
                   {items.map((it, i) => (
                     <tr key={i}>
                       <td>
-                        <input className="input" value={it.part_name} onChange={e => updateItem(i, 'part_name', e.target.value)} placeholder="Nome da peça" autoFocus={i === items.length - 1 && !it.part_name && !it.part_code} />
+                        <input className="input" value={it.part_name} onChange={e => updateItem(i, 'part_name', e.target.value)} placeholder="Nome da peça" />
                       </td>
                       <td>
                         <input className="input mono small" value={it.part_code || ''} onChange={e => updateItem(i, 'part_code', e.target.value)} placeholder="—" style={{ width: 110 }} />
@@ -3694,6 +3691,15 @@ function NewQuotation() {
                     </tr>
                   ))}
                 </tbody>
+                <tfoot>
+                  <tr>
+                    <td colSpan={4} style={{ paddingTop: 6 }}>
+                      <button className="btn btn-ghost btn-sm" type="button" onClick={addManualItem} style={{ gap: 6 }}>
+                        <i className="bi bi-plus-lg"></i> Adicionar peça
+                      </button>
+                    </td>
+                  </tr>
+                </tfoot>
               </table>
             )}
           </div>
