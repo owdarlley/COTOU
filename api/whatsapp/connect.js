@@ -1,4 +1,5 @@
 // Vercel serverless — cria instância WhatsApp e retorna QR Code (Evolution API v2)
+// fix: polling robusto, lookup correto de status, timeout seguro para Vercel
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
@@ -10,60 +11,71 @@ module.exports = async function handler(req, res) {
   const apiKey = process.env.WHATSAPP_API_KEY;
 
   if (!apiUrl || !apiKey) {
-    return res.json({ ok: false, demo: true, message: 'Evolution API não configurada no Vercel.' });
+    return res.json({ ok: false, demo: true, message: 'Env vars ausentes.' });
   }
 
   const { instanceName } = req.body || {};
-  if (!instanceName) return res.status(400).json({ ok: false, message: 'instanceName obrigatório.' });
+  if (!instanceName) return res.status(400).json({ ok: false, message: 'instanceName obrigatorio.' });
 
   const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+  const h = { 'Content-Type': 'application/json', apikey: apiKey };
 
   try {
-    // Verifica se instância já existe e está conectada
+    // 1. Verifica estado atual
     const checkRes = await fetch(
-      `${apiUrl}/instance/fetchInstances?instanceName=${encodeURIComponent(instanceName)}`,
-      { headers: { apikey: apiKey } }
+      apiUrl + '/instance/fetchInstances?instanceName=' + encodeURIComponent(instanceName),
+      { headers: h }
     ).catch(() => null);
 
-    if (checkRes?.ok) {
-      const instances = await checkRes.json().catch(() => []);
-      const found = Array.isArray(instances) && instances.find(
-        i => i.instance?.instanceName === instanceName || i.instanceName === instanceName
-      );
-      const status = found?.instance?.connectionStatus || found?.connectionStatus;
+    if (checkRes && checkRes.ok) {
+      const list = await checkRes.json().catch(() => []);
+      const found = Array.isArray(list) ? list.find(
+        i => (i.name || i.instanceName || i.instance?.instanceName) === instanceName
+      ) : null;
+      const status = found?.connectionStatus || found?.instance?.connectionStatus;
+
       if (status === 'open') {
-        // Já está conectada — não deletar, apenas confirmar
         return res.json({ ok: true, alreadyConnected: true });
+      }
+      if (found) {
+        await fetch(apiUrl + '/instance/delete/' + instanceName, { method: 'DELETE', headers: h }).catch(() => {});
+        await sleep(1200);
       }
     }
 
-    // Não está conectada — deleta (se existir) e recria para QR fresco
-    await fetch(`${apiUrl}/instance/delete/${instanceName}`, {
-      method: 'DELETE',
-      headers: { apikey: apiKey },
-    }).catch(() => {});
-
-    await sleep(1000);
-
-    await fetch(`${apiUrl}/instance/create`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', apikey: apiKey },
+    // 2. Cria instância
+    const createRes = await fetch(apiUrl + '/instance/create', {
+      method: 'POST', headers: h,
       body: JSON.stringify({ instanceName, qrcode: true, integration: 'WHATSAPP-BAILEYS' }),
     });
+    if (!createRes.ok) {
+      const e = await createRes.json().catch(() => ({}));
+      return res.status(502).json({ ok: false, message: 'Erro ao criar: ' + JSON.stringify(e) });
+    }
+    const createData = await createRes.json();
 
-    await sleep(1500);
-
-    const qrRes = await fetch(`${apiUrl}/instance/connect/${instanceName}`, {
-      headers: { apikey: apiKey },
-    });
-    const qrData = await qrRes.json();
-
-    const qrcode = qrData.base64 || null;
-    if (!qrcode) {
-      return res.json({ ok: false, message: 'QR Code não disponível após recriar a instância.' });
+    // 3. QR na resposta de criacao
+    const qrOnCreate = createData?.qrcode?.base64;
+    if (qrOnCreate && qrOnCreate.startsWith('data:')) {
+      return res.json({ ok: true, qrcode: qrOnCreate });
     }
 
-    return res.json({ ok: true, qrcode });
+    // 4. Polling seguro: 4x1800ms = ~7.2s (dentro do limite Vercel free)
+    for (let i = 0; i < 4; i++) {
+      await sleep(1800);
+      try {
+        const r = await fetch(apiUrl + '/instance/connect/' + instanceName, { headers: h });
+        if (r.ok) {
+          const d = await r.json();
+          if (d?.base64 && d.base64.startsWith('data:')) {
+            return res.json({ ok: true, qrcode: d.base64 });
+          }
+        }
+      } catch (_) {}
+    }
+
+    // 5. Ainda sem QR — retorna pending para frontend pollar via /api/whatsapp/qr
+    return res.json({ ok: true, pending: true, instanceName });
   } catch (err) {
     return res.status(502).json({ ok: false, message: err.message });
   }
