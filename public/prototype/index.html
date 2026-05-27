@@ -3600,15 +3600,16 @@ function WhatsAppConnectModal({ userId, onClose }) {
           return;
         }
 
-        // Servidor ainda acordando — polling via /api/whatsapp/qr
-        if (json.ok && json.pending && json.instanceName) {
+        // Aguardando QR Code — polling via /api/whatsapp/qr
+        if (json.ok && json.pending) {
           setPhase('pending');
           const qs = new URLSearchParams(zapiCreds).toString();
+          const instanceLabel = json.instanceName || `cotou-user-${userId}`;
           if (pollRef.current) clearInterval(pollRef.current);
           pollRef.current = setInterval(async () => {
             if (cancelled) return;
             try {
-              const pr = await fetch(`${PLATE_PROXY_URL}/api/whatsapp/qr/${json.instanceName}?${qs}`);
+              const pr = await fetch(`${PLATE_PROXY_URL}/api/whatsapp/qr/${instanceLabel}?${qs}`);
               const pd = await pr.json();
               if (pd.connected) {
                 clearInterval(pollRef.current);
@@ -3631,6 +3632,11 @@ function WhatsAppConnectModal({ userId, onClose }) {
         }
 
         // QR Code real retornado diretamente
+        if (!json.qrcode) {
+          setPhase('error');
+          setErrorMsg('QR Code não disponível. Aguarde alguns segundos e tente novamente.');
+          return;
+        }
         setQrSrc(json.qrcode);
         setPhase('qr');
         let attempts = 0;

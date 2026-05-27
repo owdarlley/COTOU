@@ -58,7 +58,7 @@ module.exports = async function handler(req, res) {
       if (raw) return res.json({ ok: true, qrcode: await normalizeQR(raw) });
     }
 
-    return res.json({ ok: true, pending: true });
+    return res.json({ ok: true, pending: true, instanceName: instanceId });
   } catch (err) {
     return res.status(502).json({ ok: false, message: err.message });
   }
