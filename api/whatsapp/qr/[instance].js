@@ -28,17 +28,24 @@ module.exports = async function handler(req, res) {
     if (!v) return null;
     if (v.startsWith('data:')) return v;
     if (v.startsWith('http')) {
-      // Proxy the image through Vercel to avoid CORS/auth issues in the browser
+      // URL wa.me com QR no fragmento: https://wa.me/settings/linked_devices#2@...
+      if (v.includes('#')) {
+        const qrData = v.split('#')[1];
+        if (qrData) {
+          try { return await QRCodeGen.toDataURL(qrData, { width: 256, margin: 2 }); } catch (_) {}
+        }
+      }
+      // URL de imagem direta — proxy server-side
       try {
         const r = await ft(v, 6000);
         if (r && r.ok) {
           const buf = await r.arrayBuffer();
           const b64 = Buffer.from(buf).toString('base64');
           const ct = r.headers.get('content-type') || 'image/png';
-          return `data:${ct};base64,${b64}`;
+          if (ct.startsWith('image/')) return `data:${ct};base64,${b64}`;
         }
       } catch (_) {}
-      return v; // fallback: return URL as-is
+      return null;
     }
     // String raw do WhatsApp (ex: "2@ABCD...") — gera imagem QR server-side
     try {
