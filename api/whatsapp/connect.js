@@ -1,4 +1,6 @@
 // Vercel serverless — verifica status e retorna QR Code via Z-API
+const QRCodeGen = require('qrcode');
+
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
@@ -41,7 +43,12 @@ module.exports = async function handler(req, res) {
       } catch (_) {}
       return v; // fallback: return URL as-is
     }
-    return `data:image/png;base64,${v}`;
+    // String raw do WhatsApp (ex: "2@ABCD...") — gera imagem QR server-side
+    try {
+      return await QRCodeGen.toDataURL(v, { width: 256, margin: 2 });
+    } catch (_) {
+      return null;
+    }
   }
 
   try {
@@ -55,7 +62,10 @@ module.exports = async function handler(req, res) {
     if (qrRes && qrRes.ok) {
       const qrData = await qrRes.json().catch(() => ({}));
       const raw = qrData?.value || qrData?.base64 || qrData?.qrcode;
-      if (raw) return res.json({ ok: true, qrcode: await normalizeQR(raw) });
+      if (raw) {
+        const qrcode = await normalizeQR(raw);
+        if (qrcode) return res.json({ ok: true, qrcode });
+      }
     }
 
     return res.json({ ok: true, pending: true, instanceName: instanceId });
