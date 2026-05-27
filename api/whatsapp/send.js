@@ -6,9 +6,9 @@ module.exports = async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ ok: false, message: 'Method not allowed' });
 
-  const instanceId = process.env.ZAPI_INSTANCE_ID;
-  const token = process.env.ZAPI_TOKEN;
-  const clientToken = process.env.ZAPI_CLIENT_TOKEN;
+  const instanceId = req.body?.zapiInstanceId || process.env.ZAPI_INSTANCE_ID;
+  const token = req.body?.zapiToken || process.env.ZAPI_TOKEN;
+  const clientToken = req.body?.zapiClientToken || process.env.ZAPI_CLIENT_TOKEN;
 
   if (!instanceId || !token) {
     return res.json({ ok: true, demo: true, message: 'Mensagem enviada (modo demo — Z-API não configurada).' });

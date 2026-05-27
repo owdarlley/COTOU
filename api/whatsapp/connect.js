@@ -6,12 +6,12 @@ module.exports = async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ ok: false });
 
-  const instanceId = process.env.ZAPI_INSTANCE_ID;
-  const token = process.env.ZAPI_TOKEN;
-  const clientToken = process.env.ZAPI_CLIENT_TOKEN;
+  const instanceId = req.body?.zapiInstanceId || process.env.ZAPI_INSTANCE_ID;
+  const token = req.body?.zapiToken || process.env.ZAPI_TOKEN;
+  const clientToken = req.body?.zapiClientToken || process.env.ZAPI_CLIENT_TOKEN;
 
   if (!instanceId || !token) {
-    return res.json({ ok: false, demo: true, message: 'Z-API não configurada.' });
+    return res.json({ ok: false, noCredentials: true, message: 'Credenciais Z-API não configuradas para este usuário.' });
   }
 
   const base = `https://api.z-api.io/instances/${instanceId}/token/${token}`;

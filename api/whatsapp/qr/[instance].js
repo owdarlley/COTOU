@@ -5,11 +5,11 @@ module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   if (req.method === 'OPTIONS') return res.status(200).end();
 
-  const instanceId = process.env.ZAPI_INSTANCE_ID;
-  const token = process.env.ZAPI_TOKEN;
-  const clientToken = process.env.ZAPI_CLIENT_TOKEN;
+  const instanceId = req.query?.zapiInstanceId || process.env.ZAPI_INSTANCE_ID;
+  const token = req.query?.zapiToken || process.env.ZAPI_TOKEN;
+  const clientToken = req.query?.zapiClientToken || process.env.ZAPI_CLIENT_TOKEN;
 
-  if (!instanceId || !token) return res.json({ ok: false, message: 'Z-API não configurada.' });
+  if (!instanceId || !token) return res.json({ ok: false, noCredentials: true, message: 'Credenciais Z-API não configuradas.' });
 
   const base = `https://api.z-api.io/instances/${instanceId}/token/${token}`;
   const headers = clientToken ? { 'Client-Token': clientToken } : {};
