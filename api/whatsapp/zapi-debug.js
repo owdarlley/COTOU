@@ -1,23 +1,25 @@
-// Diagnóstico temporário — mostra resposta bruta da Z-API
+// Diagnóstico temporário Z-API
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
 
   const instanceId = process.env.ZAPI_INSTANCE_ID;
   const token = process.env.ZAPI_TOKEN;
+  const clientToken = process.env.ZAPI_CLIENT_TOKEN;
 
-  if (!instanceId || !token) return res.json({ erro: 'Env vars ZAPI não encontradas' });
+  if (!instanceId || !token) return res.json({ erro: 'ZAPI_INSTANCE_ID ou ZAPI_TOKEN ausentes' });
 
   const base = `https://api.z-api.io/instances/${instanceId}/token/${token}`;
+  const headers = clientToken ? { 'Client-Token': clientToken } : {};
 
   async function ft(url, ms = 8000) {
     const ctrl = new AbortController();
     const t = setTimeout(() => ctrl.abort(), ms);
     try {
-      const r = await fetch(url, { signal: ctrl.signal });
+      const r = await fetch(url, { headers, signal: ctrl.signal });
       const text = await r.text();
       let json = null;
       try { json = JSON.parse(text); } catch (_) {}
-      return { status: r.status, ok: r.ok, json, rawPreview: text.substring(0, 300) };
+      return { status: r.status, ok: r.ok, json, rawPreview: text.substring(0, 400) };
     } catch (e) {
       return { erro: e.message };
     } finally {
@@ -27,8 +29,8 @@ module.exports = async function handler(req, res) {
 
   return res.json({
     instanceId,
-    status:  await ft(`${base}/status`),
-    qrCode:  await ft(`${base}/qr-code`),
-    qrImage: await ft(`${base}/qr-code/image`),
+    clientTokenPresent: !!clientToken,
+    status: await ft(`${base}/status`),
+    qrCode: await ft(`${base}/qr-code`),
   });
 };

@@ -7,13 +7,16 @@ module.exports = async function handler(req, res) {
 
   const instanceId = process.env.ZAPI_INSTANCE_ID;
   const token = process.env.ZAPI_TOKEN;
+  const clientToken = process.env.ZAPI_CLIENT_TOKEN;
 
   if (!instanceId || !token) return res.json({ connected: false, demo: true });
+
+  const headers = clientToken ? { 'Client-Token': clientToken } : {};
 
   try {
     const r = await fetch(
       `https://api.z-api.io/instances/${instanceId}/token/${token}/status`,
-      { signal: AbortSignal.timeout(8000) }
+      { headers, signal: AbortSignal.timeout(8000) }
     );
     const data = await r.json().catch(() => ({}));
     return res.json({ connected: data.connected === true, state: data.connected ? 'open' : 'close' });

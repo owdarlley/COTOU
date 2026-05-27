@@ -7,15 +7,17 @@ module.exports = async function handler(req, res) {
 
   const instanceId = process.env.ZAPI_INSTANCE_ID;
   const token = process.env.ZAPI_TOKEN;
+  const clientToken = process.env.ZAPI_CLIENT_TOKEN;
 
   if (!instanceId || !token) return res.json({ ok: false, message: 'Z-API não configurada.' });
 
   const base = `https://api.z-api.io/instances/${instanceId}/token/${token}`;
+  const headers = clientToken ? { 'Client-Token': clientToken } : {};
 
   async function ft(url, ms = 6000) {
     const ctrl = new AbortController();
     const t = setTimeout(() => ctrl.abort(), ms);
-    try { return await fetch(url, { signal: ctrl.signal }); }
+    try { return await fetch(url, { headers, signal: ctrl.signal }); }
     catch (e) { return null; }
     finally { clearTimeout(t); }
   }

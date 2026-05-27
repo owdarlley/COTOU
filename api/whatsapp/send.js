@@ -8,6 +8,7 @@ module.exports = async function handler(req, res) {
 
   const instanceId = process.env.ZAPI_INSTANCE_ID;
   const token = process.env.ZAPI_TOKEN;
+  const clientToken = process.env.ZAPI_CLIENT_TOKEN;
 
   if (!instanceId || !token) {
     return res.json({ ok: true, demo: true, message: 'Mensagem enviada (modo demo — Z-API não configurada).' });
@@ -19,12 +20,17 @@ module.exports = async function handler(req, res) {
   const digits = phone.replace(/\D/g, '');
   const number = digits.startsWith('55') ? digits : `55${digits}`;
 
+  const headers = {
+    'Content-Type': 'application/json',
+    ...(clientToken ? { 'Client-Token': clientToken } : {}),
+  };
+
   try {
     const r = await fetch(
       `https://api.z-api.io/instances/${instanceId}/token/${token}/send-text`,
       {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({ phone: number, message }),
         signal: AbortSignal.timeout(10000),
       }

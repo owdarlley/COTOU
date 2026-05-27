@@ -8,17 +8,19 @@ module.exports = async function handler(req, res) {
 
   const instanceId = process.env.ZAPI_INSTANCE_ID;
   const token = process.env.ZAPI_TOKEN;
+  const clientToken = process.env.ZAPI_CLIENT_TOKEN;
 
   if (!instanceId || !token) {
     return res.json({ ok: false, demo: true, message: 'Z-API não configurada.' });
   }
 
   const base = `https://api.z-api.io/instances/${instanceId}/token/${token}`;
+  const headers = clientToken ? { 'Client-Token': clientToken } : {};
 
   async function ft(url, opts = {}, ms = 8000) {
     const ctrl = new AbortController();
     const t = setTimeout(() => ctrl.abort(), ms);
-    try { return await fetch(url, { ...opts, signal: ctrl.signal }); }
+    try { return await fetch(url, { ...opts, headers: { ...headers, ...opts.headers }, signal: ctrl.signal }); }
     catch (e) { return null; }
     finally { clearTimeout(t); }
   }
@@ -30,14 +32,12 @@ module.exports = async function handler(req, res) {
   }
 
   try {
-    // Verifica se já está conectado
     const statusRes = await ft(`${base}/status`);
     if (statusRes && statusRes.ok) {
       const s = await statusRes.json().catch(() => ({}));
       if (s.connected) return res.json({ ok: true, alreadyConnected: true });
     }
 
-    // Busca QR Code para conectar
     const qrRes = await ft(`${base}/qr-code`);
     if (qrRes && qrRes.ok) {
       const qrData = await qrRes.json().catch(() => ({}));
