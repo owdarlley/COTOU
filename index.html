@@ -3563,8 +3563,29 @@ function WhatsAppConnectModal({ userId, onClose }) {
           return;
         }
 
+        // Sem QR ainda — inicia polling via /api/whatsapp/qr
+        if (json.ok && json.pending && json.instanceName) {
+          setPhase('qr');
+          setQrSrc(null); // spinner até o QR chegar
+          if (pollRef.current) clearInterval(pollRef.current);
+          pollRef.current = setInterval(async () => {
+            try {
+              const pr = await fetch('/api/whatsapp/qr/' + json.instanceName);
+              const pd = await pr.json();
+              if (pd.connected) {
+                clearInterval(pollRef.current);
+                dispatch({ type: 'whatsapp_connect', userId });
+                setPhase('connected');
+              } else if (pd.qrcode) {
+                setQrSrc(pd.qrcode);
+              }
+            } catch (_) {}
+          }, 3000);
+          return;
+        }
+
         // Erro real da API → mostra mensagem
-        if (!json.ok || !json.qrcode) {
+        if (!json.ok) {
           setPhase('error');
           setErrorMsg(json.message || 'Não foi possível gerar o QR Code.');
           return;
