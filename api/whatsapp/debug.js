@@ -5,36 +5,48 @@ module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   if (req.method === 'OPTIONS') return res.status(200).end();
 
-  const instanceId = process.env.ZAPI_INSTANCE_ID;
-  const token = process.env.ZAPI_TOKEN;
-  const clientToken = process.env.ZAPI_CLIENT_TOKEN;
+  // Aceita credenciais por query param ou env vars
+  const instanceId = req.query.instanceId || process.env.ZAPI_INSTANCE_ID;
+  const token = req.query.token || process.env.ZAPI_TOKEN;
+  const clientToken = req.query.clientToken || process.env.ZAPI_CLIENT_TOKEN;
 
-  if (!instanceId || !token) return res.json({ error: 'env vars missing' });
+  if (!instanceId || !token) return res.json({ error: 'Passe ?instanceId=...&token=... ou configure as env vars' });
 
   const base = `https://api.z-api.io/instances/${instanceId}/token/${token}`;
   const headers = clientToken ? { 'Client-Token': clientToken } : {};
 
   try {
-    const qrRes = await fetch(`${base}/qr-code`, { headers, signal: AbortSignal.timeout(8000) });
-    const raw = await qrRes.text();
-    let parsed = null;
-    try { parsed = JSON.parse(raw); } catch (_) {}
+    // 1. Status
+    const stRes = await fetch(`${base}/status`, { headers, signal: AbortSignal.timeout(6000) });
+    const stJson = await stRes.json().catch(() => ({}));
 
-    const value = parsed?.value || parsed?.base64 || parsed?.qrcode || null;
+    // 2. QR code
+    const qrRes = await fetch(`${base}/qr-code`, { headers, signal: AbortSignal.timeout(8000) });
+    const qrRaw = await qrRes.text();
+    let qrParsed = null;
+    try { qrParsed = JSON.parse(qrRaw); } catch (_) {}
+
+    const value = qrParsed?.value || qrParsed?.base64 || qrParsed?.qrcode || null;
+
+    let valueType = 'no-value';
+    if (value) {
+      if (value.startsWith('data:image')) valueType = 'data-uri-image';
+      else if (value.startsWith('data:')) valueType = `data-uri-other(${value.slice(5, 20)})`;
+      else if (value.startsWith('http')) valueType = `url(${value.slice(0, 60)})`;
+      else if (/^[A-Za-z0-9+/]{20,}={0,2}$/.test(value.slice(0, 40))) valueType = 'base64-string';
+      else valueType = `unknown-starts-with(${JSON.stringify(value.slice(0, 30))})`;
+    }
+
     return res.json({
-      status: qrRes.status,
-      contentType: qrRes.headers.get('content-type'),
-      rawLength: raw.length,
-      rawPreview: raw.slice(0, 200),
-      parsedKeys: parsed ? Object.keys(parsed) : null,
-      valueType: value ? (
-        value.startsWith('data:') ? 'data-uri' :
-        value.startsWith('http') ? 'url' :
-        value.startsWith('iVBOR') ? 'base64-png' :
-        value.startsWith('/9j/') ? 'base64-jpeg' :
-        `other:${value.slice(0, 30)}`
-      ) : 'no-value',
-      valueLength: value ? value.length : 0,
+      status: { connected: stJson.connected, state: stJson.state },
+      qr: {
+        httpStatus: qrRes.status,
+        contentType: qrRes.headers.get('content-type'),
+        parsedKeys: qrParsed ? Object.keys(qrParsed) : null,
+        valueType,
+        valueLength: value ? value.length : 0,
+        valuePreview: value ? value.slice(0, 80) : null,
+      },
     });
   } catch (err) {
     return res.status(502).json({ error: err.message });
