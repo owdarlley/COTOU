@@ -25,9 +25,22 @@ module.exports = async function handler(req, res) {
     finally { clearTimeout(t); }
   }
 
-  function normalizeQR(v) {
+  async function normalizeQR(v) {
     if (!v) return null;
-    if (v.startsWith('http') || v.startsWith('data:')) return v;
+    if (v.startsWith('data:')) return v;
+    if (v.startsWith('http')) {
+      // Proxy the image through Vercel to avoid CORS/auth issues in the browser
+      try {
+        const r = await ft(v, {}, 6000);
+        if (r && r.ok) {
+          const buf = await r.arrayBuffer();
+          const b64 = Buffer.from(buf).toString('base64');
+          const ct = r.headers.get('content-type') || 'image/png';
+          return `data:${ct};base64,${b64}`;
+        }
+      } catch (_) {}
+      return v; // fallback: return URL as-is
+    }
     return `data:image/png;base64,${v}`;
   }
 
@@ -42,7 +55,7 @@ module.exports = async function handler(req, res) {
     if (qrRes && qrRes.ok) {
       const qrData = await qrRes.json().catch(() => ({}));
       const raw = qrData?.value || qrData?.base64 || qrData?.qrcode;
-      if (raw) return res.json({ ok: true, qrcode: normalizeQR(raw) });
+      if (raw) return res.json({ ok: true, qrcode: await normalizeQR(raw) });
     }
 
     return res.json({ ok: true, pending: true });
