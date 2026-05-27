@@ -52,9 +52,9 @@ module.exports = async function handler(req, res) {
       body: JSON.stringify({ instanceName: newName, qrcode: true, integration: 'WHATSAPP-BAILEYS' }),
     });
 
-    // Aguarda 5s e tenta buscar o QR
-    await sleep(5000);
-    const qrRes = await ft(`${apiUrl}/instance/connect/${newName}`, { headers: h });
+    // Aguarda 20s para o Baileys conectar no WhatsApp
+    await sleep(20000);
+    const qrRes = await ft(`${apiUrl}/instance/connect/${newName}`, { headers: h }, 8000);
 
     return res.json({ deleted, newInstance: createRes, qrResult: qrRes });
   }
