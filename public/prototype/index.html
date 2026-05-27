@@ -3566,11 +3566,11 @@ function WhatsAppConnectModal({ userId, onClose }) {
         // Sem QR ainda — inicia polling via /api/whatsapp/qr
         if (json.ok && json.pending && json.instanceName) {
           setPhase('qr');
-          setQrSrc(null); // spinner até o QR chegar
+          setQrSrc(null);
           if (pollRef.current) clearInterval(pollRef.current);
           pollRef.current = setInterval(async () => {
             try {
-              const pr = await fetch('/api/whatsapp/qr/' + json.instanceName);
+              const pr = await fetch(`${PLATE_PROXY_URL}/api/whatsapp/qr/` + json.instanceName);
               const pd = await pr.json();
               if (pd.connected) {
                 clearInterval(pollRef.current);
@@ -3580,7 +3580,7 @@ function WhatsAppConnectModal({ userId, onClose }) {
                 setQrSrc(pd.qrcode);
               }
             } catch (_) {}
-          }, 3000);
+          }, 5000);
           return;
         }
 
@@ -3641,6 +3641,7 @@ function WhatsAppConnectModal({ userId, onClose }) {
           <>
             <i className="bi bi-arrow-clockwise" style={{ fontSize: 32, color: 'var(--brand)', animation: 'spin 1s linear infinite' }}></i>
             <div className="muted">Gerando QR Code…</div>
+            <div className="tiny faint" style={{ textAlign: 'center' }}>Na primeira conexão pode levar até 30s</div>
           </>
         )}
         {phase === 'qr' && (
