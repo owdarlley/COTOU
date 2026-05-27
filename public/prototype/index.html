@@ -3513,7 +3513,7 @@ function WhatsAppModal({ quotation, onClose }) {
 
 function WhatsAppConnectModal({ userId, onClose }) {
   const { dispatch } = useStore();
-  const [phase, setPhase] = useState('loading'); // loading | qr | connected | error
+  const [phase, setPhase] = useState('loading'); // loading | pending | qr | demo | connected | error
   const [qrSrc, setQrSrc] = useState(null);
   const [errorMsg, setErrorMsg] = useState('');
   const [retryCount, setRetryCount] = useState(0);
@@ -3523,17 +3523,6 @@ function WhatsAppConnectModal({ userId, onClose }) {
   React.useEffect(() => {
     let cancelled = false;
     const instanceName = `cotou-user-${userId}`;
-
-    function enterDemoMode() {
-      if (cancelled) return;
-      setPhase('qr');
-      timerRef.current = setTimeout(() => {
-        if (!cancelled) {
-          dispatch({ type: 'whatsapp_connect', userId });
-          setPhase('connected');
-        }
-      }, 5000);
-    }
 
     async function start() {
       try {
@@ -3553,8 +3542,17 @@ function WhatsAppConnectModal({ userId, onClose }) {
         const json = await res.json();
         if (cancelled) return;
 
-        // Sem API configurada → demo
-        if (json.demo) { enterDemoMode(); return; }
+        // API não configurada → modo demo (QR placeholder + auto-connect)
+        if (json.demo) {
+          setPhase('demo');
+          timerRef.current = setTimeout(() => {
+            if (!cancelled) {
+              dispatch({ type: 'whatsapp_connect', userId });
+              setPhase('connected');
+            }
+          }, 5000);
+          return;
+        }
 
         // Já estava conectada na Evolution API — confirma sem QR
         if (json.alreadyConnected) {
@@ -3563,12 +3561,12 @@ function WhatsAppConnectModal({ userId, onClose }) {
           return;
         }
 
-        // Sem QR ainda — inicia polling via /api/whatsapp/qr
+        // Servidor ainda acordando — polling via /api/whatsapp/qr (mostra spinner, não demo)
         if (json.ok && json.pending && json.instanceName) {
-          setPhase('qr');
-          setQrSrc(null);
+          setPhase('pending');
           if (pollRef.current) clearInterval(pollRef.current);
           pollRef.current = setInterval(async () => {
+            if (cancelled) return;
             try {
               const pr = await fetch(`${PLATE_PROXY_URL}/api/whatsapp/qr/` + json.instanceName);
               const pd = await pr.json();
@@ -3578,6 +3576,7 @@ function WhatsAppConnectModal({ userId, onClose }) {
                 setPhase('connected');
               } else if (pd.qrcode) {
                 setQrSrc(pd.qrcode);
+                setPhase('qr');
               }
             } catch (_) {}
           }, 5000);
@@ -3591,7 +3590,7 @@ function WhatsAppConnectModal({ userId, onClose }) {
           return;
         }
 
-        // QR Code real — v2 já retorna com prefixo data:image/png;base64,
+        // QR Code real retornado diretamente
         setQrSrc(json.qrcode);
         setPhase('qr');
         let attempts = 0;
@@ -3612,8 +3611,11 @@ function WhatsAppConnectModal({ userId, onClose }) {
           } catch (_) {}
         }, 3000);
       } catch (_) {
-        // Timeout ou erro de rede → demo
-        enterDemoMode();
+        // Timeout ou erro de rede → mostra erro real (não demo)
+        if (!cancelled) {
+          setPhase('error');
+          setErrorMsg('Não foi possível conectar ao servidor. Verifique sua conexão e tente novamente.');
+        }
       }
     }
 
@@ -3644,17 +3646,25 @@ function WhatsAppConnectModal({ userId, onClose }) {
             <div className="tiny faint" style={{ textAlign: 'center' }}>Na primeira conexão pode levar até 30s</div>
           </>
         )}
+        {phase === 'pending' && (
+          <>
+            <i className="bi bi-arrow-clockwise" style={{ fontSize: 32, color: 'var(--brand)', animation: 'spin 1s linear infinite' }}></i>
+            <div className="muted">Aguardando servidor WhatsApp…</div>
+            <div className="tiny faint" style={{ textAlign: 'center' }}>O servidor está iniciando. O QR Code aparecerá em instantes.</div>
+          </>
+        )}
+        {phase === 'demo' && (
+          <>
+            <div style={{ width: 220, height: 220, borderRadius: 12, border: '2px dashed var(--border)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12, background: 'var(--surface-2)' }}>
+              <i className="bi bi-qr-code" style={{ fontSize: 64, color: 'var(--text-faint)' }}></i>
+              <div className="tiny muted" style={{ textAlign: 'center', lineHeight: 1.4 }}>QR Code (modo demo)<br/>Conectando em 5s…</div>
+            </div>
+            <div className="muted tiny">Abra o WhatsApp → Dispositivos conectados → Conectar dispositivo</div>
+          </>
+        )}
         {phase === 'qr' && (
           <>
-            {qrSrc
-              ? <img src={qrSrc} alt="QR Code WhatsApp" style={{ width: 220, height: 220, borderRadius: 12, border: '1px solid var(--border)' }} />
-              : (
-                <div style={{ width: 220, height: 220, borderRadius: 12, border: '2px dashed var(--border)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12, background: 'var(--surface-2)' }}>
-                  <i className="bi bi-qr-code" style={{ fontSize: 64, color: 'var(--text-faint)' }}></i>
-                  <div className="tiny muted" style={{ textAlign: 'center', lineHeight: 1.4 }}>QR Code (modo demo)<br/>Conectando em 5s…</div>
-                </div>
-              )
-            }
+            {qrSrc && <img src={qrSrc} alt="QR Code WhatsApp" style={{ width: 220, height: 220, borderRadius: 12, border: '1px solid var(--border)' }} />}
             <div className="muted tiny">Abra o WhatsApp → Dispositivos conectados → Conectar dispositivo</div>
           </>
         )}
