@@ -16,13 +16,23 @@ module.exports = async function handler(req, res) {
 
   const h = { 'Content-Type': 'application/json', apikey: apiKey };
 
-  // fetch com timeout — evita pendurar no limite de 10s do Vercel
   async function ft(url, opts = {}, ms = 3000) {
     const ctrl = new AbortController();
     const t = setTimeout(() => ctrl.abort(), ms);
     try { return await fetch(url, { ...opts, signal: ctrl.signal }); }
     catch (e) { return null; }
     finally { clearTimeout(t); }
+  }
+
+  // Normaliza QR — aceita com ou sem prefixo data:
+  function toQR(b64) {
+    if (!b64) return null;
+    return b64.startsWith('data:') ? b64 : `data:image/png;base64,${b64}`;
+  }
+
+  // Extrai QR de qualquer campo possível da resposta
+  function extractQR(data) {
+    return data?.base64 || data?.qrcode?.base64 || data?.qr?.base64 || data?.qrcode || null;
   }
 
   try {
@@ -48,14 +58,13 @@ module.exports = async function handler(req, res) {
       const qrRes = await ft(apiUrl + '/instance/connect/' + instance, { headers: h }, 2500);
       if (qrRes && qrRes.ok) {
         const qrData = await qrRes.json().catch(() => ({}));
-        if (qrData?.base64 && qrData.base64.startsWith('data:')) {
-          return res.json({ ok: true, qrcode: qrData.base64 });
-        }
+        const raw = extractQR(qrData);
+        if (raw) return res.json({ ok: true, qrcode: toQR(raw) });
       }
       return res.json({ ok: true, pending: true });
     }
 
-    // Instância não existe (connect desistiu antes de criá-la) — cria agora
+    // Instância não existe — cria agora
     const createRes = await ft(apiUrl + '/instance/create', {
       method: 'POST', headers: h,
       body: JSON.stringify({ instanceName: instance, qrcode: true, integration: 'WHATSAPP-BAILEYS' }),
@@ -64,18 +73,15 @@ module.exports = async function handler(req, res) {
     if (!createRes) return res.json({ ok: true, pending: true });
 
     const createData = await createRes.json().catch(() => ({}));
-    const qrOnCreate = createData?.qrcode?.base64;
-    if (qrOnCreate && qrOnCreate.startsWith('data:')) {
-      return res.json({ ok: true, qrcode: qrOnCreate });
-    }
+    const rawCreate = extractQR(createData) || extractQR(createData?.qrcode);
+    if (rawCreate) return res.json({ ok: true, qrcode: toQR(rawCreate) });
 
     // QR não veio na criação — tenta buscar uma vez
     const qrRes2 = await ft(apiUrl + '/instance/connect/' + instance, { headers: h }, 2000);
     if (qrRes2 && qrRes2.ok) {
       const qrData2 = await qrRes2.json().catch(() => ({}));
-      if (qrData2?.base64 && qrData2.base64.startsWith('data:')) {
-        return res.json({ ok: true, qrcode: qrData2.base64 });
-      }
+      const raw2 = extractQR(qrData2);
+      if (raw2) return res.json({ ok: true, qrcode: toQR(raw2) });
     }
 
     return res.json({ ok: true, pending: true });

@@ -20,7 +20,6 @@ module.exports = async function handler(req, res) {
   const sleep = (ms) => new Promise(r => setTimeout(r, ms));
   const h = { 'Content-Type': 'application/json', apikey: apiKey };
 
-  // Fetch com timeout individual — evita pendurar no Render dormindo
   async function ft(url, opts = {}, ms = 4000) {
     const ctrl = new AbortController();
     const t = setTimeout(() => ctrl.abort(), ms);
@@ -29,8 +28,13 @@ module.exports = async function handler(req, res) {
     finally { clearTimeout(t); }
   }
 
+  // Normaliza QR — aceita com ou sem prefixo data:
+  function toQR(b64) {
+    if (!b64) return null;
+    return b64.startsWith('data:') ? b64 : `data:image/png;base64,${b64}`;
+  }
+
   try {
-    // 1. Verifica se já está conectada (4s timeout — se Render dormindo, retorna null)
     const checkRes = await ft(
       `${apiUrl}/instance/fetchInstances?instanceName=${encodeURIComponent(instanceName)}`,
       { headers: h }
@@ -45,44 +49,35 @@ module.exports = async function handler(req, res) {
 
       if (status === 'open') return res.json({ ok: true, alreadyConnected: true });
 
-      // Existe mas não conectada — deleta para recriar
       if (found) {
         await ft(`${apiUrl}/instance/delete/${instanceName}`, { method: 'DELETE', headers: h }, 3000);
         await sleep(800);
       }
     }
-    // Se checkRes === null, Render está acordando — continua tentando criar
 
-    // 2. Cria instância (4s timeout)
     const createRes = await ft(`${apiUrl}/instance/create`, {
       method: 'POST', headers: h,
       body: JSON.stringify({ instanceName, qrcode: true, integration: 'WHATSAPP-BAILEYS' }),
     });
 
     if (!createRes) {
-      // Render ainda acordando — retorna pending, frontend faz polling via /api/whatsapp/qr
       return res.json({ ok: true, pending: true, instanceName });
     }
 
     const createData = await createRes.json().catch(() => ({}));
 
-    // QR já veio na resposta de criação
-    const qrOnCreate = createData?.qrcode?.base64;
-    if (qrOnCreate && qrOnCreate.startsWith('data:')) {
-      return res.json({ ok: true, qrcode: qrOnCreate });
-    }
+    // QR pode vir em createData.qrcode.base64 ou createData.base64
+    const qrRaw = createData?.qrcode?.base64 || createData?.base64;
+    if (qrRaw) return res.json({ ok: true, qrcode: toQR(qrRaw) });
 
-    // 3. Tenta buscar QR uma vez (2s de espera)
     await sleep(2000);
     const qrRes = await ft(`${apiUrl}/instance/connect/${instanceName}`, { headers: h });
     if (qrRes && qrRes.ok) {
       const qrData = await qrRes.json().catch(() => ({}));
-      if (qrData?.base64 && qrData.base64.startsWith('data:')) {
-        return res.json({ ok: true, qrcode: qrData.base64 });
-      }
+      const qrRaw2 = qrData?.base64 || qrData?.qrcode?.base64;
+      if (qrRaw2) return res.json({ ok: true, qrcode: toQR(qrRaw2) });
     }
 
-    // QR ainda não disponível — frontend faz polling via /api/whatsapp/qr
     return res.json({ ok: true, pending: true, instanceName });
 
   } catch (err) {
