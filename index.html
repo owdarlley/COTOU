@@ -1932,12 +1932,17 @@ function reducer(state, action) {
         quotations: state.quotations.map(q => q.id === action.id ? { ...q, customer_approved: action.approved ? 1 : 0 } : q),
         toasts: [...state.toasts, { id: Date.now(), type: action.approved ? 'success' : 'error', message: action.approved ? 'Cliente aprovou' : 'Cliente recusou' }],
       };
-    case 'send_whatsapp':
+    case 'send_whatsapp': {
+      const approvalToken = Math.random().toString(36).slice(2, 14) + Math.random().toString(36).slice(2, 14);
+      const approvalExpires = new Date(Date.now() + 48 * 3600 * 1000).toISOString();
       return {
         ...state,
-        quotations: state.quotations.map(q => q.id === action.id ? { ...q, whatsapp_sent_at: new Date().toISOString() } : q),
-        toasts: [...state.toasts, { id: Date.now(), type: 'success', message: 'Mensagem enviada via WhatsApp' }],
+        quotations: state.quotations.map(q => q.id === action.id
+          ? { ...q, whatsapp_sent_at: new Date().toISOString(), approval_token: approvalToken, approval_token_expires_at: approvalExpires }
+          : q),
+        toasts: [...state.toasts, { id: Date.now(), type: 'success', message: 'WhatsApp enviado! Link de aprovação gerado.' }],
       };
+    }
     case 'open_wa_connect':
       return { ...state, waConnectOpen: true };
     case 'close_wa_connect':
@@ -3190,6 +3195,15 @@ function QuotationDetail() {
               {qt.whatsapp_sent_at && (
                 <MetaRow label="WhatsApp" value={fmt.datetime(qt.whatsapp_sent_at)} mono icon="bi-whatsapp" iconColor="#16a34a" />
               )}
+              {qt.approval_token && qt.customer_approved == null && (
+                <MetaRow label="Aprovação" value="⏳ Aguardando cliente" icon="bi-link-45deg" iconColor="var(--brand)" />
+              )}
+              {qt.customer_approved === 1 && (
+                <MetaRow label="Aprovação" value="✅ Cliente aprovou" icon="bi-check-circle-fill" iconColor="#16a34a" />
+              )}
+              {qt.customer_approved === 0 && (
+                <MetaRow label="Aprovação" value="❌ Cliente recusou" icon="bi-x-circle-fill" iconColor="#dc2626" />
+              )}
             </div>
           </div>
 
@@ -3465,6 +3479,10 @@ function WhatsAppModal({ quotation, onClose }) {
     `*Total: ${fmt.brl(totals.grandTotal)}*`,
     '',
     'Confirma para encomendarmos? 🔧',
+    '',
+    `✅ *Aprovação rápida:*`,
+    `${PLATE_PROXY_URL}/aprovar/${quotation.approval_token || 'PREVIEW'}`,
+    `_(válido por 48h)_`,
   ].join('\n');
 
   const canSend = Boolean(me?.whatsapp_connected);
