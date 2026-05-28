@@ -4894,10 +4894,10 @@ function AdminSettingsScreen() {
   }
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, alignItems: 'start' }}>
+    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
 
       {/* ── Editor ── */}
-      <div className="card" style={{ gap: 0, padding: 0, overflow: 'hidden' }}>
+      <div className="card" style={{ padding: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
 
         <div style={{ padding: '16px 18px', borderBottom: '1px solid var(--border)' }}>
           <div style={{ fontWeight: 700, fontSize: 14 }}>Modelo da mensagem</div>
@@ -4921,9 +4921,9 @@ function AdminSettingsScreen() {
           </div>
         </div>
 
-        <div style={{ padding: '14px 18px' }}>
+        <div style={{ padding: '14px 18px', flex: 1, display: 'flex', flexDirection: 'column' }}>
           <textarea ref={taRef} className="input"
-            style={{ lineHeight: 1.65, minHeight: 290, resize: 'vertical', fontSize: 13, fontFamily: 'inherit', width: '100%', boxSizing: 'border-box' }}
+            style={{ flex: 1, lineHeight: 1.65, minHeight: 200, resize: 'none', fontSize: 13, fontFamily: 'inherit', width: '100%', boxSizing: 'border-box' }}
             value={template}
             onChange={e => setTemplate(e.target.value)}
           />
@@ -4943,7 +4943,7 @@ function AdminSettingsScreen() {
       </div>
 
       {/* ── Preview ── */}
-      <div className="card" style={{ gap: 14 }}>
+      <div className="card" style={{ padding: '18px', display: 'flex', flexDirection: 'column', gap: 14 }}>
         <div>
           <div style={{ fontWeight: 700, fontSize: 14, display: 'flex', alignItems: 'center', gap: 7 }}>
             <i className="bi bi-whatsapp" style={{ color: '#25d366', fontSize: 16 }}></i>
@@ -4954,7 +4954,7 @@ function AdminSettingsScreen() {
           </div>
         </div>
 
-        <div style={{ background: '#e5ddd5', borderRadius: 10, padding: '16px 14px' }}>
+        <div style={{ flex: 1, background: '#e5ddd5', borderRadius: 10, padding: '16px 14px', overflowY: 'auto' }}>
           <div style={{ background: '#dcf8c6', borderRadius: '12px 12px 2px 12px', padding: '10px 13px', fontSize: 12.5, lineHeight: 1.65, maxWidth: '90%', marginLeft: 'auto', color: '#111', boxShadow: '0 1px 2px rgba(0,0,0,.1)' }}>
             {renderWAText(preview)}
             <div style={{ textAlign: 'right', fontSize: 10, color: '#888', marginTop: 5 }}>
