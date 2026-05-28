@@ -2624,7 +2624,14 @@ function RoleSwitcher() {
    ========================================================= */
 function Topbar({ title, subtitle, actions }) {
   const { dispatch } = useStore();
-  const theme = document.documentElement.dataset.theme || 'light';
+  const [theme, setTheme] = React.useState(document.documentElement.dataset.theme || 'light');
+
+  React.useEffect(() => {
+    const handler = (e) => setTheme(e.detail);
+    window.addEventListener('cotou-theme', handler);
+    return () => window.removeEventListener('cotou-theme', handler);
+  }, []);
+
   return (
     <div className="topbar">
       <div>
