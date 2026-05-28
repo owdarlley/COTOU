@@ -56,8 +56,35 @@ async function sendQuoteMessage(customerPhone, quotation, items, instanceName, a
   if (!instance) throw new Error('Instância WhatsApp não definida. Conecte seu WhatsApp nas configurações.');
 
   const number = formatPhone(customerPhone);
-  const text = buildMessage(quotation, items, approvalToken);
 
+  // Tenta botões nativos quando approvalToken é fornecido
+  if (approvalToken) {
+    try {
+      const partsTotal = items.reduce((s, i) => s + (i.total_price || 0), 0);
+      const laborTotal = items.reduce((s, i) => s + (i.labor_cost_compras || i.labor_cost_vendas || 0), 0);
+      const grandTotal = partsTotal + laborTotal;
+
+      const { data } = await axios.post(
+        `${apiUrl}/message/sendButtons/${instance}`,
+        {
+          number,
+          title: `Cotação #${quotation.quote_number} — ${quotation.customer_name}`,
+          description: `Veículo: ${quotation.make || ''} ${quotation.model || ''} ${quotation.year_model || ''}\n\nTotal estimado: R$ ${grandTotal.toFixed(2)}\n\nConfirma a encomenda das peças?`,
+          footer: 'COTOU — Sistema de cotação',
+          buttons: [
+            { type: 'reply', displayText: '✅ Confirmar encomenda', id: `a_${approvalToken}` },
+            { type: 'reply', displayText: '❌ Recusar cotação', id: `r_${approvalToken}` },
+          ],
+        },
+        { headers: { apikey: apiKey }, timeout: 15000 }
+      );
+      return { ok: true, buttons: true, data };
+    } catch (_) {
+      // Cai para mensagem de texto com link abaixo
+    }
+  }
+
+  const text = buildMessage(quotation, items, approvalToken);
   const { data } = await axios.post(
     `${apiUrl}/message/sendText/${instance}`,
     { number, text },
