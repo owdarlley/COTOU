@@ -4881,116 +4881,64 @@ function AdminSettingsScreen() {
   }
 
   return (
-    <div className="col" style={{ gap: 20 }}>
+    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, alignItems: 'start' }}>
 
-      {/* Banner */}
-      <div style={{ background: 'linear-gradient(135deg, #25d366 0%, #075e54 100%)', borderRadius: 14, padding: '18px 22px', display: 'flex', alignItems: 'center', gap: 16 }}>
-        <div style={{ width: 48, height: 48, borderRadius: '50%', background: 'rgba(255,255,255,.18)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-          <i className="bi bi-whatsapp" style={{ fontSize: 26, color: 'white' }}></i>
-        </div>
+      {/* ── Editor ── */}
+      <div className="card" style={{ gap: 16 }}>
+        <div className="card-title">Modelo da mensagem</div>
+
         <div>
-          <div style={{ color: 'white', fontWeight: 700, fontSize: 15, marginBottom: 3 }}>Mensagem de cotação — WhatsApp</div>
-          <div style={{ color: 'rgba(255,255,255,.78)', fontSize: 12.5, lineHeight: 1.4 }}>
-            Personalize o texto enviado ao cliente. Use as variáveis para inserir dados automáticos da cotação.
+          <p style={{ fontSize: 12, color: 'var(--text-faint)', marginBottom: 8 }}>Clique para inserir no texto:</p>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
+            {WA_VARS.map(v => (
+              <button key={v.key} title={v.label} onClick={() => insertVar(v.key)}
+                style={{ fontSize: 11.5, padding: '3px 10px', borderRadius: 6, border: '1px solid var(--border)', background: 'var(--surface-2)', color: 'var(--text)', cursor: 'pointer', fontFamily: 'monospace' }}>
+                {v.key}
+              </button>
+            ))}
           </div>
+        </div>
+
+        <textarea ref={taRef} className="input"
+          style={{ lineHeight: 1.65, minHeight: 300, resize: 'vertical', fontSize: 13, fontFamily: 'inherit' }}
+          value={template}
+          onChange={e => setTemplate(e.target.value)}
+        />
+
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <button style={{ fontSize: 12, color: 'var(--text-faint)', background: 'none', border: 'none', cursor: 'pointer' }}
+            onClick={() => setTemplate(DEFAULT_WA_TEMPLATE)}>
+            Restaurar padrão
+          </button>
+          <Button variant="primary"
+            icon={saving ? 'bi-arrow-clockwise' : saved ? 'bi-check-lg' : 'bi-floppy'}
+            onClick={save} disabled={saving}>
+            {saving ? 'Salvando…' : saved ? 'Salvo!' : 'Salvar'}
+          </Button>
         </div>
       </div>
 
-      {/* Two-column grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, alignItems: 'start' }}>
-
-        {/* ── Editor ── */}
-        <div className="card" style={{ gap: 16 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <i className="bi bi-pencil-square" style={{ color: 'var(--brand)', fontSize: 15 }}></i>
-            <span style={{ fontWeight: 700, fontSize: 14 }}>Texto da mensagem</span>
-          </div>
-
-          {/* Variable chips */}
-          <div style={{ background: 'var(--surface-2)', borderRadius: 10, padding: '12px 14px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10 }}>
-              <i className="bi bi-braces" style={{ color: 'var(--brand)', fontSize: 13 }}></i>
-              <span style={{ fontSize: 11.5, fontWeight: 600, color: 'var(--text)' }}>Variáveis disponíveis</span>
-              <span style={{ fontSize: 11, color: 'var(--text-faint)' }}>— clique para inserir</span>
-            </div>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
-              {WA_VARS.map(v => (
-                <button key={v.key} title={v.label} onClick={() => insertVar(v.key)}
-                  style={{ fontSize: 11.5, padding: '4px 10px', borderRadius: 16, border: '1.5px solid var(--brand)', background: 'var(--surface)', color: 'var(--brand)', cursor: 'pointer', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 3 }}>
-                  <i className="bi bi-plus-lg" style={{ fontSize: 10 }}></i>{v.key}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <textarea ref={taRef} className="input"
-            style={{ lineHeight: 1.65, minHeight: 280, resize: 'vertical', fontSize: 13, fontFamily: 'inherit' }}
-            value={template}
-            onChange={e => setTemplate(e.target.value)}
-          />
-
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <button style={{ fontSize: 12, color: 'var(--text-faint)', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5 }}
-              onClick={() => setTemplate(DEFAULT_WA_TEMPLATE)}>
-              <i className="bi bi-arrow-counterclockwise" style={{ fontSize: 13 }}></i>Restaurar padrão
-            </button>
-            <Button variant="primary"
-              icon={saving ? 'bi-arrow-clockwise' : saved ? 'bi-check-lg' : 'bi-floppy'}
-              onClick={save} disabled={saving}>
-              {saving ? 'Salvando…' : saved ? 'Salvo!' : 'Salvar alterações'}
-            </Button>
-          </div>
+      {/* ── Preview ── */}
+      <div className="card" style={{ gap: 14 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div className="card-title" style={{ margin: 0 }}>Preview</div>
+          <span style={{ fontSize: 11, color: 'var(--text-faint)' }}>dados fictícios</span>
         </div>
 
-        {/* ── Preview ── */}
-        <div className="col" style={{ gap: 14 }}>
-          <div className="card" style={{ gap: 14 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <i className="bi bi-phone" style={{ color: 'var(--brand)', fontSize: 15 }}></i>
-              <span style={{ fontWeight: 700, fontSize: 14 }}>Preview</span>
-              <span style={{ marginLeft: 'auto', fontSize: 11, color: 'var(--text-faint)', background: 'var(--surface-2)', padding: '2px 9px', borderRadius: 20 }}>dados fictícios</span>
-            </div>
-
-            {/* WhatsApp mockup */}
-            <div style={{ borderRadius: 14, overflow: 'hidden', border: '1px solid rgba(0,0,0,.1)', boxShadow: '0 4px 16px rgba(0,0,0,.10)' }}>
-              {/* WA header bar */}
-              <div style={{ background: '#075e54', padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 10 }}>
-                <div style={{ width: 36, height: 36, borderRadius: '50%', background: '#128c7e', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                  <i className="bi bi-person-fill" style={{ color: 'white', fontSize: 18 }}></i>
-                </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ color: 'white', fontWeight: 600, fontSize: 13, lineHeight: 1.2 }}>João Silva</div>
-                  <div style={{ color: 'rgba(255,255,255,.6)', fontSize: 10.5 }}>online</div>
-                </div>
-                <div style={{ display: 'flex', gap: 14, color: 'white', fontSize: 15 }}>
-                  <i className="bi bi-telephone"></i>
-                  <i className="bi bi-three-dots-vertical"></i>
-                </div>
-              </div>
-
-              {/* Chat area */}
-              <div style={{ background: '#e5ddd5', padding: '12px 14px' }}>
-                <div style={{ background: '#dcf8c6', borderRadius: '8px 8px 2px 8px', padding: '10px 12px', fontSize: 12.5, lineHeight: 1.6, whiteSpace: 'pre-wrap', maxWidth: '90%', marginLeft: 'auto', color: '#111', boxShadow: '0 1px 2px rgba(0,0,0,.12)' }}>
-                  {preview}
-                  <div style={{ textAlign: 'right', fontSize: 10, color: '#666', marginTop: 5, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 3 }}>
-                    {new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
-                    <i className="bi bi-check2-all" style={{ color: '#34b7f1', fontSize: 12 }}></i>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Tip */}
-            <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start', padding: '10px 12px', background: 'var(--surface-2)', borderRadius: 10 }}>
-              <i className="bi bi-info-circle" style={{ color: '#94a3b8', fontSize: 14, marginTop: 1, flexShrink: 0 }}></i>
-              <span style={{ fontSize: 11.5, color: 'var(--text-faint)', lineHeight: 1.5 }}>
-                Use <strong>*asteriscos*</strong> para <strong>negrito</strong> no WhatsApp. A mensagem real substitui cada variável pelos dados da cotação.
-              </span>
+        <div style={{ background: '#e5ddd5', borderRadius: 10, padding: '14px 12px' }}>
+          <div style={{ background: '#dcf8c6', borderRadius: '8px 8px 2px 8px', padding: '10px 12px', fontSize: 12.5, lineHeight: 1.6, whiteSpace: 'pre-wrap', maxWidth: '92%', marginLeft: 'auto', color: '#111' }}>
+            {preview}
+            <div style={{ textAlign: 'right', fontSize: 10, color: '#888', marginTop: 4 }}>
+              {new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })} <i className="bi bi-check2-all" style={{ color: '#34b7f1' }}></i>
             </div>
           </div>
         </div>
 
+        <p style={{ fontSize: 11.5, color: 'var(--text-faint)', lineHeight: 1.5, margin: 0 }}>
+          Use <strong>*asteriscos*</strong> para negrito no WhatsApp.
+        </p>
       </div>
+
     </div>
   );
 }
