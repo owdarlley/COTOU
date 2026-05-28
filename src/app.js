@@ -20,6 +20,7 @@ const partsRoutes = require('./routes/parts');
 const notificationsRoutes = require('./routes/notifications');
 const adminRoutes = require('./routes/admin');
 const apiRoutes = require('./routes/api');
+const aprovacaoRoutes = require('./routes/aprovacao');
 
 runMigrations();
 
@@ -72,6 +73,9 @@ app.get('/', requireAuth, (req, res) => {
     unreadCount
   });
 });
+
+// Rotas públicas (sem autenticação) — devem vir antes do requireAuth
+app.use(aprovacaoRoutes);
 
 app.use('/auth', authRoutes);
 app.use('/cotacoes', quotationsRoutes);

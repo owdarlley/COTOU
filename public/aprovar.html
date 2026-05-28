@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cotação — COTOU</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Inter', sans-serif; background: #f1f5f9; color: #1e293b; min-height: 100vh; }
+    .page { max-width: 480px; margin: 0 auto; padding: 24px 16px 48px; }
+    .header { text-align: center; padding: 28px 0 20px; }
+    .logo { display: inline-flex; align-items: center; gap: 8px; font-weight: 700; font-size: 20px; color: #2563eb; margin-bottom: 8px; }
+    .logo i { font-size: 22px; }
+    .subtitle { font-size: 13px; color: #64748b; }
+    .card { background: #fff; border-radius: 16px; padding: 20px; margin-bottom: 16px; box-shadow: 0 1px 4px rgba(0,0,0,.07); }
+    .card-title { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: #94a3b8; margin-bottom: 12px; }
+    .vehicle-row { display: flex; align-items: center; gap: 12px; }
+    .vehicle-icon { width: 44px; height: 44px; border-radius: 12px; background: #eff6ff; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .vehicle-icon i { font-size: 20px; color: #2563eb; }
+    .vehicle-name { font-weight: 600; font-size: 15px; }
+    .vehicle-plate { font-size: 12px; color: #64748b; font-family: monospace; margin-top: 2px; }
+    .customer-name { font-size: 17px; font-weight: 600; }
+    .quote-number { font-size: 12px; color: #64748b; margin-top: 2px; }
+    table { width: 100%; border-collapse: collapse; }
+    th { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; color: #94a3b8; padding: 0 0 8px; text-align: left; }
+    th:last-child, td:last-child { text-align: right; }
+    td { padding: 10px 0; border-top: 1px solid #f1f5f9; font-size: 14px; }
+    td:first-child { color: #374151; }
+    .price { font-family: monospace; font-weight: 600; white-space: nowrap; }
+    .delivery { font-size: 11px; color: #94a3b8; margin-top: 2px; }
+    .total-row { border-top: 2px solid #e2e8f0; padding-top: 12px; margin-top: 4px; display: flex; justify-content: space-between; align-items: center; }
+    .total-label { font-weight: 600; font-size: 14px; }
+    .total-value { font-size: 22px; font-weight: 700; color: #2563eb; font-family: monospace; }
+    .actions { display: flex; flex-direction: column; gap: 10px; margin-top: 8px; }
+    .btn { width: 100%; padding: 14px; border-radius: 12px; border: none; font-size: 15px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: opacity .15s; font-family: inherit; }
+    .btn:disabled { opacity: .6; cursor: not-allowed; }
+    .btn-confirm { background: #16a34a; color: #fff; }
+    .btn-confirm:hover:not(:disabled) { background: #15803d; }
+    .btn-reject { background: #fff; color: #dc2626; border: 1.5px solid #fca5a5; }
+    .btn-reject:hover:not(:disabled) { background: #fff1f1; }
+    .result { text-align: center; padding: 32px 20px; }
+    .result-icon { width: 72px; height: 72px; border-radius: 99px; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; }
+    .result-icon.approved { background: #dcfce7; }
+    .result-icon.rejected { background: #fee2e2; }
+    .result-icon.expired { background: #fef3c7; }
+    .result-icon i { font-size: 36px; }
+    .result-icon.approved i { color: #16a34a; }
+    .result-icon.rejected i { color: #dc2626; }
+    .result-icon.expired i { color: #d97706; }
+    .result-title { font-size: 20px; font-weight: 700; margin-bottom: 8px; }
+    .result-desc { font-size: 14px; color: #64748b; line-height: 1.5; }
+    .spin { animation: spin .8s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .loading { text-align: center; padding: 48px 16px; color: #64748b; }
+    .labor-row { display: flex; justify-content: space-between; font-size: 13px; color: #64748b; padding: 6px 0; border-top: 1px solid #f1f5f9; }
+  </style>
+</head>
+<body>
+<div class="page">
+  <div class="header">
+    <div class="logo"><i class="bi bi-car-front-fill"></i> COTOU</div>
+    <div class="subtitle">Sistema de cotação de peças automotivas</div>
+  </div>
+
+  <div id="app">
+    <div class="loading">
+      <i class="bi bi-arrow-clockwise spin" style="font-size:28px;display:block;margin-bottom:12px"></i>
+      Carregando cotação…
+    </div>
+  </div>
+</div>
+
+<script>
+  const token = location.pathname.split('/').pop();
+  const API = '/api/aprovar/' + token;
+
+  function brl(v) {
+    if (v == null) return '—';
+    return Number(v).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  }
+
+  async function load() {
+    try {
+      const r = await fetch(API);
+      const data = await r.json();
+
+      if (!data.ok && data.expired) { renderExpired(); return; }
+      if (!data.ok && data.used) { renderUsed(data.approved); return; }
+      if (!data.ok) { renderError(data.message); return; }
+
+      renderQuotation(data.quotation, data.items);
+    } catch (_) {
+      renderError('Não foi possível carregar a cotação. Verifique sua conexão.');
+    }
+  }
+
+  function renderQuotation(q, items) {
+    const partsTotal = items.reduce((s, i) => s + (i.total_price || 0), 0);
+    const laborTotal = items.reduce((s, i) => s + (i.labor_cost_compras || i.labor_cost_vendas || 0), 0);
+    const grandTotal = partsTotal + laborTotal;
+
+    const rows = items.map(i => `
+      <tr>
+        <td>
+          <div>${i.part_name}</div>
+          ${i.delivery_days ? `<div class="delivery">Prazo: ${i.delivery_days} dia(s)</div>` : ''}
+        </td>
+        <td class="price">${brl(i.total_price)}</td>
+      </tr>
+    `).join('');
+
+    const laborSection = laborTotal > 0 ? `
+      <div class="labor-row">
+        <span>Mão de obra</span>
+        <span class="price">${brl(laborTotal)}</span>
+      </div>
+    ` : '';
+
+    document.getElementById('app').innerHTML = `
+      <div class="card">
+        <div class="card-title">Cliente</div>
+        <div class="customer-name">${q.customer_name}</div>
+        <div class="quote-number">Cotação ${q.quote_number}</div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Veículo</div>
+        <div class="vehicle-row">
+          <div class="vehicle-icon"><i class="bi bi-car-front"></i></div>
+          <div>
+            <div class="vehicle-name">${q.make || ''} ${q.model || ''} ${q.year_model || ''}</div>
+            <div class="vehicle-plate">${q.license_plate || ''}</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Peças cotadas</div>
+        <table>
+          <thead><tr><th>Descrição</th><th>Valor</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+        ${laborSection}
+        <div class="total-row">
+          <div class="total-label">Total estimado</div>
+          <div class="total-value">${brl(grandTotal)}</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Sua decisão</div>
+        <div class="actions">
+          <button class="btn btn-confirm" onclick="decide('approve')">
+            <i class="bi bi-check-lg"></i> Confirmar encomenda
+          </button>
+          <button class="btn btn-reject" onclick="decide('reject')">
+            <i class="bi bi-x-lg"></i> Recusar cotação
+          </button>
+        </div>
+        <p style="font-size:11px;color:#94a3b8;text-align:center;margin-top:12px;line-height:1.5">
+          Ao confirmar, você autoriza o prosseguimento da encomenda das peças listadas acima.
+        </p>
+      </div>
+    `;
+  }
+
+  async function decide(action) {
+    document.querySelectorAll('.btn').forEach(b => b.disabled = true);
+    try {
+      const r = await fetch(API, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action }),
+      });
+      const data = await r.json();
+      if (!data.ok) { renderError(data.message); return; }
+      renderResult(action === 'approve');
+    } catch (_) {
+      renderError('Erro ao registrar sua resposta. Tente novamente.');
+    }
+  }
+
+  function renderResult(approved) {
+    document.getElementById('app').innerHTML = `
+      <div class="card result">
+        <div class="result-icon ${approved ? 'approved' : 'rejected'}">
+          <i class="bi ${approved ? 'bi-check-lg' : 'bi-x-lg'}"></i>
+        </div>
+        <div class="result-title">${approved ? 'Pedido confirmado!' : 'Cotação recusada'}</div>
+        <div class="result-desc">${approved
+          ? 'Ótimo! Estamos iniciando o processo de encomenda das peças. Em breve entraremos em contato.'
+          : 'Entendido! Nossa equipe entrará em contato para entender melhor o que você precisa.'
+        }</div>
+      </div>
+    `;
+  }
+
+  function renderExpired() {
+    document.getElementById('app').innerHTML = `
+      <div class="card result">
+        <div class="result-icon expired"><i class="bi bi-clock"></i></div>
+        <div class="result-title">Link expirado</div>
+        <div class="result-desc">Este link de aprovação não está mais disponível. Entre em contato com a loja para gerar um novo.</div>
+      </div>
+    `;
+  }
+
+  function renderUsed(approved) {
+    document.getElementById('app').innerHTML = `
+      <div class="card result">
+        <div class="result-icon ${approved ? 'approved' : 'rejected'}">
+          <i class="bi ${approved ? 'bi-check-circle' : 'bi-x-circle'}"></i>
+        </div>
+        <div class="result-title">${approved ? 'Já confirmado' : 'Já recusado'}</div>
+        <div class="result-desc">Você já respondeu a esta cotação. Nossa equipe já foi notificada.</div>
+      </div>
+    `;
+  }
+
+  function renderError(msg) {
+    document.getElementById('app').innerHTML = `
+      <div class="card result">
+        <div class="result-icon expired"><i class="bi bi-exclamation-triangle"></i></div>
+        <div class="result-title">Ops!</div>
+        <div class="result-desc">${msg || 'Ocorreu um erro inesperado.'}</div>
+      </div>
+    `;
+  }
+
+  load();
+</script>
+</body>
+</html>

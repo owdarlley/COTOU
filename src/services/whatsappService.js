@@ -6,7 +6,7 @@ function formatPhone(phone) {
   return `55${digits}`;
 }
 
-function buildMessage(quotation, items) {
+function buildMessage(quotation, items, approvalToken) {
   const laborTotal = items.reduce((s, i) => s + (i.labor_cost_compras || i.labor_cost_vendas || 0), 0);
   const partsTotal = items.reduce((s, i) => s + (i.total_price || 0), 0);
   const grandTotal = partsTotal + laborTotal;
@@ -23,6 +23,11 @@ function buildMessage(quotation, items) {
     ? `⏱ Prazo estimado de entrega: ${Math.max(...items.filter(i => i.delivery_days).map(i => i.delivery_days))} dias úteis`
     : '';
 
+  const appUrl = process.env.APP_URL || '';
+  const approvalLine = approvalToken && appUrl
+    ? `\n\n✅ *Aprovação rápida:*\n${appUrl}/aprovar/${approvalToken}\n_(válido por 48h)_`
+    : '';
+
   return `Olá, *${quotation.customer_name}*! 👋
 
 Sua cotação *#${quotation.quote_number}* está pronta!
@@ -35,7 +40,7 @@ ${itensTexto}
 ${laborTotal > 0 ? `🔧 Mão de obra: R$ ${laborTotal.toFixed(2)}\n` : ''}💰 *Total estimado: R$ ${grandTotal.toFixed(2)}*
 ${prazoTexto}
 
-Qualquer dúvida, estamos à disposição! 😊`;
+Confirma para encomendarmos? 😊${approvalLine}`;
 }
 
 function getClient() {
@@ -45,13 +50,13 @@ function getClient() {
   return { apiUrl, apiKey };
 }
 
-async function sendQuoteMessage(customerPhone, quotation, items, instanceName) {
+async function sendQuoteMessage(customerPhone, quotation, items, instanceName, approvalToken) {
   const { apiUrl, apiKey } = getClient();
   const instance = instanceName || process.env.WHATSAPP_INSTANCE_NAME;
   if (!instance) throw new Error('Instância WhatsApp não definida. Conecte seu WhatsApp nas configurações.');
 
   const number = formatPhone(customerPhone);
-  const text = buildMessage(quotation, items);
+  const text = buildMessage(quotation, items, approvalToken);
 
   const { data } = await axios.post(
     `${apiUrl}/message/sendText/${instance}`,

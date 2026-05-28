@@ -114,10 +114,11 @@ router.post('/whatsapp/enviar/:id', async (req, res) => {
 
   const user = User.findById(req.session.userId);
   const items = QuotationItem.findByQuotationId(quotation.id);
+  const approvalToken = Quotation.generateApprovalToken(quotation.id);
   try {
-    await sendQuoteMessage(quotation.customer_phone, quotation, items, user?.whatsapp_instance_name || null);
+    await sendQuoteMessage(quotation.customer_phone, quotation, items, user?.whatsapp_instance_name || null, approvalToken);
     Quotation.markWhatsappSent(quotation.id, req.session.userId);
-    res.json({ ok: true, message: 'Mensagem enviada com sucesso!' });
+    res.json({ ok: true, message: 'Mensagem enviada com sucesso!', approvalToken });
   } catch (err) {
     res.json({ ok: false, message: err.message });
   }

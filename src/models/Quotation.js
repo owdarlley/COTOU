@@ -1,4 +1,5 @@
 const { db } = require('../config/database');
+const crypto = require('crypto');
 
 const SELECT_FULL = `
   SELECT
@@ -68,6 +69,34 @@ class Quotation {
       SET customer_approved = ?, customer_approved_at = datetime('now'), updated_at = datetime('now')
       WHERE id = ?
     `).run(approved ? 1 : 0, id);
+  }
+
+  static generateApprovalToken(id) {
+    const token = crypto.randomBytes(24).toString('base64url');
+    const expires = new Date(Date.now() + 48 * 3600 * 1000).toISOString();
+    db.prepare(`UPDATE quotations SET approval_token=?, approval_token_expires_at=?, updated_at=datetime('now') WHERE id=?`)
+      .run(token, expires, id);
+    return token;
+  }
+
+  static getByApprovalToken(token) {
+    return db.prepare(`
+      ${SELECT_FULL}
+      WHERE q.approval_token = ?
+        AND q.approval_token_expires_at > datetime('now')
+    `).get(token);
+  }
+
+  static useApprovalToken(token, approved, ip) {
+    const q = this.getByApprovalToken(token);
+    if (!q) return null;
+    db.prepare(`
+      UPDATE quotations
+      SET customer_approved=?, customer_approved_at=datetime('now'),
+          approval_ip=?, approval_token=NULL, updated_at=datetime('now')
+      WHERE id=?
+    `).run(approved ? 1 : 0, ip || null, q.id);
+    return q;
   }
 
   static countByStatus(userId, role) {
