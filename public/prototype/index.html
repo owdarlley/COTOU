@@ -4838,15 +4838,68 @@ function UserModal({ user, onClose }) {
   );
 }
 
-const WA_VARS = [
-  { key: '[NOME DO CLIENTE]',    label: 'Nome do cliente' },
-  { key: '[NÚMERO DA COTAÇÃO]',  label: 'Nº da cotação' },
-  { key: '[VEÍCULO]',            label: 'Veículo' },
-  { key: '[PLACA]',              label: 'Placa' },
-  { key: '[LISTA DE PEÇAS]',     label: 'Peças e valores' },
-  { key: '[TOTAL]',              label: 'Total (R$)' },
-  { key: '[MÃO DE OBRA]',        label: 'Mão de obra' },
-  { key: '[PRAZO DE ENTREGA]',   label: 'Prazo de entrega' },
+const PREDEFINED_TEMPLATES = [
+  {
+    id: 'padrao',
+    name: 'Padrão',
+    description: 'Amigável e completo',
+    text: DEFAULT_WA_TEMPLATE,
+  },
+  {
+    id: 'formal',
+    name: 'Formal',
+    description: 'Tom profissional',
+    text: `Prezado(a) [NOME DO CLIENTE],
+
+Sua cotação está disponível. Confira os detalhes abaixo:
+
+*Veículo:* [VEÍCULO] — Placa [PLACA]
+
+*Peças cotadas:*
+[LISTA DE PEÇAS]
+
+[MÃO DE OBRA]*Total: R$ [TOTAL]*
+[PRAZO DE ENTREGA]
+
+Confirme o pedido respondendo esta mensagem.
+
+Atenciosamente,
+Equipe de Atendimento`,
+  },
+  {
+    id: 'direto',
+    name: 'Direto',
+    description: 'Curto e objetivo',
+    text: `Olá, [NOME DO CLIENTE]! Sua cotação ficou pronta ✅
+
+[VEÍCULO] — Placa [PLACA]
+
+[LISTA DE PEÇAS]
+
+[MÃO DE OBRA]*Total: R$ [TOTAL]*
+[PRAZO DE ENTREGA]
+
+Confirma o pedido?`,
+  },
+  {
+    id: 'detalhado',
+    name: 'Detalhado',
+    description: 'Com número de cotação',
+    text: `Olá, [NOME DO CLIENTE]! 😊
+
+Sua cotação *[NÚMERO DA COTAÇÃO]* está pronta!
+
+🚗 *Veículo:* [VEÍCULO]
+🔑 *Placa:* [PLACA]
+
+📦 *Itens cotados:*
+[LISTA DE PEÇAS]
+
+[MÃO DE OBRA]💰 *Total: R$ [TOTAL]*
+[PRAZO DE ENTREGA]
+
+Responda *SIM* para confirmar o pedido 👍`,
+  },
 ];
 
 function renderWAText(text) {
@@ -4864,26 +4917,20 @@ function renderWAText(text) {
 
 function AdminSettingsScreen() {
   const { state, dispatch } = useStore();
-  const [template, setTemplate] = useState(state.settings?.whatsapp_template || DEFAULT_WA_TEMPLATE);
+  const currentText = state.settings?.whatsapp_template || DEFAULT_WA_TEMPLATE;
+  const matchId = (PREDEFINED_TEMPLATES.find(t => t.text === currentText) || PREDEFINED_TEMPLATES[0]).id;
+  const [selectedId, setSelectedId] = useState(matchId);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
-  const taRef = React.useRef(null);
+
+  const selected = PREDEFINED_TEMPLATES.find(t => t.id === selectedId) || PREDEFINED_TEMPLATES[0];
 
   const SAMPLE_Q = { customer_name: 'João Silva', quote_number: 'COT-2026-0001', vehicle: { make: 'Toyota', model: 'Corolla', plate: 'ABC1D23' } };
   const SAMPLE_I = [
     { part_name: 'Filtro de óleo', part_code: 'FO-001', total_price: 45, delivery_days: 2, quantity: 1, labor_cost_compras: 0 },
     { part_name: 'Pastilha de freio', total_price: 120, delivery_days: null, quantity: 1, labor_cost_compras: 80 },
   ];
-  const preview = renderTemplate({ whatsapp_template: template }, SAMPLE_Q, SAMPLE_I);
-
-  function insertVar(v) {
-    const ta = taRef.current;
-    if (!ta) { setTemplate(t => t + v); return; }
-    const start = ta.selectionStart;
-    const end = ta.selectionEnd;
-    setTemplate(template.slice(0, start) + v + template.slice(end));
-    setTimeout(() => { ta.focus(); ta.setSelectionRange(start + v.length, start + v.length); }, 0);
-  }
+  const preview = renderTemplate({ whatsapp_template: selected.text }, SAMPLE_Q, SAMPLE_I);
 
   async function save() {
     setSaving(true);
@@ -4891,10 +4938,10 @@ function AdminSettingsScreen() {
       await fetch(`${PLATE_PROXY_URL}/api/admin/settings`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ whatsapp_template: template }),
+        body: JSON.stringify({ whatsapp_template: selected.text }),
       });
     } catch (_) {}
-    dispatch({ type: 'update_settings', payload: { whatsapp_template: template } });
+    dispatch({ type: 'update_settings', payload: { whatsapp_template: selected.text } });
     setSaving(false);
     setSaved(true);
     setTimeout(() => setSaved(false), 2500);
@@ -4903,44 +4950,36 @@ function AdminSettingsScreen() {
   return (
     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
 
-      {/* ── Editor ── */}
+      {/* ── Seleção ── */}
       <div className="card" style={{ padding: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
 
-        <div style={{ padding: '10px 16px', borderBottom: '1px solid var(--border)' }}>
+        <div style={{ padding: '14px 18px', borderBottom: '1px solid var(--border)' }}>
           <div style={{ fontWeight: 700, fontSize: 14 }}>Modelo da mensagem</div>
-          <div style={{ fontSize: 11.5, color: 'var(--text-faint)', marginTop: 1 }}>
-            Personalize o texto enviado ao cliente quando a cotação é finalizada.
+          <div style={{ fontSize: 12, color: 'var(--text-faint)', marginTop: 2 }}>
+            Escolha o estilo da mensagem enviada ao cliente.
           </div>
         </div>
 
-        <div style={{ padding: '10px 16px', borderBottom: '1px solid var(--border)', background: 'var(--surface-2)' }}>
-          <div style={{ fontSize: 11.5, color: 'var(--text-faint)', marginBottom: 7 }}>
-            Clique em uma variável para inserir no texto:
-          </div>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
-            {WA_VARS.map(v => (
-              <button key={v.key} title={`Inserir: ${v.key}`} onClick={() => insertVar(v.key)}
-                style={{ padding: '4px 9px', borderRadius: 7, border: 'none', background: 'rgba(37,99,235,.08)', color: 'var(--brand)', cursor: 'pointer', textAlign: 'left', lineHeight: 1.25 }}>
-                <div style={{ fontSize: 11.5, fontWeight: 600 }}>{v.label}</div>
-                <div style={{ fontSize: 9.5, opacity: 0.7, fontFamily: 'monospace', fontWeight: 700 }}>{v.key}</div>
-              </button>
-            ))}
-          </div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, padding: '14px 18px', flex: 1 }}>
+          {PREDEFINED_TEMPLATES.map(tpl => {
+            const active = selectedId === tpl.id;
+            return (
+              <div key={tpl.id} onClick={() => setSelectedId(tpl.id)}
+                style={{ borderRadius: 10, border: active ? '2px solid var(--brand)' : '1.5px solid var(--border)', padding: '12px 14px', cursor: 'pointer', background: active ? 'rgba(37,99,235,.04)' : 'var(--surface)', position: 'relative', transition: 'border-color .15s' }}>
+                {active && (
+                  <i className="bi bi-check-circle-fill" style={{ position: 'absolute', top: 9, right: 10, color: 'var(--brand)', fontSize: 14 }}></i>
+                )}
+                <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 2, paddingRight: active ? 18 : 0 }}>{tpl.name}</div>
+                <div style={{ fontSize: 11.5, color: 'var(--text-faint)', marginBottom: 10 }}>{tpl.description}</div>
+                <div style={{ fontSize: 11, color: 'var(--text-faint)', lineHeight: 1.45, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical' }}>
+                  {tpl.text.replace(/\*/g, '').split('\n').filter(l => l.trim()).slice(0, 3).join(' · ')}
+                </div>
+              </div>
+            );
+          })}
         </div>
 
-        <div style={{ padding: '10px 16px', flex: 1, display: 'flex', flexDirection: 'column' }}>
-          <textarea ref={taRef} className="input"
-            style={{ flex: 1, lineHeight: 1.65, minHeight: 200, resize: 'none', fontSize: 13, fontFamily: 'inherit', width: '100%', boxSizing: 'border-box' }}
-            value={template}
-            onChange={e => setTemplate(e.target.value)}
-          />
-        </div>
-
-        <div style={{ padding: '9px 16px', borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--surface-2)' }}>
-          <button style={{ fontSize: 12, color: 'var(--text-faint)', background: 'none', border: 'none', cursor: 'pointer' }}
-            onClick={() => setTemplate(DEFAULT_WA_TEMPLATE)}>
-            Restaurar padrão
-          </button>
+        <div style={{ padding: '12px 18px', borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'flex-end', background: 'var(--surface-2)' }}>
           <Button variant="primary"
             icon={saving ? 'bi-arrow-clockwise' : saved ? 'bi-check-lg' : 'bi-floppy'}
             onClick={save} disabled={saving}>
@@ -4950,30 +4989,37 @@ function AdminSettingsScreen() {
       </div>
 
       {/* ── Preview ── */}
-      <div className="card" style={{ padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: 10 }}>
-        <div>
-          <div style={{ fontWeight: 700, fontSize: 14, display: 'flex', alignItems: 'center', gap: 7 }}>
-            <i className="bi bi-whatsapp" style={{ color: '#25d366', fontSize: 15 }}></i>
-            Como o cliente recebe
+      <div className="card" style={{ padding: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+
+        <div style={{ background: '#075e54', padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
+          <div style={{ width: 36, height: 36, borderRadius: '50%', background: '#128c7e', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <i className="bi bi-person-fill" style={{ color: 'white', fontSize: 18 }}></i>
           </div>
-          <div style={{ fontSize: 11.5, color: 'var(--text-faint)', marginTop: 1 }}>
-            Preview com dados fictícios.
+          <div style={{ flex: 1 }}>
+            <div style={{ color: 'white', fontWeight: 600, fontSize: 13.5, lineHeight: 1.2 }}>João Silva</div>
+            <div style={{ color: 'rgba(255,255,255,.6)', fontSize: 11 }}>online</div>
+          </div>
+          <div style={{ display: 'flex', gap: 16, color: 'rgba(255,255,255,.75)', fontSize: 16 }}>
+            <i className="bi bi-telephone"></i>
+            <i className="bi bi-three-dots-vertical"></i>
           </div>
         </div>
 
-        <div style={{ flex: 1, background: '#e5ddd5', borderRadius: 10, padding: '12px 10px', overflowY: 'auto' }}>
-          <div style={{ background: '#dcf8c6', borderRadius: '12px 12px 2px 12px', padding: '10px 13px', fontSize: 12.5, lineHeight: 1.65, maxWidth: '90%', marginLeft: 'auto', color: '#111', boxShadow: '0 1px 2px rgba(0,0,0,.1)' }}>
-            {renderWAText(preview)}
-            <div style={{ textAlign: 'right', fontSize: 10, color: '#888', marginTop: 5 }}>
+        <div style={{ flex: 1, background: '#e5ddd5', overflowY: 'auto', padding: '14px 12px' }}>
+          <div style={{ background: '#dcf8c6', borderRadius: '8px 8px 0 8px', padding: '9px 12px', maxWidth: '86%', marginLeft: 'auto', boxShadow: '0 1px 1px rgba(0,0,0,.1)' }}>
+            <div style={{ fontSize: 13, lineHeight: 1.6, color: '#111' }}>
+              {renderWAText(preview)}
+            </div>
+            <div style={{ textAlign: 'right', marginTop: 4, fontSize: 10.5, color: '#667781', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 3 }}>
               {new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
-              {' '}<i className="bi bi-check2-all" style={{ color: '#34b7f1' }}></i>
+              <i className="bi bi-check2-all" style={{ color: '#53bdeb', fontSize: 14 }}></i>
             </div>
           </div>
         </div>
 
-        <p style={{ fontSize: 12, color: 'var(--text-faint)', margin: 0, lineHeight: 1.5 }}>
-          Dica: use <strong>*asteriscos*</strong> para deixar palavras em <strong>negrito</strong> no WhatsApp.
-        </p>
+        <div style={{ padding: '8px 14px', borderTop: '1px solid rgba(0,0,0,.07)', background: 'var(--surface-2)', fontSize: 11.5, color: 'var(--text-faint)', flexShrink: 0 }}>
+          Preview com dados fictícios — a mensagem real usa as informações de cada cotação.
+        </div>
       </div>
 
     </div>
