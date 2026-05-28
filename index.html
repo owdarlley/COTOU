@@ -1763,41 +1763,41 @@ const PLATE_PROXY_URL = 'https://cotou.vercel.app';
 
 const StoreContext = createContext(null);
 
-const DEFAULT_WA_TEMPLATE = `Olá, *{{customer_name}}*! 👋
+const DEFAULT_INTRO = 'Sua cotação está pronta! Veja os detalhes abaixo:';
+const DEFAULT_OUTRO = 'Confirma para encomendarmos? 😊';
 
-Sua cotação *#{{quote_number}}* está pronta!
-
-🚗 *Veículo:* {{vehicle}} — Placa {{plate}}
-
-📦 *Peças cotadas:*
-{{items}}
-
-{{labor}}💰 *Total estimado: R$ {{total}}*
-{{deadline}}
-
-Confirma para encomendarmos? 😊`;
-
-function renderTemplate(template, quotation, items) {
+function renderTemplate(settings, quotation, items) {
   const t = calcTotals(items);
+  const intro = settings?.whatsapp_intro ?? DEFAULT_INTRO;
+  const outro = settings?.whatsapp_outro ?? DEFAULT_OUTRO;
+  const firstName = (quotation.customer_name || '').split(' ')[0] || 'Cliente';
+  const vehicle = `${quotation.vehicle?.make || ''} ${quotation.vehicle?.model || ''}`.trim();
+  const plate = quotation.vehicle?.plate || '';
   const itensTexto = items.map(it => {
-    let linha = `• ${it.part_name}`;
-    if (it.part_code) linha += ` (Cód: ${it.part_code})`;
-    if (it.total_price) linha += ` — ${fmt.brl(it.total_price)}`;
-    if (it.delivery_days) linha += ` | Prazo: ${it.delivery_days} dias`;
-    return linha;
+    let l = `• ${it.part_name}`;
+    if (it.part_code) l += ` (Cód: ${it.part_code})`;
+    if (it.total_price) l += ` — ${fmt.brl(it.total_price)}`;
+    if (it.delivery_days) l += ` | Prazo: ${it.delivery_days} dias`;
+    return l;
   }).join('\n');
+  const laborLine = t.laborTotal > 0 ? `🔧 Mão de obra: ${fmt.brl(t.laborTotal)}\n` : '';
   const deliveryDays = items.filter(i => i.delivery_days).map(i => i.delivery_days);
-  const vars = {
-    customer_name: (quotation.customer_name || '').split(' ')[0] || 'Cliente',
-    quote_number:  quotation.quote_number || '',
-    vehicle:       `${quotation.vehicle?.make || ''} ${quotation.vehicle?.model || ''}`.trim(),
-    plate:         quotation.vehicle?.plate || '',
-    items:         itensTexto,
-    labor:         t.laborTotal > 0 ? `🔧 Mão de obra: ${fmt.brl(t.laborTotal)}\n` : '',
-    total:         t.grandTotal.toFixed(2),
-    deadline:      deliveryDays.length ? `⏱ Prazo estimado de entrega: ${Math.max(...deliveryDays)} dias úteis` : '',
-  };
-  return (template || DEFAULT_WA_TEMPLATE).replace(/\{\{(\w+)\}\}/g, (_, k) => vars[k] ?? `{{${k}}}`);
+  const deadline = deliveryDays.length ? `⏱ Prazo estimado de entrega: ${Math.max(...deliveryDays)} dias úteis` : '';
+  return [
+    `Olá, *${firstName}*! 👋`,
+    '',
+    intro,
+    '',
+    `🚗 *Veículo:* ${vehicle} — Placa ${plate}`,
+    '',
+    '📦 *Peças cotadas:*',
+    itensTexto,
+    '',
+    `${laborLine}💰 *Total estimado: R$ ${t.grandTotal.toFixed(2)}*`,
+    deadline,
+    '',
+    outro,
+  ].join('\n').replace(/\n{3,}/g, '\n\n');
 }
 
 const initialState = {
@@ -1806,7 +1806,7 @@ const initialState = {
   parts: SEED_PARTS,
   quotations: SEED_QUOTATIONS,
   notifications: SEED_NOTIFICATIONS,
-  settings: { whatsapp_template: DEFAULT_WA_TEMPLATE },
+  settings: { whatsapp_intro: DEFAULT_INTRO, whatsapp_outro: DEFAULT_OUTRO },
   toasts: [],
   loggedIn: false,
   waConnectOpen: false,
@@ -4827,44 +4827,25 @@ function UserModal({ user, onClose }) {
   );
 }
 
+const LOCKED_BLOCK_STYLE = {
+  background: 'var(--surface-2)', border: '1px solid var(--border)',
+  borderRadius: 10, padding: '12px 14px', fontSize: 13, color: 'var(--text-faint)',
+  display: 'flex', alignItems: 'flex-start', gap: 10,
+};
+
 function AdminSettingsScreen() {
   const { state, dispatch } = useStore();
-  const [template, setTemplate] = useState(state.settings?.whatsapp_template || DEFAULT_WA_TEMPLATE);
+  const [intro, setIntro] = useState(state.settings?.whatsapp_intro ?? DEFAULT_INTRO);
+  const [outro, setOutro] = useState(state.settings?.whatsapp_outro ?? DEFAULT_OUTRO);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
-  const taRef = React.useRef(null);
 
-  const VARS = [
-    { key: '{{customer_name}}', label: 'Nome do cliente' },
-    { key: '{{quote_number}}',  label: 'Nº da cotação' },
-    { key: '{{vehicle}}',       label: 'Veículo' },
-    { key: '{{plate}}',         label: 'Placa' },
-    { key: '{{items}}',         label: 'Peças' },
-    { key: '{{total}}',         label: 'Total' },
-    { key: '{{labor}}',         label: 'Mão de obra' },
-    { key: '{{deadline}}',      label: 'Prazo' },
-  ];
-
-  const SAMPLE_QUOTATION = {
-    customer_name: 'João Silva',
-    quote_number: 'COT-2026-0001',
-    vehicle: { make: 'Toyota', model: 'Corolla', plate: 'ABC1D23' },
-  };
-  const SAMPLE_ITEMS = [
+  const SAMPLE_Q = { customer_name: 'João Silva', quote_number: 'COT-2026-0001', vehicle: { make: 'Toyota', model: 'Corolla', plate: 'ABC1D23' } };
+  const SAMPLE_I = [
     { part_name: 'Filtro de óleo', part_code: 'FO-001', total_price: 45, delivery_days: 2, quantity: 1, labor_cost_compras: 0 },
     { part_name: 'Pastilha de freio', total_price: 120, delivery_days: null, quantity: 1, labor_cost_compras: 80 },
   ];
-  const preview = renderTemplate(template, SAMPLE_QUOTATION, SAMPLE_ITEMS);
-
-  function insertVar(v) {
-    const ta = taRef.current;
-    if (!ta) { setTemplate(t => t + v); return; }
-    const start = ta.selectionStart;
-    const end = ta.selectionEnd;
-    const next = template.slice(0, start) + v + template.slice(end);
-    setTemplate(next);
-    setTimeout(() => { ta.focus(); ta.setSelectionRange(start + v.length, start + v.length); }, 0);
-  }
+  const preview = renderTemplate({ whatsapp_intro: intro, whatsapp_outro: outro }, SAMPLE_Q, SAMPLE_I);
 
   async function save() {
     setSaving(true);
@@ -4872,36 +4853,68 @@ function AdminSettingsScreen() {
       await fetch(`${PLATE_PROXY_URL}/api/admin/settings`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ whatsapp_template: template }),
+        body: JSON.stringify({ whatsapp_intro: intro, whatsapp_outro: outro }),
       });
     } catch (_) {}
-    dispatch({ type: 'update_settings', payload: { whatsapp_template: template } });
+    dispatch({ type: 'update_settings', payload: { whatsapp_intro: intro, whatsapp_outro: outro } });
     setSaving(false);
     setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
+    setTimeout(() => setSaved(false), 2500);
   }
 
   return (
-    <div className="col" style={{ gap: 20 }}>
-      <div className="card">
-        <div className="card-title">Template da mensagem WhatsApp</div>
-        <div className="col" style={{ gap: 12 }}>
-          <div className="row" style={{ gap: 6, flexWrap: 'wrap' }}>
-            {VARS.map(v => (
-              <button key={v.key} title={v.label}
-                style={{ fontFamily: 'monospace', fontSize: 11, padding: '3px 10px', background: 'var(--surface-2)', border: '1px solid var(--border)', borderRadius: 6, cursor: 'pointer', color: 'var(--brand)' }}
-                onClick={() => insertVar(v.key)}>
-                {v.key}
-              </button>
-            ))}
+    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, alignItems: 'start' }}>
+      <div className="col" style={{ gap: 10 }}>
+        <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+          <div style={{ padding: '14px 16px', borderBottom: '1px solid var(--border)' }}>
+            <div style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.06em', color: '#94a3b8', marginBottom: 8 }}>
+              <i className="bi bi-lock-fill" style={{ marginRight: 5 }}></i>Saudação — automática
+            </div>
+            <div style={LOCKED_BLOCK_STYLE}>
+              <span style={{ fontSize: 18 }}>👋</span>
+              <span><strong>Olá, [nome do cliente]!</strong></span>
+            </div>
           </div>
-          <textarea ref={taRef} className="input"
-            style={{ fontFamily: 'monospace', fontSize: 12, lineHeight: 1.6, minHeight: 260, resize: 'vertical', whiteSpace: 'pre' }}
-            value={template}
-            onChange={e => setTemplate(e.target.value)}
-          />
-          <div className="row" style={{ justifyContent: 'flex-end', gap: 10 }}>
-            <Button variant="ghost" onClick={() => setTemplate(DEFAULT_WA_TEMPLATE)}>Restaurar padrão</Button>
+          <div style={{ padding: '14px 16px', borderBottom: '1px solid var(--border)', background: 'var(--surface)' }}>
+            <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text)', display: 'block', marginBottom: 6 }}>
+              ✏️ Texto de abertura
+            </label>
+            <textarea className="input" rows={3}
+              style={{ resize: 'vertical', fontSize: 13, lineHeight: 1.5 }}
+              value={intro}
+              onChange={e => setIntro(e.target.value)}
+              placeholder="Ex: Sua cotação está pronta! Veja abaixo:"
+            />
+          </div>
+          <div style={{ padding: '14px 16px', borderBottom: '1px solid var(--border)' }}>
+            <div style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.06em', color: '#94a3b8', marginBottom: 8 }}>
+              <i className="bi bi-lock-fill" style={{ marginRight: 5 }}></i>Dados da cotação — automáticos
+            </div>
+            <div style={{ ...LOCKED_BLOCK_STYLE, flexDirection: 'column', gap: 4 }}>
+              <div>🚗 <strong>Veículo</strong> e placa do cliente</div>
+              <div>📦 <strong>Lista de peças</strong> com preços e prazos</div>
+              <div>💰 <strong>Total estimado</strong> (e mão de obra, se houver)</div>
+              <div style={{ fontSize: 11, marginTop: 4, color: 'var(--text-faint)' }}>
+                Esses dados são preenchidos automaticamente com as informações de cada cotação.
+              </div>
+            </div>
+          </div>
+          <div style={{ padding: '14px 16px', borderBottom: '1px solid var(--border)', background: 'var(--surface)' }}>
+            <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text)', display: 'block', marginBottom: 6 }}>
+              ✏️ Texto de encerramento
+            </label>
+            <textarea className="input" rows={3}
+              style={{ resize: 'vertical', fontSize: 13, lineHeight: 1.5 }}
+              value={outro}
+              onChange={e => setOutro(e.target.value)}
+              placeholder="Ex: Confirma para encomendarmos? 😊"
+            />
+          </div>
+          <div style={{ padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <button style={{ fontSize: 12, color: 'var(--text-faint)', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}
+              onClick={() => { setIntro(DEFAULT_INTRO); setOutro(DEFAULT_OUTRO); }}>
+              Restaurar padrão
+            </button>
             <Button variant="primary"
               icon={saving ? 'bi-arrow-clockwise' : saved ? 'bi-check-lg' : 'bi-floppy'}
               onClick={save} disabled={saving}>
@@ -4910,20 +4923,21 @@ function AdminSettingsScreen() {
           </div>
         </div>
       </div>
-
-      <div className="card">
-        <div className="card-title">Preview (dados de exemplo)</div>
-        <div style={{ background: '#e5ddd5', borderRadius: 12, padding: 16 }}>
-          <div style={{ background: '#dcf8c6', borderRadius: 8, padding: 12, fontSize: 13, lineHeight: 1.6, whiteSpace: 'pre-wrap', maxWidth: 360, marginLeft: 'auto', color: '#111' }}>
-            {preview}
-            <div style={{ textAlign: 'right', fontSize: 10, color: '#666', marginTop: 6 }}>
-              {new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })} <i className="bi bi-check2-all" style={{ color: '#34b7f1' }}></i>
+      <div className="col" style={{ gap: 10 }}>
+        <div className="card">
+          <div className="card-title">Como o cliente vai receber</div>
+          <div style={{ background: '#e5ddd5', borderRadius: 12, padding: 14 }}>
+            <div style={{ background: '#dcf8c6', borderRadius: 8, padding: 12, fontSize: 12.5, lineHeight: 1.6, whiteSpace: 'pre-wrap', maxWidth: 320, marginLeft: 'auto', color: '#111' }}>
+              {preview}
+              <div style={{ textAlign: 'right', fontSize: 10, color: '#666', marginTop: 6 }}>
+                {new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })} <i className="bi bi-check2-all" style={{ color: '#34b7f1' }}></i>
+              </div>
             </div>
           </div>
+          <p style={{ fontSize: 11, color: 'var(--text-faint)', marginTop: 8, lineHeight: 1.4 }}>
+            Preview com dados fictícios. A mensagem real usa os dados de cada cotação.
+          </p>
         </div>
-        <p style={{ fontSize: 11, color: 'var(--text-faint)', marginTop: 8 }}>
-          Variáveis não reconhecidas aparecem como <code style={{ fontFamily: 'monospace' }}>{'{{variavel}}'}</code> no preview.
-        </p>
       </div>
     </div>
   );
