@@ -1763,13 +1763,23 @@ const PLATE_PROXY_URL = 'https://cotou.vercel.app';
 
 const StoreContext = createContext(null);
 
-const DEFAULT_INTRO = 'Sua cotação está pronta! Veja os detalhes abaixo:';
-const DEFAULT_OUTRO = 'Confirma para encomendarmos? 😊';
+const DEFAULT_WA_TEMPLATE = `Olá, [NOME DO CLIENTE]! 👋
+
+Sua cotação está pronta! Veja os detalhes abaixo:
+
+🚗 *Veículo:* [VEÍCULO] — Placa [PLACA]
+
+📦 *Peças cotadas:*
+[LISTA DE PEÇAS]
+
+[MÃO DE OBRA]💰 *Total estimado: R$ [TOTAL]*
+[PRAZO DE ENTREGA]
+
+Confirma para encomendarmos? 😊`;
 
 function renderTemplate(settings, quotation, items) {
   const t = calcTotals(items);
-  const intro = settings?.whatsapp_intro ?? DEFAULT_INTRO;
-  const outro = settings?.whatsapp_outro ?? DEFAULT_OUTRO;
+  const template = settings?.whatsapp_template || DEFAULT_WA_TEMPLATE;
   const firstName = (quotation.customer_name || '').split(' ')[0] || 'Cliente';
   const vehicle = `${quotation.vehicle?.make || ''} ${quotation.vehicle?.model || ''}`.trim();
   const plate = quotation.vehicle?.plate || '';
@@ -1783,21 +1793,15 @@ function renderTemplate(settings, quotation, items) {
   const laborLine = t.laborTotal > 0 ? `🔧 Mão de obra: ${fmt.brl(t.laborTotal)}\n` : '';
   const deliveryDays = items.filter(i => i.delivery_days).map(i => i.delivery_days);
   const deadline = deliveryDays.length ? `⏱ Prazo estimado de entrega: ${Math.max(...deliveryDays)} dias úteis` : '';
-  return [
-    `Olá, *${firstName}*! 👋`,
-    '',
-    intro,
-    '',
-    `🚗 *Veículo:* ${vehicle} — Placa ${plate}`,
-    '',
-    '📦 *Peças cotadas:*',
-    itensTexto,
-    '',
-    `${laborLine}💰 *Total estimado: R$ ${t.grandTotal.toFixed(2)}*`,
-    deadline,
-    '',
-    outro,
-  ].join('\n').replace(/\n{3,}/g, '\n\n');
+  return template
+    .replace(/\[NOME DO CLIENTE\]/g, firstName)
+    .replace(/\[NÚMERO DA COTAÇÃO\]/g, quotation.quote_number || '')
+    .replace(/\[VEÍCULO\]/g, vehicle)
+    .replace(/\[PLACA\]/g, plate)
+    .replace(/\[LISTA DE PEÇAS\]/g, itensTexto)
+    .replace(/\[MÃO DE OBRA\]/g, laborLine)
+    .replace(/\[TOTAL\]/g, t.grandTotal.toFixed(2))
+    .replace(/\[PRAZO DE ENTREGA\]/g, deadline);
 }
 
 const initialState = {
@@ -1806,7 +1810,7 @@ const initialState = {
   parts: SEED_PARTS,
   quotations: SEED_QUOTATIONS,
   notifications: SEED_NOTIFICATIONS,
-  settings: { whatsapp_intro: DEFAULT_INTRO, whatsapp_outro: DEFAULT_OUTRO },
+  settings: { whatsapp_template: DEFAULT_WA_TEMPLATE },
   toasts: [],
   loggedIn: false,
   waConnectOpen: false,
@@ -4827,25 +4831,39 @@ function UserModal({ user, onClose }) {
   );
 }
 
-const LOCKED_BLOCK_STYLE = {
-  background: 'var(--surface-2)', border: '1px solid var(--border)',
-  borderRadius: 10, padding: '12px 14px', fontSize: 13, color: 'var(--text-faint)',
-  display: 'flex', alignItems: 'flex-start', gap: 10,
-};
+const WA_VARS = [
+  { key: '[NOME DO CLIENTE]',    label: 'Nome do cliente' },
+  { key: '[NÚMERO DA COTAÇÃO]',  label: 'Nº da cotação' },
+  { key: '[VEÍCULO]',            label: 'Veículo' },
+  { key: '[PLACA]',              label: 'Placa' },
+  { key: '[LISTA DE PEÇAS]',     label: 'Peças e valores' },
+  { key: '[TOTAL]',              label: 'Total (R$)' },
+  { key: '[MÃO DE OBRA]',        label: 'Mão de obra' },
+  { key: '[PRAZO DE ENTREGA]',   label: 'Prazo de entrega' },
+];
 
 function AdminSettingsScreen() {
   const { state, dispatch } = useStore();
-  const [intro, setIntro] = useState(state.settings?.whatsapp_intro ?? DEFAULT_INTRO);
-  const [outro, setOutro] = useState(state.settings?.whatsapp_outro ?? DEFAULT_OUTRO);
+  const [template, setTemplate] = useState(state.settings?.whatsapp_template || DEFAULT_WA_TEMPLATE);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const taRef = React.useRef(null);
 
   const SAMPLE_Q = { customer_name: 'João Silva', quote_number: 'COT-2026-0001', vehicle: { make: 'Toyota', model: 'Corolla', plate: 'ABC1D23' } };
   const SAMPLE_I = [
     { part_name: 'Filtro de óleo', part_code: 'FO-001', total_price: 45, delivery_days: 2, quantity: 1, labor_cost_compras: 0 },
     { part_name: 'Pastilha de freio', total_price: 120, delivery_days: null, quantity: 1, labor_cost_compras: 80 },
   ];
-  const preview = renderTemplate({ whatsapp_intro: intro, whatsapp_outro: outro }, SAMPLE_Q, SAMPLE_I);
+  const preview = renderTemplate({ whatsapp_template: template }, SAMPLE_Q, SAMPLE_I);
+
+  function insertVar(v) {
+    const ta = taRef.current;
+    if (!ta) { setTemplate(t => t + v); return; }
+    const start = ta.selectionStart;
+    const end = ta.selectionEnd;
+    setTemplate(template.slice(0, start) + v + template.slice(end));
+    setTimeout(() => { ta.focus(); ta.setSelectionRange(start + v.length, start + v.length); }, 0);
+  }
 
   async function save() {
     setSaving(true);
@@ -4853,10 +4871,10 @@ function AdminSettingsScreen() {
       await fetch(`${PLATE_PROXY_URL}/api/admin/settings`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ whatsapp_intro: intro, whatsapp_outro: outro }),
+        body: JSON.stringify({ whatsapp_template: template }),
       });
     } catch (_) {}
-    dispatch({ type: 'update_settings', payload: { whatsapp_intro: intro, whatsapp_outro: outro } });
+    dispatch({ type: 'update_settings', payload: { whatsapp_template: template } });
     setSaving(false);
     setSaved(true);
     setTimeout(() => setSaved(false), 2500);
@@ -4864,55 +4882,36 @@ function AdminSettingsScreen() {
 
   return (
     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, alignItems: 'start' }}>
-      <div className="col" style={{ gap: 10 }}>
-        <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
-          <div style={{ padding: '14px 16px', borderBottom: '1px solid var(--border)' }}>
-            <div style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.06em', color: '#94a3b8', marginBottom: 8 }}>
-              <i className="bi bi-lock-fill" style={{ marginRight: 5 }}></i>Saudação — automática
+
+      <div className="col" style={{ gap: 12 }}>
+        <div className="card">
+          <div className="card-title">Modelo da mensagem</div>
+
+          {/* Chips de variáveis */}
+          <div style={{ marginBottom: 10 }}>
+            <div style={{ fontSize: 12, color: 'var(--text-faint)', marginBottom: 8 }}>
+              Clique para inserir no texto:
             </div>
-            <div style={LOCKED_BLOCK_STYLE}>
-              <span style={{ fontSize: 18 }}>👋</span>
-              <span><strong>Olá, [nome do cliente]!</strong></span>
-            </div>
-          </div>
-          <div style={{ padding: '14px 16px', borderBottom: '1px solid var(--border)', background: 'var(--surface)' }}>
-            <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text)', display: 'block', marginBottom: 6 }}>
-              ✏️ Texto de abertura
-            </label>
-            <textarea className="input" rows={3}
-              style={{ resize: 'vertical', fontSize: 13, lineHeight: 1.5 }}
-              value={intro}
-              onChange={e => setIntro(e.target.value)}
-              placeholder="Ex: Sua cotação está pronta! Veja abaixo:"
-            />
-          </div>
-          <div style={{ padding: '14px 16px', borderBottom: '1px solid var(--border)' }}>
-            <div style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.06em', color: '#94a3b8', marginBottom: 8 }}>
-              <i className="bi bi-lock-fill" style={{ marginRight: 5 }}></i>Dados da cotação — automáticos
-            </div>
-            <div style={{ ...LOCKED_BLOCK_STYLE, flexDirection: 'column', gap: 4 }}>
-              <div>🚗 <strong>Veículo</strong> e placa do cliente</div>
-              <div>📦 <strong>Lista de peças</strong> com preços e prazos</div>
-              <div>💰 <strong>Total estimado</strong> (e mão de obra, se houver)</div>
-              <div style={{ fontSize: 11, marginTop: 4, color: 'var(--text-faint)' }}>
-                Esses dados são preenchidos automaticamente com as informações de cada cotação.
-              </div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+              {WA_VARS.map(v => (
+                <button key={v.key} title={v.label}
+                  onClick={() => insertVar(v.key)}
+                  style={{ fontSize: 12, padding: '4px 10px', borderRadius: 20, border: '1.5px solid var(--brand)', background: 'var(--surface)', color: 'var(--brand)', cursor: 'pointer', fontWeight: 500 }}>
+                  {v.key}
+                </button>
+              ))}
             </div>
           </div>
-          <div style={{ padding: '14px 16px', borderBottom: '1px solid var(--border)', background: 'var(--surface)' }}>
-            <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text)', display: 'block', marginBottom: 6 }}>
-              ✏️ Texto de encerramento
-            </label>
-            <textarea className="input" rows={3}
-              style={{ resize: 'vertical', fontSize: 13, lineHeight: 1.5 }}
-              value={outro}
-              onChange={e => setOutro(e.target.value)}
-              placeholder="Ex: Confirma para encomendarmos? 😊"
-            />
-          </div>
-          <div style={{ padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+
+          <textarea ref={taRef} className="input"
+            style={{ lineHeight: 1.6, minHeight: 300, resize: 'vertical', fontSize: 13 }}
+            value={template}
+            onChange={e => setTemplate(e.target.value)}
+          />
+
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 12 }}>
             <button style={{ fontSize: 12, color: 'var(--text-faint)', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}
-              onClick={() => { setIntro(DEFAULT_INTRO); setOutro(DEFAULT_OUTRO); }}>
+              onClick={() => setTemplate(DEFAULT_WA_TEMPLATE)}>
               Restaurar padrão
             </button>
             <Button variant="primary"
@@ -4923,7 +4922,8 @@ function AdminSettingsScreen() {
           </div>
         </div>
       </div>
-      <div className="col" style={{ gap: 10 }}>
+
+      <div className="col" style={{ gap: 12 }}>
         <div className="card">
           <div className="card-title">Como o cliente vai receber</div>
           <div style={{ background: '#e5ddd5', borderRadius: 12, padding: 14 }}>
@@ -4934,11 +4934,12 @@ function AdminSettingsScreen() {
               </div>
             </div>
           </div>
-          <p style={{ fontSize: 11, color: 'var(--text-faint)', marginTop: 8, lineHeight: 1.4 }}>
-            Preview com dados fictícios. A mensagem real usa os dados de cada cotação.
+          <p style={{ fontSize: 11, color: 'var(--text-faint)', marginTop: 8, lineHeight: 1.5 }}>
+            Preview com dados fictícios — a mensagem real usa as informações de cada cotação.
           </p>
         </div>
       </div>
+
     </div>
   );
 }
