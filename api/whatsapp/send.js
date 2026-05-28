@@ -54,14 +54,19 @@ module.exports = async function handler(req, res) {
     }
   }
 
-  // Fallback: texto simples
+  // Fallback: texto simples — reinclude o link de aprovação se tiver token
+  const appUrl = process.env.APP_URL || '';
+  const textFallback = approvalToken && appUrl
+    ? `${message}\n\n✅ *Aprovação rápida:*\n${appUrl}/aprovar/${approvalToken}\n_(válido por 48h)_`
+    : message;
+
   try {
     const r = await fetch(
       `https://api.z-api.io/instances/${instanceId}/token/${token}/send-text`,
       {
         method: 'POST',
         headers,
-        body: JSON.stringify({ phone: number, message }),
+        body: JSON.stringify({ phone: number, message: textFallback }),
         signal: AbortSignal.timeout(10000),
       }
     );
