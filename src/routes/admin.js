@@ -75,18 +75,14 @@ router.post('/usuarios/:id/senha', async (req, res) => {
 
 // GET /admin/settings
 router.get('/settings', (req, res) => {
-  res.json({
-    ok: true,
-    whatsapp_intro: Settings.get('whatsapp_intro', 'Sua cotação está pronta! Veja os detalhes abaixo:'),
-    whatsapp_outro: Settings.get('whatsapp_outro', 'Confirma para encomendarmos? 😊'),
-  });
+  res.json({ ok: true, whatsapp_template: Settings.get('whatsapp_template', '') });
 });
 
 // PUT /admin/settings
 router.put('/settings', (req, res) => {
-  const { whatsapp_intro, whatsapp_outro } = req.body;
-  if (whatsapp_intro !== undefined) Settings.set('whatsapp_intro', whatsapp_intro);
-  if (whatsapp_outro !== undefined) Settings.set('whatsapp_outro', whatsapp_outro);
+  const { whatsapp_template } = req.body;
+  if (typeof whatsapp_template !== 'string') return res.status(400).json({ ok: false, error: 'Valor inválido.' });
+  Settings.set('whatsapp_template', whatsapp_template);
   res.json({ ok: true });
 });
 

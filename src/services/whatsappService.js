@@ -1,8 +1,19 @@
 const axios = require('axios');
 const Settings = require('../models/Settings');
 
-const DEFAULT_INTRO = 'Sua cotação está pronta! Veja os detalhes abaixo:';
-const DEFAULT_OUTRO = 'Confirma para encomendarmos? 😊';
+const DEFAULT_TEMPLATE = `Olá, [NOME DO CLIENTE]! 👋
+
+Sua cotação está pronta! Veja os detalhes abaixo:
+
+🚗 *Veículo:* [VEÍCULO] — Placa [PLACA]
+
+📦 *Peças cotadas:*
+[LISTA DE PEÇAS]
+
+[MÃO DE OBRA]💰 *Total estimado: R$ [TOTAL]*
+[PRAZO DE ENTREGA]
+
+Confirma para encomendarmos? 😊`;
 
 function formatPhone(phone) {
   const digits = phone.replace(/\D/g, '');
@@ -28,30 +39,26 @@ function buildMessage(quotation, items, approvalToken) {
     ? `⏱ Prazo estimado de entrega: ${Math.max(...deliveryDays)} dias úteis`
     : '';
 
-  const intro = Settings.get('whatsapp_intro') || DEFAULT_INTRO;
-  const outro = Settings.get('whatsapp_outro') || DEFAULT_OUTRO;
-
   const vehicle = `${quotation.make || ''} ${quotation.model || ''} ${quotation.year_model || ''}`.trim();
   const laborLine = laborTotal > 0 ? `🔧 Mão de obra: R$ ${laborTotal.toFixed(2)}\n` : '';
 
+  const template = Settings.get('whatsapp_template') || DEFAULT_TEMPLATE;
+  let msg = template
+    .replace(/\[NOME DO CLIENTE\]/g, quotation.customer_name || '')
+    .replace(/\[NÚMERO DA COTAÇÃO\]/g, quotation.quote_number || '')
+    .replace(/\[VEÍCULO\]/g, vehicle)
+    .replace(/\[PLACA\]/g, quotation.license_plate || '')
+    .replace(/\[LISTA DE PEÇAS\]/g, itensTexto)
+    .replace(/\[MÃO DE OBRA\]/g, laborLine)
+    .replace(/\[TOTAL\]/g, grandTotal.toFixed(2))
+    .replace(/\[PRAZO DE ENTREGA\]/g, prazoTexto);
+
   const appUrl = process.env.APP_URL || '';
-  const approvalLine = approvalToken && appUrl
-    ? `\n\n✅ *Aprovação rápida:*\n${appUrl}/aprovar/${approvalToken}\n_(válido por 48h)_`
-    : '';
+  if (approvalToken && appUrl) {
+    msg += `\n\n✅ *Aprovação rápida:*\n${appUrl}/aprovar/${approvalToken}\n_(válido por 48h)_`;
+  }
 
-  return `Olá, *${quotation.customer_name}*! 👋
-
-${intro}
-
-🚗 *Veículo:* ${vehicle} — Placa ${quotation.license_plate}
-
-📦 *Peças cotadas:*
-${itensTexto}
-
-${laborLine}💰 *Total estimado: R$ ${grandTotal.toFixed(2)}*
-${prazoTexto}
-
-${outro}${approvalLine}`;
+  return msg;
 }
 
 function getClient() {
