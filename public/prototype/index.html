@@ -3464,7 +3464,6 @@ function WhatsAppModal({ quotation, onClose }) {
   const [sending, setSending] = useState(false);
   const items = quotation.items || [];
   const totals = calcTotals(items);
-  const approvalToken = quotation.approval_token || null;
   const msg = [
     `*COTOU — Cotação ${quotation.quote_number}*`,
     '',
@@ -3493,7 +3492,6 @@ function WhatsAppModal({ quotation, onClose }) {
         body: JSON.stringify({
           phone: quotation.customer_phone,
           message: msg,
-          approvalToken: approvalToken || undefined,
           zapiInstanceId: me?.zapi_instance_id || undefined,
           zapiToken: me?.zapi_token || undefined,
           zapiClientToken: me?.zapi_client_token || undefined,
@@ -3533,20 +3531,10 @@ function WhatsAppModal({ quotation, onClose }) {
           </div>
         </div>
         <div style={{ background: '#e5ddd5', borderRadius: 12, padding: 16, minHeight: 200 }}>
-          <div style={{ background: '#dcf8c6', borderRadius: 8, fontSize: 13, lineHeight: 1.5, maxWidth: 360, marginLeft: 'auto', color: '#111', overflow: 'hidden' }}>
-            <div style={{ padding: 12, whiteSpace: 'pre-wrap' }}>
-              {msg}
-              <div style={{ textAlign: 'right', fontSize: 10, color: '#666', marginTop: 6 }}>
-                {new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })} <i className="bi bi-check2-all" style={{ color: '#34b7f1' }}></i>
-              </div>
-            </div>
-            <div style={{ borderTop: '1px solid #b2d8a0' }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '9px 12px', color: '#0a7cff', fontWeight: 600, fontSize: 13, borderBottom: '1px solid #b2d8a0' }}>
-                <i className="bi bi-check-lg"></i> Confirmar encomenda
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '9px 12px', color: '#dc2626', fontWeight: 600, fontSize: 13 }}>
-                <i className="bi bi-x-lg"></i> Recusar cotação
-              </div>
+          <div style={{ background: '#dcf8c6', borderRadius: 8, padding: 12, fontSize: 13, lineHeight: 1.5, whiteSpace: 'pre-wrap', maxWidth: 360, marginLeft: 'auto', color: '#111' }}>
+            {msg}
+            <div style={{ textAlign: 'right', fontSize: 10, color: '#666', marginTop: 6 }}>
+              {new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })} <i className="bi bi-check2-all" style={{ color: '#34b7f1' }}></i>
             </div>
           </div>
         </div>

@@ -1,5 +1,4 @@
 // Vercel serverless — envia mensagem WhatsApp via Z-API
-// Tenta send-button-list quando approvalToken é fornecido; cai para send-text
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
@@ -15,7 +14,7 @@ module.exports = async function handler(req, res) {
     return res.json({ ok: true, demo: true, message: 'Mensagem enviada (modo demo — Z-API não configurada).' });
   }
 
-  const { phone, message, approvalToken } = req.body || {};
+  const { phone, message } = req.body || {};
   if (!phone || !message) return res.status(400).json({ ok: false, message: 'phone e message são obrigatórios.' });
 
   const digits = phone.replace(/\D/g, '');
@@ -26,47 +25,13 @@ module.exports = async function handler(req, res) {
     ...(clientToken ? { 'Client-Token': clientToken } : {}),
   };
 
-  // Tenta botões de aprovação quando approvalToken é fornecido
-  if (approvalToken) {
-    try {
-      const r = await fetch(
-        `https://api.z-api.io/instances/${instanceId}/token/${token}/send-button-list`,
-        {
-          method: 'POST',
-          headers,
-          body: JSON.stringify({
-            phone: number,
-            message,
-            buttonList: {
-              buttons: [
-                { id: `a_${approvalToken}`, label: '✅ Confirmar encomenda' },
-                { id: `r_${approvalToken}`, label: '❌ Recusar cotação' },
-              ],
-            },
-          }),
-          signal: AbortSignal.timeout(10000),
-        }
-      );
-      const data = await r.json().catch(() => ({}));
-      if (r.ok) return res.json({ ok: true, buttons: true, data });
-    } catch (_) {
-      // Cai para send-text abaixo
-    }
-  }
-
-  // Fallback: texto simples — reinclude o link de aprovação se tiver token
-  const appUrl = process.env.APP_URL || '';
-  const textFallback = approvalToken && appUrl
-    ? `${message}\n\n✅ *Aprovação rápida:*\n${appUrl}/aprovar/${approvalToken}\n_(válido por 48h)_`
-    : message;
-
   try {
     const r = await fetch(
       `https://api.z-api.io/instances/${instanceId}/token/${token}/send-text`,
       {
         method: 'POST',
         headers,
-        body: JSON.stringify({ phone: number, message: textFallback }),
+        body: JSON.stringify({ phone: number, message }),
         signal: AbortSignal.timeout(10000),
       }
     );
