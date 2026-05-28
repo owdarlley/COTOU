@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { requireAuth, requireRole } = require('../middleware/auth');
 const User = require('../models/User');
+const Settings = require('../models/Settings');
 
 router.use(requireAuth, requireRole('admin'));
 
@@ -69,6 +70,19 @@ router.post('/usuarios/:id/senha', async (req, res) => {
     return res.status(400).json({ ok: false, error: 'Senha deve ter pelo menos 6 caracteres.' });
   }
   await User.updatePassword(parseInt(req.params.id), new_password);
+  res.json({ ok: true });
+});
+
+// GET /admin/settings
+router.get('/settings', (req, res) => {
+  res.json({ ok: true, whatsapp_template: Settings.get('whatsapp_template', '') });
+});
+
+// PUT /admin/settings
+router.put('/settings', (req, res) => {
+  const { whatsapp_template } = req.body;
+  if (typeof whatsapp_template !== 'string') return res.status(400).json({ ok: false, error: 'Valor inválido.' });
+  Settings.set('whatsapp_template', whatsapp_template);
   res.json({ ok: true });
 });
 

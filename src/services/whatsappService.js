@@ -1,4 +1,19 @@
 const axios = require('axios');
+const Settings = require('../models/Settings');
+
+const DEFAULT_TEMPLATE = `Olá, *{{customer_name}}*! 👋
+
+Sua cotação *#{{quote_number}}* está pronta!
+
+🚗 *Veículo:* {{vehicle}} — Placa {{plate}}
+
+📦 *Peças cotadas:*
+{{items}}
+
+{{labor}}💰 *Total estimado: R$ {{total}}*
+{{deadline}}
+
+Confirma para encomendarmos? 😊`;
 
 function formatPhone(phone) {
   const digits = phone.replace(/\D/g, '');
@@ -6,7 +21,7 @@ function formatPhone(phone) {
   return `55${digits}`;
 }
 
-function buildMessage(quotation, items, approvalToken) {
+function buildMessage(quotation, items, approvalToken, template) {
   const laborTotal = items.reduce((s, i) => s + (i.labor_cost_compras || i.labor_cost_vendas || 0), 0);
   const partsTotal = items.reduce((s, i) => s + (i.total_price || 0), 0);
   const grandTotal = partsTotal + laborTotal;
@@ -19,28 +34,31 @@ function buildMessage(quotation, items, approvalToken) {
     return linha;
   }).join('\n');
 
-  const prazoTexto = items.find(i => i.delivery_days)
-    ? `⏱ Prazo estimado de entrega: ${Math.max(...items.filter(i => i.delivery_days).map(i => i.delivery_days))} dias úteis`
+  const deliveryDays = items.filter(i => i.delivery_days).map(i => i.delivery_days);
+  const prazoTexto = deliveryDays.length
+    ? `⏱ Prazo estimado de entrega: ${Math.max(...deliveryDays)} dias úteis`
     : '';
+
+  const vars = {
+    customer_name: quotation.customer_name || '',
+    quote_number:  quotation.quote_number || '',
+    vehicle:       `${quotation.make || ''} ${quotation.model || ''} ${quotation.year_model || ''}`.trim(),
+    plate:         quotation.license_plate || '',
+    items:         itensTexto,
+    labor:         laborTotal > 0 ? `🔧 Mão de obra: R$ ${laborTotal.toFixed(2)}\n` : '',
+    total:         grandTotal.toFixed(2),
+    deadline:      prazoTexto,
+  };
+
+  const tpl = (template || Settings.get('whatsapp_template') || DEFAULT_TEMPLATE);
+  let msg = tpl.replace(/\{\{(\w+)\}\}/g, (_, key) => vars[key] ?? `{{${key}}}`);
 
   const appUrl = process.env.APP_URL || '';
-  const approvalLine = approvalToken && appUrl
-    ? `\n\n✅ *Aprovação rápida:*\n${appUrl}/aprovar/${approvalToken}\n_(válido por 48h)_`
-    : '';
+  if (approvalToken && appUrl) {
+    msg += `\n\n✅ *Aprovação rápida:*\n${appUrl}/aprovar/${approvalToken}\n_(válido por 48h)_`;
+  }
 
-  return `Olá, *${quotation.customer_name}*! 👋
-
-Sua cotação *#${quotation.quote_number}* está pronta!
-
-🚗 *Veículo:* ${quotation.make || ''} ${quotation.model || ''} ${quotation.year_model || ''} — Placa ${quotation.license_plate}
-
-📦 *Peças cotadas:*
-${itensTexto}
-
-${laborTotal > 0 ? `🔧 Mão de obra: R$ ${laborTotal.toFixed(2)}\n` : ''}💰 *Total estimado: R$ ${grandTotal.toFixed(2)}*
-${prazoTexto}
-
-Confirma para encomendarmos? 😊${approvalLine}`;
+  return msg;
 }
 
 function getClient() {
