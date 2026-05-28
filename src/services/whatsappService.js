@@ -1,19 +1,8 @@
 const axios = require('axios');
 const Settings = require('../models/Settings');
 
-const DEFAULT_TEMPLATE = `Olá, *{{customer_name}}*! 👋
-
-Sua cotação *#{{quote_number}}* está pronta!
-
-🚗 *Veículo:* {{vehicle}} — Placa {{plate}}
-
-📦 *Peças cotadas:*
-{{items}}
-
-{{labor}}💰 *Total estimado: R$ {{total}}*
-{{deadline}}
-
-Confirma para encomendarmos? 😊`;
+const DEFAULT_INTRO = 'Sua cotação está pronta! Veja os detalhes abaixo:';
+const DEFAULT_OUTRO = 'Confirma para encomendarmos? 😊';
 
 function formatPhone(phone) {
   const digits = phone.replace(/\D/g, '');
@@ -21,7 +10,7 @@ function formatPhone(phone) {
   return `55${digits}`;
 }
 
-function buildMessage(quotation, items, approvalToken, template) {
+function buildMessage(quotation, items, approvalToken) {
   const laborTotal = items.reduce((s, i) => s + (i.labor_cost_compras || i.labor_cost_vendas || 0), 0);
   const partsTotal = items.reduce((s, i) => s + (i.total_price || 0), 0);
   const grandTotal = partsTotal + laborTotal;
@@ -39,26 +28,30 @@ function buildMessage(quotation, items, approvalToken, template) {
     ? `⏱ Prazo estimado de entrega: ${Math.max(...deliveryDays)} dias úteis`
     : '';
 
-  const vars = {
-    customer_name: quotation.customer_name || '',
-    quote_number:  quotation.quote_number || '',
-    vehicle:       `${quotation.make || ''} ${quotation.model || ''} ${quotation.year_model || ''}`.trim(),
-    plate:         quotation.license_plate || '',
-    items:         itensTexto,
-    labor:         laborTotal > 0 ? `🔧 Mão de obra: R$ ${laborTotal.toFixed(2)}\n` : '',
-    total:         grandTotal.toFixed(2),
-    deadline:      prazoTexto,
-  };
+  const intro = Settings.get('whatsapp_intro') || DEFAULT_INTRO;
+  const outro = Settings.get('whatsapp_outro') || DEFAULT_OUTRO;
 
-  const tpl = (template || Settings.get('whatsapp_template') || DEFAULT_TEMPLATE);
-  let msg = tpl.replace(/\{\{(\w+)\}\}/g, (_, key) => vars[key] ?? `{{${key}}}`);
+  const vehicle = `${quotation.make || ''} ${quotation.model || ''} ${quotation.year_model || ''}`.trim();
+  const laborLine = laborTotal > 0 ? `🔧 Mão de obra: R$ ${laborTotal.toFixed(2)}\n` : '';
 
   const appUrl = process.env.APP_URL || '';
-  if (approvalToken && appUrl) {
-    msg += `\n\n✅ *Aprovação rápida:*\n${appUrl}/aprovar/${approvalToken}\n_(válido por 48h)_`;
-  }
+  const approvalLine = approvalToken && appUrl
+    ? `\n\n✅ *Aprovação rápida:*\n${appUrl}/aprovar/${approvalToken}\n_(válido por 48h)_`
+    : '';
 
-  return msg;
+  return `Olá, *${quotation.customer_name}*! 👋
+
+${intro}
+
+🚗 *Veículo:* ${vehicle} — Placa ${quotation.license_plate}
+
+📦 *Peças cotadas:*
+${itensTexto}
+
+${laborLine}💰 *Total estimado: R$ ${grandTotal.toFixed(2)}*
+${prazoTexto}
+
+${outro}${approvalLine}`;
 }
 
 function getClient() {
