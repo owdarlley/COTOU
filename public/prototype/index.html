@@ -3447,6 +3447,7 @@ function RespondModal({ quotation, onClose }) {
    ========================================================= */
 function WhatsAppModal({ quotation, onClose }) {
   const { state, dispatch, currentUser: me } = useStore();
+  const [sending, setSending] = useState(false);
   const totals = calcTotals(quotation.items);
   const msg = [
     `*COTOU — Cotação ${quotation.quote_number}*`,
