@@ -4899,29 +4899,29 @@ function AdminSettingsScreen() {
       {/* ── Editor ── */}
       <div className="card" style={{ padding: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
 
-        <div style={{ padding: '16px 18px', borderBottom: '1px solid var(--border)' }}>
+        <div style={{ padding: '10px 16px', borderBottom: '1px solid var(--border)' }}>
           <div style={{ fontWeight: 700, fontSize: 14 }}>Modelo da mensagem</div>
-          <div style={{ fontSize: 12, color: 'var(--text-faint)', marginTop: 2 }}>
+          <div style={{ fontSize: 11.5, color: 'var(--text-faint)', marginTop: 1 }}>
             Personalize o texto enviado ao cliente quando a cotação é finalizada.
           </div>
         </div>
 
-        <div style={{ padding: '14px 18px', borderBottom: '1px solid var(--border)', background: 'var(--surface-2)' }}>
-          <div style={{ fontSize: 12, color: 'var(--text-faint)', marginBottom: 10 }}>
+        <div style={{ padding: '10px 16px', borderBottom: '1px solid var(--border)', background: 'var(--surface-2)' }}>
+          <div style={{ fontSize: 11.5, color: 'var(--text-faint)', marginBottom: 7 }}>
             Clique em uma variável para inserir no texto:
           </div>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
             {WA_VARS.map(v => (
               <button key={v.key} title={`Inserir: ${v.key}`} onClick={() => insertVar(v.key)}
-                style={{ padding: '5px 11px', borderRadius: 8, border: 'none', background: 'rgba(37,99,235,.08)', color: 'var(--brand)', cursor: 'pointer', textAlign: 'left', lineHeight: 1.3 }}>
-                <div style={{ fontSize: 12, fontWeight: 600 }}>{v.label}</div>
-                <div style={{ fontSize: 10, opacity: 0.7, fontFamily: 'monospace', fontWeight: 700 }}>{v.key}</div>
+                style={{ padding: '4px 9px', borderRadius: 7, border: 'none', background: 'rgba(37,99,235,.08)', color: 'var(--brand)', cursor: 'pointer', textAlign: 'left', lineHeight: 1.25 }}>
+                <div style={{ fontSize: 11.5, fontWeight: 600 }}>{v.label}</div>
+                <div style={{ fontSize: 9.5, opacity: 0.7, fontFamily: 'monospace', fontWeight: 700 }}>{v.key}</div>
               </button>
             ))}
           </div>
         </div>
 
-        <div style={{ padding: '14px 18px', flex: 1, display: 'flex', flexDirection: 'column' }}>
+        <div style={{ padding: '10px 16px', flex: 1, display: 'flex', flexDirection: 'column' }}>
           <textarea ref={taRef} className="input"
             style={{ flex: 1, lineHeight: 1.65, minHeight: 200, resize: 'none', fontSize: 13, fontFamily: 'inherit', width: '100%', boxSizing: 'border-box' }}
             value={template}
@@ -4929,7 +4929,7 @@ function AdminSettingsScreen() {
           />
         </div>
 
-        <div style={{ padding: '12px 18px', borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--surface-2)' }}>
+        <div style={{ padding: '9px 16px', borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--surface-2)' }}>
           <button style={{ fontSize: 12, color: 'var(--text-faint)', background: 'none', border: 'none', cursor: 'pointer' }}
             onClick={() => setTemplate(DEFAULT_WA_TEMPLATE)}>
             Restaurar padrão
@@ -4943,18 +4943,18 @@ function AdminSettingsScreen() {
       </div>
 
       {/* ── Preview ── */}
-      <div className="card" style={{ padding: '18px', display: 'flex', flexDirection: 'column', gap: 14 }}>
+      <div className="card" style={{ padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: 10 }}>
         <div>
           <div style={{ fontWeight: 700, fontSize: 14, display: 'flex', alignItems: 'center', gap: 7 }}>
-            <i className="bi bi-whatsapp" style={{ color: '#25d366', fontSize: 16 }}></i>
+            <i className="bi bi-whatsapp" style={{ color: '#25d366', fontSize: 15 }}></i>
             Como o cliente recebe
           </div>
-          <div style={{ fontSize: 12, color: 'var(--text-faint)', marginTop: 2 }}>
+          <div style={{ fontSize: 11.5, color: 'var(--text-faint)', marginTop: 1 }}>
             Preview com dados fictícios.
           </div>
         </div>
 
-        <div style={{ flex: 1, background: '#e5ddd5', borderRadius: 10, padding: '16px 14px', overflowY: 'auto' }}>
+        <div style={{ flex: 1, background: '#e5ddd5', borderRadius: 10, padding: '12px 10px', overflowY: 'auto' }}>
           <div style={{ background: '#dcf8c6', borderRadius: '12px 12px 2px 12px', padding: '10px 13px', fontSize: 12.5, lineHeight: 1.65, maxWidth: '90%', marginLeft: 'auto', color: '#111', boxShadow: '0 1px 2px rgba(0,0,0,.1)' }}>
             {renderWAText(preview)}
             <div style={{ textAlign: 'right', fontSize: 10, color: '#888', marginTop: 5 }}>
