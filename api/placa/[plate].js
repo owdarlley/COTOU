@@ -47,10 +47,10 @@ module.exports = async function handler(req, res) {
     const sub   = data.SUBMODELO || data.submodelo || '';
     const anoModelo = data.anoModelo || data.ano || '';
 
-    const fipeList = Array.isArray(data.fipe) ? data.fipe : [];
-    const bestFipe = fipeList.length
-      ? fipeList.reduce((b, i) => (i.score > b.score ? i : b), fipeList[0])
-      : null;
+    // Varre o JSON inteiro pelo VIN completo (17 chars sem asterisco)
+    const VIN_RE = /\b[A-HJ-NPR-Z0-9]{17}\b/i;
+    const vinMatch = JSON.stringify(data).match(VIN_RE);
+    const chassis = vinMatch ? vinMatch[0].toUpperCase() : (data.chassi || '');
 
     return res.json({
       ok: true,
@@ -61,15 +61,10 @@ module.exports = async function handler(req, res) {
         year_manuf: parseInt(extra.ano_fabricacao || anoModelo) || null,
         color:      data.cor || '',
         fuel:       extra.combustivel || data.combustivel || '',
-        chassis:    data.chassi || '',
+        chassis,
         city:       data.municipio || extra.municipio || '',
         uf:         data.uf || extra.uf || '',
         situation:  data.situacao || '',
-        fipe: bestFipe ? {
-          codigo: bestFipe.codigo_fipe,
-          valor:  bestFipe.valor_medio_fipe,
-          score:  bestFipe.score,
-        } : null,
       },
     });
   } catch (err) {
