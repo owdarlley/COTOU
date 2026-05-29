@@ -3575,6 +3575,7 @@ function ConsultarFornecedorModal({ item, supplier, vehicle, onClose }) {
     if (vehicle?.make || vehicle?.model) {
       const vDesc = [vehicle.make, vehicle.model, vehicle.year_model].filter(Boolean).join(' ');
       m += `\n\n🚗 *Veículo:* ${vDesc}`;
+      if (vehicle.chassis) m += `\n🔑 *Chassi:* ${vehicle.chassis}`;
     }
     m += `\n\nVocê tem disponível? Qual o valor unitário e prazo de entrega?\n\nObrigado! 😊`;
     return m;
