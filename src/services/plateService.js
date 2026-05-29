@@ -84,9 +84,12 @@ function normalize(data) {
     year_manuf: parseInt(anoFab)    || null,
     color:      data.cor       || '',
     fuel:       combustivel,
-    chassis:    [data.CHASSI, data.chassi, data.chassis, data.CHASSIS, extra.chassi, extra.CHASSI]
-                  .filter(Boolean)
-                  .sort((a, b) => b.length - a.length)[0] || '',
+    chassis:    (() => {
+                  const candidates = [data.CHASSI, data.chassi, data.chassis, data.CHASSIS, extra.chassi, extra.CHASSI]
+                    .filter(v => v && typeof v === 'string' && v.trim());
+                  const full = candidates.filter(v => !v.includes('*')).sort((a, b) => b.length - a.length);
+                  return full[0] || candidates.sort((a, b) => b.length - a.length)[0] || '';
+                })(),
     city:       data.municipio || extra.municipio || '',
     uf:         data.uf        || extra.uf        || '',
     situation:  data.situacao  || '',
