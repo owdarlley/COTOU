@@ -30,7 +30,7 @@ router.post('/api/aprovar/:token', express.json(), (req, res) => {
   if (!q) return res.status(410).json({ ok: false, message: 'Link inválido ou expirado.' });
 
   // Notifica o vendedor que criou a cotação
-  const type = action === 'approve' ? 'cliente_aprovou' : 'cliente_recusou';
+  const type = 'status_atualizado';
   const label = action === 'approve' ? 'aprovou' : 'recusou';
   Notification.create({
     userId: q.created_by_user_id,

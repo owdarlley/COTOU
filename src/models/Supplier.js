@@ -1,4 +1,4 @@
-const db = require('../database');
+const { db } = require('../config/database');
 
 class Supplier {
   static findAll()       { return db.prepare('SELECT * FROM suppliers WHERE active=1 ORDER BY name').all(); }

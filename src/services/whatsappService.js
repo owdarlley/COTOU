@@ -68,13 +68,13 @@ function getClient() {
   return { apiUrl, apiKey };
 }
 
-async function sendQuoteMessage(customerPhone, quotation, items, instanceName) {
+async function sendQuoteMessage(customerPhone, quotation, items, instanceName, approvalToken) {
   const { apiUrl, apiKey } = getClient();
   const instance = instanceName || process.env.WHATSAPP_INSTANCE_NAME;
   if (!instance) throw new Error('Instância WhatsApp não definida. Conecte seu WhatsApp nas configurações.');
 
   const number = formatPhone(customerPhone);
-  const text = buildMessage(quotation, items);
+  const text = buildMessage(quotation, items, approvalToken);
 
   const { data } = await axios.post(
     `${apiUrl}/message/sendText/${instance}`,

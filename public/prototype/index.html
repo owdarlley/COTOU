@@ -1921,9 +1921,20 @@ function reducer(state, action) {
         created_at: q.created_at,
         time_label: 'agora',
       }));
+      const existingCustomer = state.customers.find(c => c.phone === action.payload.customer_phone);
+      const newCustomers = existingCustomer
+        ? state.customers
+        : [...state.customers, {
+            id: nextId(state.customers),
+            name: action.payload.customer_name,
+            phone: action.payload.customer_phone,
+            created_at: q.created_at,
+            updated_at: q.created_at,
+          }];
       return {
         ...state,
         quotations: [q, ...state.quotations],
+        customers: newCustomers,
         notifications: [...notifs, ...state.notifications],
         toasts: [...state.toasts, { id: Date.now(), type: 'success', message: `Cotação ${quote_number} criada` }],
         route: { name: 'quotation-detail', params: { id } },
@@ -4089,6 +4100,7 @@ function NewQuotation() {
           year_model: Number(vehicle.year_model) || null,
           year_manuf: Number(vehicle.year_manuf) || null,
           color: vehicle.color, fuel: vehicle.fuel,
+          chassis: vehicle.chassis || '',
         },
         items: validItems,
         notes_vendas: notesVendas,
