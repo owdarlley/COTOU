@@ -85,14 +85,6 @@ function normalize(data) {
   const anoFab    = extra.ano_fabricacao || anoModelo;
   const combustivel = extra.combustivel || data.combustivel || '';
 
-  // API retorna fipe.dados (objeto) ou fipe (array direto)
-  const fipeList = Array.isArray(data.fipe)
-    ? data.fipe
-    : Array.isArray(data.fipe?.dados) ? data.fipe.dados : [];
-  const bestFipe = fipeList.length
-    ? fipeList.reduce((best, item) => (item.score > best.score ? item : best), fipeList[0])
-    : null;
-
   return {
     make:       make,
     model:      fullModel,
@@ -104,11 +96,6 @@ function normalize(data) {
     city:       data.municipio || extra.municipio || '',
     uf:         data.uf        || extra.uf        || '',
     situation:  data.situacao  || '',
-    fipe: bestFipe ? {
-      codigo: bestFipe.codigo_fipe,
-      valor:  bestFipe.texto_valor || bestFipe.valor_medio_fipe,
-      score:  bestFipe.score,
-    } : null,
     raw: JSON.stringify(data),
   };
 }
