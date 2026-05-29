@@ -2724,10 +2724,7 @@ function Topbar({ title, subtitle, actions }) {
 
   return (
     <div className="topbar">
-      <div style={{ display: 'flex', alignItems: 'baseline', gap: 10 }}>
-        <h1>{title}</h1>
-        {subtitle && <span className="tiny faint">{subtitle}</span>}
-      </div>
+      <h1>{title}</h1>
       <div className="topbar-actions">
         {actions}
         <RoleSwitcher />
