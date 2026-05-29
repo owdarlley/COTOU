@@ -2728,9 +2728,9 @@ function Topbar({ title, subtitle, actions }) {
         <h1>{title}</h1>
         {subtitle && <div className="tiny faint" style={{ marginTop: 1 }}>{subtitle}</div>}
       </div>
-      <RoleSwitcher />
       <div className="topbar-actions">
         {actions}
+        <RoleSwitcher />
         <button
           className="icon-btn"
           onClick={() => {
