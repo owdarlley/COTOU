@@ -3957,7 +3957,7 @@ function NewQuotation() {
   const [plateLoading, setPlateLoading] = useState(false);
   const [plateFound, setPlateFound] = useState(false);
   const [plateWarning, setPlateWarning] = useState('');
-  const [vehicle, setVehicle] = useState({ make: '', model: '', year_model: '', year_manuf: '', color: '', fuel: '' });
+  const [vehicle, setVehicle] = useState({ make: '', model: '', year_model: '', year_manuf: '', color: '', fuel: '', chassis: '' });
   // items
   const [items, setItems] = useState([]);
   const [partQuery, setPartQuery] = useState('');
@@ -3982,6 +3982,7 @@ function NewQuotation() {
           year_manuf: String(json.data.year_manuf || ''),
           color:      json.data.color || '',
           fuel:       json.data.fuel || '',
+          chassis:    json.data.chassis || '',
         });
         setPlateFound(true);
         dispatch({ type: 'toast', tone: 'success', message: 'Dados do veículo carregados' });
@@ -4152,6 +4153,9 @@ function NewQuotation() {
                 <option value="ELÉTRICO">Elétrico</option>
                 <option value="HIBRIDO">Híbrido</option>
               </select>
+            </Field>
+            <Field label="Chassi">
+              <input className="input mono" value={vehicle.chassis} onChange={e => setVehicle({ ...vehicle, chassis: e.target.value.toUpperCase() })} placeholder="9BWZZZ377VT004251" style={{ letterSpacing: '0.05em' }} />
             </Field>
           </div>
           <div className="row between">
