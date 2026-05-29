@@ -59,30 +59,10 @@ async function getBalance() {
 }
 
 function findChassis(data) {
-  // Varre recursivamente todos os campos string procurando um VIN completo (17 chars, sem asterisco)
-  const VIN_RE = /^[A-HJ-NPR-Z0-9]{17}$/i;
-  const candidates = [];
-
-  function walk(obj) {
-    if (!obj || typeof obj !== 'object') return;
-    for (const val of Object.values(obj)) {
-      if (typeof val === 'string' && val.trim() && !val.includes('*')) {
-        if (VIN_RE.test(val.trim())) candidates.push(val.trim().toUpperCase());
-      } else if (typeof val === 'object') {
-        walk(val);
-      }
-    }
-  }
-
-  walk(data);
-  if (candidates.length) return candidates[0];
-
-  // Fallback: qualquer campo chamado chassi (mesmo mascarado)
   const extra = data.extra || {};
-  const masked = [data.CHASSI, data.chassi, data.chassis, data.CHASSIS, extra.chassi, extra.CHASSI]
-    .filter(v => v && typeof v === 'string' && v.trim())
-    .sort((a, b) => b.length - a.length);
-  return masked[0] || '';
+  const candidates = [data.CHASSI, data.chassi, data.chassis, data.CHASSIS, extra.chassi, extra.CHASSI]
+    .filter(v => v && typeof v === 'string' && v.trim());
+  return candidates.find(v => !v.includes('*')) || candidates[0] || '';
 }
 
 function normalize(data) {
