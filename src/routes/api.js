@@ -8,6 +8,7 @@ const PartsCatalog = require('../models/PartsCatalog');
 const Notification = require('../models/Notification');
 const Quotation = require('../models/Quotation');
 const QuotationItem = require('../models/QuotationItem');
+const Supplier = require('../models/Supplier');
 
 router.use(requireAuth);
 
@@ -121,6 +122,23 @@ router.post('/whatsapp/enviar/:id', async (req, res) => {
   } catch (err) {
     res.json({ ok: false, message: err.message });
   }
+});
+
+// Fornecedores
+router.get('/suppliers',        (req, res) => res.json({ ok: true, data: Supplier.findAll() }));
+router.post('/suppliers',       requireRole('admin', 'compras'), (req, res) => {
+  if (!req.body?.name) return res.status(400).json({ ok: false, message: 'Nome é obrigatório.' });
+  const r = Supplier.create(req.body);
+  res.json({ ok: true, id: r.lastInsertRowid });
+});
+router.put('/suppliers/:id',    requireRole('admin', 'compras'), (req, res) => {
+  if (!req.body?.name) return res.status(400).json({ ok: false, message: 'Nome é obrigatório.' });
+  Supplier.update(req.params.id, req.body);
+  res.json({ ok: true });
+});
+router.delete('/suppliers/:id', requireRole('admin', 'compras'), (req, res) => {
+  Supplier.remove(req.params.id);
+  res.json({ ok: true });
 });
 
 module.exports = router;
