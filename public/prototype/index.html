@@ -3469,11 +3469,10 @@ function RespondModal({ quotation, onClose }) {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           {quotation.items.map((it, i) => {
             const activeSupplier = activeSuppliers.find(s => s.name === items[i].supplier_name);
-            const canConsult = activeSupplier?.phone && currentUser?.whatsapp_connected;
+            const canConsult = !!(activeSupplier?.phone);
             const consultTitle = !items[i].supplier_name ? 'Selecione um fornecedor' :
               !activeSupplier?.phone ? 'Fornecedor sem telefone cadastrado' :
-              !currentUser?.whatsapp_connected ? 'Conecte seu WhatsApp em Usuários' :
-              `Consultar ${activeSupplier.name}`;
+              `Consultar ${activeSupplier.name} via WhatsApp`;
             return (
               <div key={it.id} className="card card-pad" style={{ background: 'var(--surface-2)', border: '1px solid var(--border)' }}>
                 <div className="row between" style={{ marginBottom: 12 }}>
@@ -3565,7 +3564,7 @@ function RespondModal({ quotation, onClose }) {
    Consultar Fornecedor via WhatsApp
    ========================================================= */
 function ConsultarFornecedorModal({ item, supplier, onClose }) {
-  const { currentUser } = useStore();
+  const { currentUser, dispatch } = useStore();
 
   function buildMsg() {
     let m = `Olá, *${supplier.name}*! 👋\n\nEstamos verificando disponibilidade de peça:\n\n`;
@@ -3580,24 +3579,29 @@ function ConsultarFornecedorModal({ item, supplier, onClose }) {
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
 
+  const hasCredentials = currentUser?.zapi_instance_id && currentUser?.zapi_token;
+
   async function send() {
     setSending(true);
-    try {
-      await fetch(`${PLATE_PROXY_URL}/api/whatsapp/send`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          phone: supplier.phone,
-          message: msg,
-          zapiInstanceId: currentUser?.zapi_instance_id || undefined,
-          zapiToken: currentUser?.zapi_token || undefined,
-          zapiClientToken: currentUser?.zapi_client_token || undefined,
-        }),
-      });
-    } catch (_) {}
+    if (hasCredentials) {
+      try {
+        await fetch(`${PLATE_PROXY_URL}/api/whatsapp/send`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            phone: supplier.phone,
+            message: msg,
+            zapiInstanceId: currentUser.zapi_instance_id,
+            zapiToken: currentUser.zapi_token,
+            zapiClientToken: currentUser.zapi_client_token || undefined,
+          }),
+        });
+      } catch (_) {}
+    }
     setSent(true);
     setSending(false);
-    setTimeout(onClose, 1800);
+    dispatch({ type: 'toast', tone: 'success', message: `Consulta enviada para ${supplier.name}!` });
+    setTimeout(onClose, 1500);
   }
 
   return (
@@ -3617,19 +3621,28 @@ function ConsultarFornecedorModal({ item, supplier, onClose }) {
       }>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', background: 'var(--surface-2)', borderRadius: 'var(--r-md)' }}>
-          <i className="bi bi-person-circle" style={{ color: 'var(--brand)', fontSize: 22 }}></i>
+          <i className="bi bi-person-circle" style={{ color: '#25d366', fontSize: 22 }}></i>
           <div>
             <div className="bold" style={{ fontSize: 13 }}>{supplier.name}</div>
             <div className="tiny faint mono">{supplier.phone}</div>
           </div>
         </div>
+        {!hasCredentials && (
+          <div style={{ display: 'flex', gap: 8, padding: '9px 12px', background: 'rgba(245,158,11,.08)', borderRadius: 'var(--r-md)', border: '1px solid rgba(245,158,11,.2)' }}>
+            <i className="bi bi-exclamation-triangle" style={{ color: '#f59e0b', flexShrink: 0 }}></i>
+            <span className="tiny" style={{ color: '#92400e' }}>
+              Z-API não configurado para este usuário. Configure em <strong>Usuários → Editar</strong> para envio real.
+              No protótipo, o envio é simulado.
+            </span>
+          </div>
+        )}
         <Field label="Mensagem (editável antes de enviar)">
           <textarea className="textarea" rows={8} value={msg}
             onChange={e => setMsg(e.target.value)}
             style={{ lineHeight: 1.6, fontSize: 13 }} />
         </Field>
         <p className="tiny faint" style={{ margin: 0 }}>
-          A mensagem será enviada do seu WhatsApp conectado para o número do fornecedor.
+          A mensagem será enviada do seu WhatsApp para o número do fornecedor.
         </p>
       </div>
     </Modal>
