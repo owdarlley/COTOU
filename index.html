@@ -1751,6 +1751,22 @@ const SEED_QUOTATIONS = [
       { id: 902, part_name: 'Disco de Freio Traseiro',    part_code: 'DF-4456', quantity: 2, unit_price: 145.00, total_price: 290.00, labor_cost_compras: 0,     delivery_days: 1, supplier_name: 'FreioParts', item_status: 'cotado', notes: null },
     ],
   },
+  {
+    id: 10, quote_number: 'COT-2026-0010', status: 'em_cotacao',
+    customer_name: 'Roberto Nascimento', customer_phone: '11976543210',
+    vehicle: { plate: 'EBA7923', make: 'FORD', model: 'Fiesta Sedan 1.6 Flex', year_model: 2008, year_manuf: 2007, color: 'PRATA', fuel: 'FLEX', chassis: '9BFZF26P288196922' },
+    created_by_user_id: 2, assigned_buyer_id: 3,
+    creator_name: 'João Vendas', buyer_name: 'Maria Compras',
+    notes_vendas: 'Cliente relata barulho no motor e vidro elétrico com defeito.',
+    notes_compras: null,
+    photo_path: null, customer_approved: null, whatsapp_sent_at: null,
+    created_at: '2026-05-29T08:30:00Z',
+    messages: [],
+    items: [
+      { id: 1001, part_name: 'Correia Dentada', part_code: 'CD-1139', quantity: 1, unit_price: null, total_price: null, labor_cost_compras: null, delivery_days: null, supplier_name: null, item_status: 'em_cotacao', notes: null },
+      { id: 1002, part_name: 'Regulador de Vidro Elétrico Dianteiro Esquerdo', part_code: 'RV-2241', quantity: 1, unit_price: null, total_price: null, labor_cost_compras: null, delivery_days: null, supplier_name: null, item_status: 'em_cotacao', notes: null },
+    ],
+  },
 ];
 
 const SEED_NOTIFICATIONS = [
