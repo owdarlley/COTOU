@@ -2724,9 +2724,9 @@ function Topbar({ title, subtitle, actions }) {
 
   return (
     <div className="topbar">
-      <div>
+      <div style={{ display: 'flex', alignItems: 'baseline', gap: 10 }}>
         <h1>{title}</h1>
-        {subtitle && <div className="tiny faint" style={{ marginTop: 1 }}>{subtitle}</div>}
+        {subtitle && <span className="tiny faint">{subtitle}</span>}
       </div>
       <div className="topbar-actions">
         {actions}
