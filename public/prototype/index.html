@@ -3582,10 +3582,13 @@ function RespondModal({ quotation, onClose }) {
    ========================================================= */
 function ConsultarFornecedorModal({ item, supplier, quotationId, onClose }) {
   const { currentUser, dispatch, state } = useStore();
-  const vehicle = state.quotations.find(q => q.id === quotationId)?.vehicle || {};
+  const quotation = state.quotations.find(q => q.id === quotationId) || {};
+  const vehicle = quotation.vehicle || {};
 
   function buildMsg() {
-    let m = `Olá, *${supplier.name}*! 👋\n\nEstamos verificando disponibilidade de peça:\n\n`;
+    let m = `Olá, *${supplier.name}*! 👋\n\n`;
+    if (quotation.quote_number) m += `📋 *Cotação:* ${quotation.quote_number}\n\n`;
+    m += `Estamos verificando disponibilidade de peça:\n\n`;
     m += `🔧 *${item.part_name}*`;
     if (item.part_code) m += ` (Cód: ${item.part_code})`;
     m += `\n📦 Quantidade: ${item.quantity} unidade${item.quantity > 1 ? 's' : ''}`;
