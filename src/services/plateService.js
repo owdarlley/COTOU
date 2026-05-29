@@ -59,6 +59,13 @@ async function getBalance() {
 }
 
 function findChassis(data) {
+  // VIN: 17 chars, somente A-H J-N P-R S-Z 0-9 (sem I O Q)
+  const VIN_RE = /\b[A-HJ-NPR-Z0-9]{17}\b/i;
+  const raw = JSON.stringify(data);
+  const match = raw.match(VIN_RE);
+  if (match) return match[0].toUpperCase();
+
+  // fallback: campo chassi conhecido, preferindo sem asterisco
   const extra = data.extra || {};
   const candidates = [data.CHASSI, data.chassi, data.chassis, data.CHASSIS, extra.chassi, extra.CHASSI]
     .filter(v => v && typeof v === 'string' && v.trim());
