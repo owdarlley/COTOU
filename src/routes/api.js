@@ -9,6 +9,7 @@ const Notification = require('../models/Notification');
 const Quotation = require('../models/Quotation');
 const QuotationItem = require('../models/QuotationItem');
 const Supplier = require('../models/Supplier');
+const Customer = require('../models/Customer');
 
 router.use(requireAuth);
 
@@ -122,6 +123,15 @@ router.post('/whatsapp/enviar/:id', async (req, res) => {
   } catch (err) {
     res.json({ ok: false, message: err.message });
   }
+});
+
+// Clientes
+router.get('/customers',        (req, res) => res.json({ ok: true, data: Customer.findAll() }));
+router.get('/customers/search', (req, res) => res.json(Customer.search(req.query.q || '')));
+router.put('/customers/:id',    requireRole('admin', 'vendas'), (req, res) => {
+  if (!req.body?.name) return res.status(400).json({ ok: false, message: 'Nome é obrigatório.' });
+  Customer.update(req.params.id, req.body);
+  res.json({ ok: true });
 });
 
 // Fornecedores

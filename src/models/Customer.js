@@ -9,6 +9,24 @@ class Customer {
     return db.prepare('SELECT * FROM customers WHERE phone = ?').get(phone);
   }
 
+  static findAll() {
+    return db.prepare(`
+      SELECT c.*,
+        COUNT(q.id)       AS quotation_count,
+        MAX(q.created_at) AS last_quotation_at
+      FROM customers c
+      LEFT JOIN quotations q ON q.customer_id = c.id
+      GROUP BY c.id
+      ORDER BY c.name
+    `).all();
+  }
+
+  static update(id, data) {
+    return db.prepare(`
+      UPDATE customers SET name=?, phone=?, updated_at=datetime('now') WHERE id=?
+    `).run(data.name, data.phone || null, id);
+  }
+
   static findOrCreate({ name, phone }) {
     let customer = this.findByPhone(phone);
     if (!customer) {

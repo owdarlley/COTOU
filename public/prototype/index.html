@@ -1595,6 +1595,19 @@ const SEED_PARTS = [
   { id: 22, code: 'MO-1198', name: 'Mola Helicoidal Dianteira',    description: 'Par',                                  default_price: 220.00, category: 'Suspensão' },
 ];
 
+const SEED_CUSTOMERS = [
+  { id: 1,  name: 'Carlos Eduardo Mendes',   phone: '11987654321', created_at: '2026-05-20T08:00:00Z' },
+  { id: 2,  name: 'Ana Paula Ferreira',       phone: '21992345678', created_at: '2026-05-21T09:00:00Z' },
+  { id: 3,  name: 'Roberto Souza Lima',       phone: '31976543210', created_at: '2026-05-22T10:00:00Z' },
+  { id: 4,  name: 'Fernanda Oliveira Costa',  phone: '11912345678', created_at: '2026-05-23T11:00:00Z' },
+  { id: 5,  name: 'Marcelo Andrade',          phone: '41988881234', created_at: '2026-05-23T14:00:00Z' },
+  { id: 6,  name: 'Juliana Nascimento',       phone: '85977779999', created_at: '2026-05-24T08:30:00Z' },
+  { id: 7,  name: 'Diego Carvalho',           phone: '11965432109', created_at: '2026-05-24T15:00:00Z' },
+  { id: 8,  name: 'Patrícia Rocha Santos',    phone: '51955558765', created_at: '2026-05-25T09:00:00Z' },
+  { id: 9,  name: 'Dárlley Alves de Almeida', phone: '15998569990', created_at: '2026-05-27T10:00:00Z' },
+  { id: 10, name: 'Roberto Nascimento',       phone: '11976543210', created_at: '2026-05-29T08:30:00Z' },
+];
+
 const SEED_SUPPLIERS = [
   { id: 1, name: 'AutoPeças Belo Horizonte', phone: '31999990001', notes: 'Mecânica pesada', active: 1, created_at: '2026-01-01T10:00:00Z' },
   { id: 2, name: 'GlassWay Vidros',          phone: '31999990002', notes: 'Vidros e acessórios', active: 1, created_at: '2026-01-01T10:00:00Z' },
@@ -1831,6 +1844,7 @@ const initialState = {
   currentUserId: 2, // start as Vendas
   users: SEED_USERS,
   parts: SEED_PARTS,
+  customers: SEED_CUSTOMERS,
   suppliers: SEED_SUPPLIERS,
   quotations: SEED_QUOTATIONS,
   notifications: SEED_NOTIFICATIONS,
@@ -2059,6 +2073,9 @@ function reducer(state, action) {
       return { ...state, users: state.users.map(u => u.id === action.id ? { ...u, active: !u.active } : u) };
     case 'update_settings':
       return { ...state, settings: { ...state.settings, ...action.payload } };
+    case 'update_customer':
+      return { ...state, customers: state.customers.map(c => c.id === action.id ? { ...c, ...action.payload } : c),
+        toasts: [...state.toasts, { id: Date.now(), type: 'success', message: 'Cliente atualizado' }] };
     case 'add_supplier':
       return { ...state, suppliers: [...state.suppliers, { id: nextId(state.suppliers), active: 1, created_at: new Date().toISOString(), ...action.payload }],
         toasts: [...state.toasts, { id: Date.now(), type: 'success', message: 'Fornecedor adicionado' }] };
@@ -2456,14 +2473,15 @@ Object.assign(window, {
 const { useState, useEffect, useRef } = React;
 
 const NAV_ITEMS_BY_ROLE = {
-  vendas:  ['dashboard', 'quotations', 'new-quotation', 'catalog', 'notifications'],
-  compras: ['dashboard', 'quotations', 'suppliers', 'catalog', 'notifications'],
-  admin:   ['dashboard', 'quotations', 'suppliers', 'catalog', 'admin-users', 'admin-settings', 'notifications'],
+  vendas:  ['dashboard', 'quotations', 'new-quotation', 'customers', 'catalog', 'notifications'],
+  compras: ['dashboard', 'quotations', 'customers', 'suppliers', 'catalog', 'notifications'],
+  admin:   ['dashboard', 'quotations', 'customers', 'suppliers', 'catalog', 'admin-users', 'admin-settings', 'notifications'],
 };
 const NAV_META = {
   'dashboard':       { label: 'Dashboard',         icon: 'bi-grid-1x2' },
   'quotations':      { label: 'Cotações',          icon: 'bi-clipboard-data' },
   'new-quotation':   { label: 'Nova cotação',      icon: 'bi-plus-square' },
+  'customers':       { label: 'Clientes',          icon: 'bi-person-lines-fill' },
   'suppliers':       { label: 'Fornecedores',      icon: 'bi-truck' },
   'catalog':         { label: 'Catálogo de peças', icon: 'bi-box-seam' },
   'admin-users':     { label: 'Usuários',          icon: 'bi-people' },
@@ -5181,6 +5199,245 @@ function AdminSettingsScreen() {
 /* =========================================================
    Fornecedores — tela + modal
    ========================================================= */
+/* =========================================================
+   Customers Screen
+   ========================================================= */
+function CustomersScreen() {
+  const { state, dispatch } = useStore();
+  const [search, setSearch] = useState('');
+  const [editCustomer, setEditCustomer] = useState(null);
+  const [detailCustomer, setDetailCustomer] = useState(null);
+
+  const customers = (state.customers || []).filter(c =>
+    !search ||
+    c.name.toLowerCase().includes(search.toLowerCase()) ||
+    c.phone.includes(search)
+  );
+
+  function statsFor(phone) {
+    const qs = (state.quotations || []).filter(q => q.customer_phone === phone);
+    const last = qs.reduce((m, q) => (!m || q.created_at > m) ? q.created_at : m, null);
+    const total = qs.reduce((s, q) => s + calcTotals(q.items).grandTotal, 0);
+    return { count: qs.length, last, total };
+  }
+
+  const TH = ({ children, w }) => (
+    <th style={{ textAlign: 'left', padding: '8px 12px', fontSize: 11, fontWeight: 600,
+      color: 'var(--text-faint)', textTransform: 'uppercase', letterSpacing: '0.05em', width: w }}>
+      {children}
+    </th>
+  );
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+      <div className="card">
+        <div className="row between" style={{ marginBottom: 16 }}>
+          <div>
+            <div style={{ fontWeight: 700, fontSize: 18 }}>Clientes</div>
+            <div className="small faint" style={{ marginTop: 2 }}>Histórico de atendimento e dados de contato</div>
+          </div>
+        </div>
+
+        <div style={{ marginBottom: 14 }}>
+          <input className="input" placeholder="Buscar por nome ou telefone…" value={search}
+            onChange={e => setSearch(e.target.value)} style={{ maxWidth: 320 }} />
+        </div>
+
+        {customers.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '48px 20px', color: 'var(--text-faint)' }}>
+            <i className="bi bi-person-lines-fill" style={{ fontSize: 36, marginBottom: 12, display: 'block' }}></i>
+            <div className="bold" style={{ marginBottom: 4 }}>Nenhum cliente encontrado</div>
+            <div className="small">Os clientes aparecem automaticamente ao criar cotações.</div>
+          </div>
+        ) : (
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead>
+              <tr style={{ borderBottom: '1px solid var(--border)' }}>
+                <TH>Nome</TH>
+                <TH>Telefone</TH>
+                <TH w={90}>Cotações</TH>
+                <TH w={110}>Total gasto</TH>
+                <TH w={140}>Último atendimento</TH>
+                <TH w={80}></TH>
+              </tr>
+            </thead>
+            <tbody>
+              {customers.map(c => {
+                const { count, last, total } = statsFor(c.phone);
+                return (
+                  <tr key={c.id} style={{ borderBottom: '1px solid var(--border)', cursor: 'pointer' }}
+                    onClick={() => setDetailCustomer(c)}>
+                    <td style={{ padding: '10px 12px' }}>
+                      <div className="bold" style={{ fontSize: 13 }}>{c.name}</div>
+                      <div className="tiny faint" style={{ marginTop: 2 }}>
+                        cliente desde {new Date(c.created_at).toLocaleDateString('pt-BR')}
+                      </div>
+                    </td>
+                    <td style={{ padding: '10px 12px', fontFamily: 'monospace', fontSize: 12 }}>
+                      <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <i className="bi bi-whatsapp" style={{ color: '#25d366', fontSize: 13 }}></i>
+                        {fmt.phone(c.phone)}
+                      </span>
+                    </td>
+                    <td style={{ padding: '10px 12px', textAlign: 'center' }}>
+                      <span className="badge" style={{ background: 'var(--surface-2)', color: 'var(--text)', fontFamily: 'monospace' }}>
+                        {count}
+                      </span>
+                    </td>
+                    <td style={{ padding: '10px 12px', fontFamily: 'monospace', fontSize: 12, fontWeight: 600 }}>
+                      {total > 0 ? fmt.brl(total) : <span className="faint">—</span>}
+                    </td>
+                    <td style={{ padding: '10px 12px', fontSize: 12, color: 'var(--text-faint)' }}>
+                      {last ? fmt.ago(last) : '—'}
+                    </td>
+                    <td style={{ padding: '10px 12px' }} onClick={e => e.stopPropagation()}>
+                      <button className="icon-btn" title="Editar dados"
+                        onClick={() => setEditCustomer(c)}>
+                        <i className="bi bi-pencil" style={{ fontSize: 14 }}></i>
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        )}
+      </div>
+
+      {detailCustomer && (
+        <CustomerDetailModal customer={detailCustomer} onClose={() => setDetailCustomer(null)} />
+      )}
+      {editCustomer && (
+        <CustomerModal customer={editCustomer} onClose={() => setEditCustomer(null)} />
+      )}
+    </div>
+  );
+}
+
+function CustomerDetailModal({ customer, onClose }) {
+  const { state, dispatch } = useStore();
+  const quotations = (state.quotations || [])
+    .filter(q => q.customer_phone === customer.phone)
+    .sort((a, b) => b.created_at.localeCompare(a.created_at));
+
+  const totalGasto = quotations.reduce((s, q) => s + calcTotals(q.items).grandTotal, 0);
+
+  return (
+    <Modal open onClose={onClose}
+      title={customer.name}
+      icon="bi-person-lines-fill"
+      size="lg"
+      footer={<Button variant="ghost" onClick={onClose}>Fechar</Button>}>
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+        {/* Info header */}
+        <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+          <div className="card card-pad" style={{ flex: 1, minWidth: 140, background: 'var(--surface-2)' }}>
+            <div className="tiny faint" style={{ marginBottom: 4 }}>Telefone</div>
+            <div style={{ fontFamily: 'monospace', fontSize: 13, display: 'flex', alignItems: 'center', gap: 6 }}>
+              <i className="bi bi-whatsapp" style={{ color: '#25d366' }}></i>
+              {fmt.phone(customer.phone)}
+            </div>
+          </div>
+          <div className="card card-pad" style={{ flex: 1, minWidth: 120, background: 'var(--surface-2)' }}>
+            <div className="tiny faint" style={{ marginBottom: 4 }}>Cotações</div>
+            <div style={{ fontSize: 22, fontWeight: 700 }}>{quotations.length}</div>
+          </div>
+          <div className="card card-pad" style={{ flex: 1, minWidth: 140, background: 'var(--surface-2)' }}>
+            <div className="tiny faint" style={{ marginBottom: 4 }}>Total em peças</div>
+            <div style={{ fontSize: 16, fontWeight: 700, fontFamily: 'monospace' }}>
+              {totalGasto > 0 ? fmt.brl(totalGasto) : '—'}
+            </div>
+          </div>
+          <div className="card card-pad" style={{ flex: 1, minWidth: 140, background: 'var(--surface-2)' }}>
+            <div className="tiny faint" style={{ marginBottom: 4 }}>Cliente desde</div>
+            <div style={{ fontSize: 13 }}>{new Date(customer.created_at).toLocaleDateString('pt-BR')}</div>
+          </div>
+        </div>
+
+        {/* Quotation history */}
+        <div>
+          <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 10 }}>Histórico de cotações</div>
+          {quotations.length === 0 ? (
+            <div className="small faint" style={{ padding: '20px 0', textAlign: 'center' }}>
+              Nenhuma cotação encontrada.
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {quotations.map(q => {
+                const { grandTotal } = calcTotals(q.items);
+                return (
+                  <div key={q.id} className="card card-pad"
+                    style={{ background: 'var(--surface-2)', cursor: 'pointer', border: '1px solid var(--border)' }}
+                    onClick={() => {
+                      onClose();
+                      dispatch({ type: 'navigate', name: 'quotation-detail', params: { id: q.id } });
+                    }}>
+                    <div className="row between">
+                      <div>
+                        <div className="row" style={{ gap: 8, alignItems: 'center', marginBottom: 4 }}>
+                          <span className="mono bold" style={{ fontSize: 13 }}>{q.quote_number}</span>
+                          <StatusBadge status={q.status} />
+                        </div>
+                        <div className="tiny faint">
+                          {q.vehicle.make} {q.vehicle.model} · {q.items.length} {q.items.length === 1 ? 'peça' : 'peças'} · {fmt.ago(q.created_at)}
+                        </div>
+                      </div>
+                      <div style={{ textAlign: 'right' }}>
+                        {grandTotal > 0 && (
+                          <div className="mono bold" style={{ fontSize: 13 }}>{fmt.brl(grandTotal)}</div>
+                        )}
+                        <i className="bi bi-chevron-right" style={{ fontSize: 12, color: 'var(--text-faint)', marginTop: 4, display: 'block' }}></i>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </div>
+    </Modal>
+  );
+}
+
+function CustomerModal({ customer, onClose }) {
+  const { dispatch } = useStore();
+  const [form, setForm] = useState({ name: customer.name, phone: customer.phone || '' });
+  const valid = form.name.trim().length > 0;
+
+  function save() {
+    if (!valid) return;
+    const payload = { name: form.name.trim(), phone: form.phone.trim() || null };
+    dispatch({ type: 'update_customer', id: customer.id, payload });
+    fetch(`${PLATE_PROXY_URL}/api/customers/${customer.id}`, {
+      method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
+    }).catch(() => {});
+    onClose();
+  }
+
+  return (
+    <Modal open onClose={onClose} title="Editar Cliente" icon="bi-person-lines-fill"
+      footer={
+        <>
+          <Button variant="ghost" onClick={onClose}>Cancelar</Button>
+          <Button variant="primary" icon="bi-floppy" onClick={save} disabled={!valid}>Salvar</Button>
+        </>
+      }>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+        <Field label="Nome *">
+          <input className="input" value={form.name}
+            onChange={e => setForm({ ...form, name: e.target.value })} autoFocus />
+        </Field>
+        <Field label="Telefone (WhatsApp)">
+          <input className="input mono" placeholder="Só números" value={form.phone}
+            onChange={e => setForm({ ...form, phone: e.target.value })} />
+        </Field>
+      </div>
+    </Modal>
+  );
+}
+
 function SuppliersScreen() {
   const { state, dispatch } = useStore();
   const [modalOpen, setModalOpen] = useState(false);
@@ -5345,6 +5602,7 @@ function Router() {
     case 'notifications':     screen = <NotificationsScreen />; break;
     case 'admin-users':       screen = <AdminUsersScreen />; break;
     case 'admin-settings':    screen = <AdminSettingsScreen />; break;
+    case 'customers':         screen = <CustomersScreen />; break;
     case 'suppliers':         screen = <SuppliersScreen />; break;
     default:                  screen = <Dashboard />;
   }
@@ -5358,6 +5616,7 @@ function Router() {
     'notifications': { title: 'Notificações', subtitle: 'Eventos do sistema' },
     'admin-users': { title: 'Usuários', subtitle: 'Gestão de acesso' },
     'admin-settings': { title: 'Configurações', subtitle: 'Personalização do sistema' },
+    'customers': { title: 'Clientes', subtitle: 'Histórico e gestão de clientes' },
     'suppliers': { title: 'Fornecedores', subtitle: 'Cadastro de fornecedores' },
   };
   const t = titles[state.route.name] || titles.dashboard;
