@@ -3518,7 +3518,7 @@ function RespondModal({ quotation, onClose }) {
                       <button
                         title={consultTitle}
                         disabled={!canConsult}
-                        onClick={() => canConsult && setConsultarItem({ item: it, formItem: items[i], supplier: activeSupplier })}
+                        onClick={() => canConsult && setConsultarItem({ item: it, formItem: items[i], supplier: activeSupplier, vehicle: quotation.vehicle })}
                         style={{ flexShrink: 0, width: 34, borderRadius: 'var(--r-md)', border: '1px solid var(--border)', background: canConsult ? '#25d366' : 'var(--surface)', color: canConsult ? 'white' : 'var(--text-faint)', cursor: canConsult ? 'pointer' : 'not-allowed', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                         <i className="bi bi-whatsapp" style={{ fontSize: 15 }}></i>
                       </button>
@@ -3553,6 +3553,7 @@ function RespondModal({ quotation, onClose }) {
         <ConsultarFornecedorModal
           item={consultarItem.item}
           supplier={consultarItem.supplier}
+          vehicle={consultarItem.vehicle}
           onClose={() => setConsultarItem(null)}
         />
       )}
@@ -3563,7 +3564,7 @@ function RespondModal({ quotation, onClose }) {
 /* =========================================================
    Consultar Fornecedor via WhatsApp
    ========================================================= */
-function ConsultarFornecedorModal({ item, supplier, onClose }) {
+function ConsultarFornecedorModal({ item, supplier, vehicle, onClose }) {
   const { currentUser, dispatch } = useStore();
 
   function buildMsg() {
@@ -3571,6 +3572,10 @@ function ConsultarFornecedorModal({ item, supplier, onClose }) {
     m += `🔧 *${item.part_name}*`;
     if (item.part_code) m += ` (Cód: ${item.part_code})`;
     m += `\n📦 Quantidade: ${item.quantity} unidade${item.quantity > 1 ? 's' : ''}`;
+    if (vehicle?.make || vehicle?.model) {
+      const vDesc = [vehicle.make, vehicle.model, vehicle.year_model].filter(Boolean).join(' ');
+      m += `\n\n🚗 *Veículo:* ${vDesc}`;
+    }
     m += `\n\nVocê tem disponível? Qual o valor unitário e prazo de entrega?\n\nObrigado! 😊`;
     return m;
   }
