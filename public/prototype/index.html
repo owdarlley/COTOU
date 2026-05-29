@@ -116,7 +116,6 @@ a { color: inherit; }
 .app-root {
   display: grid;
   grid-template-columns: 240px 1fr;
-  grid-template-rows: 65px 1fr;
   min-height: 100vh;
 }
 
@@ -128,7 +127,6 @@ a { color: inherit; }
   position: sticky;
   top: 0;
   height: 100vh;
-  grid-row: 1 / 3;
 }
 
 .sidebar-brand {
@@ -241,8 +239,6 @@ a { color: inherit; }
   padding: 0 28px;
   background: var(--surface);
   border-bottom: 1px solid var(--border);
-  grid-column: 2;
-  grid-row: 1;
   position: sticky;
   top: 0;
   z-index: 30;
@@ -5666,8 +5662,8 @@ function Router() {
   return (
     <div className="app-root">
       <Sidebar />
-      <Topbar title={t.title} subtitle={t.subtitle} />
-      <main style={{ minWidth: 0, gridColumn: 2, gridRow: 2, overflowY: 'auto' }}>
+      <main style={{ minWidth: 0 }}>
+        <Topbar title={t.title} subtitle={t.subtitle} />
         {screen}
       </main>
       {state.waConnectOpen && (
