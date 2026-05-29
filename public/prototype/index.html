@@ -1613,7 +1613,7 @@ const SEED_QUOTATIONS = [
   {
     id: 1, quote_number: 'COT-2026-0001', status: 'pendente',
     customer_name: 'Carlos Eduardo Mendes', customer_phone: '11987654321',
-    vehicle: { plate: 'ABC1D23', make: 'VOLKSWAGEN', model: 'Gol 1.0', year_model: 2019, year_manuf: 2018, color: 'PRATA', fuel: 'FLEX' },
+    vehicle: { plate: 'ABC1D23', make: 'VOLKSWAGEN', model: 'Gol 1.0', year_model: 2019, year_manuf: 2018, color: 'PRATA', fuel: 'FLEX', chassis: '9BWZZZ377VT004251' },
     created_by_user_id: 2, assigned_buyer_id: null,
     creator_name: 'João Vendas', buyer_name: null,
     notes_vendas: 'Cliente relata barulho ao frear pela manhã. Verificar pastilhas dianteiras e disco.',
@@ -1630,7 +1630,7 @@ const SEED_QUOTATIONS = [
   {
     id: 2, quote_number: 'COT-2026-0002', status: 'em_cotacao',
     customer_name: 'Ana Paula Ferreira', customer_phone: '21992345678',
-    vehicle: { plate: 'XYZ5E67', make: 'TOYOTA', model: 'Corolla 2.0 XEi', year_model: 2022, year_manuf: 2021, color: 'PRETO', fuel: 'FLEX' },
+    vehicle: { plate: 'XYZ5E67', make: 'TOYOTA', model: 'Corolla 2.0 XEi', year_model: 2022, year_manuf: 2021, color: 'PRETO', fuel: 'FLEX', chassis: '9BFZF26P288196922' },
     created_by_user_id: 2, assigned_buyer_id: 3,
     creator_name: 'João Vendas', buyer_name: 'Maria Compras',
     notes_vendas: 'Folga na suspensão traseira do lado direito. Cliente prefere peça original.',
@@ -1648,7 +1648,7 @@ const SEED_QUOTATIONS = [
   {
     id: 3, quote_number: 'COT-2026-0003', status: 'cotado',
     customer_name: 'Roberto Souza Lima', customer_phone: '31976543210',
-    vehicle: { plate: 'MNO3F89', make: 'CHEVROLET', model: 'Onix Plus 1.0 Turbo', year_model: 2023, year_manuf: 2023, color: 'BRANCO', fuel: 'FLEX' },
+    vehicle: { plate: 'MNO3F89', make: 'CHEVROLET', model: 'Onix Plus 1.0 Turbo', year_model: 2023, year_manuf: 2023, color: 'BRANCO', fuel: 'FLEX', chassis: '9BGJF19BX0B123456' },
     created_by_user_id: 2, assigned_buyer_id: 3,
     creator_name: 'João Vendas', buyer_name: 'Maria Compras',
     notes_vendas: 'Embreagem patinando em subida. Inspeção visual sugere disco gasto.',
@@ -1667,7 +1667,7 @@ const SEED_QUOTATIONS = [
   {
     id: 4, quote_number: 'COT-2026-0004', status: 'cotado',
     customer_name: 'Fernanda Oliveira Costa', customer_phone: '11912345678',
-    vehicle: { plate: 'DEF2G45', make: 'FORD', model: 'Ka 1.5 SE', year_model: 2020, year_manuf: 2019, color: 'VERMELHO', fuel: 'FLEX' },
+    vehicle: { plate: 'DEF2G45', make: 'FORD', model: 'Ka 1.5 SE', year_model: 2020, year_manuf: 2019, color: 'VERMELHO', fuel: 'FLEX', chassis: '9BFZF26P0J8234567' },
     created_by_user_id: 4, assigned_buyer_id: 3,
     creator_name: 'Ricardo Atende', buyer_name: 'Maria Compras',
     notes_vendas: 'Vidro traseiro estilhaçado. Cliente quer original.',
@@ -1681,7 +1681,7 @@ const SEED_QUOTATIONS = [
   {
     id: 5, quote_number: 'COT-2026-0005', status: 'peca_chegou',
     customer_name: 'Marcelo Andrade', customer_phone: '41988881234',
-    vehicle: { plate: 'GHI7H01', make: 'HYUNDAI', model: 'HB20 1.0 Sense', year_model: 2021, year_manuf: 2021, color: 'PRATA', fuel: 'FLEX' },
+    vehicle: { plate: 'GHI7H01', make: 'HYUNDAI', model: 'HB20 1.0 Sense', year_model: 2021, year_manuf: 2021, color: 'PRATA', fuel: 'FLEX', chassis: 'MALAM51ASLM345678' },
     created_by_user_id: 2, assigned_buyer_id: 3,
     creator_name: 'João Vendas', buyer_name: 'Maria Compras',
     notes_vendas: 'Sensor de estacionamento traseiro com defeito intermitente.',
@@ -1695,7 +1695,7 @@ const SEED_QUOTATIONS = [
   {
     id: 6, quote_number: 'COT-2026-0006', status: 'cancelado',
     customer_name: 'Juliana Nascimento', customer_phone: '85977779999',
-    vehicle: { plate: 'JKL4I56', make: 'FIAT', model: 'Strada Endurance', year_model: 2022, year_manuf: 2022, color: 'PRETO', fuel: 'FLEX' },
+    vehicle: { plate: 'JKL4I56', make: 'FIAT', model: 'Strada Endurance', year_model: 2022, year_manuf: 2022, color: 'PRETO', fuel: 'FLEX', chassis: '9BD158A38N0456789' },
     created_by_user_id: 2, assigned_buyer_id: null,
     creator_name: 'João Vendas', buyer_name: null,
     notes_vendas: 'Troca de bateria preventiva.',
@@ -1708,7 +1708,7 @@ const SEED_QUOTATIONS = [
   {
     id: 7, quote_number: 'COT-2026-0007', status: 'pendente',
     customer_name: 'Diego Carvalho', customer_phone: '11965432109',
-    vehicle: { plate: 'PQR8J90', make: 'RENAULT', model: 'Kwid Zen 1.0', year_model: 2020, year_manuf: 2020, color: 'BRANCO', fuel: 'FLEX' },
+    vehicle: { plate: 'PQR8J90', make: 'RENAULT', model: 'Kwid Zen 1.0', year_model: 2020, year_manuf: 2020, color: 'BRANCO', fuel: 'FLEX', chassis: '93YAAZHC2KJ567890' },
     created_by_user_id: 4, assigned_buyer_id: null,
     creator_name: 'Ricardo Atende', buyer_name: null,
     notes_vendas: 'Motor superaquecendo em trânsito parado. Suspeita: bomba d\'água e radiador.',
@@ -1722,7 +1722,7 @@ const SEED_QUOTATIONS = [
   {
     id: 8, quote_number: 'COT-2026-0008', status: 'em_cotacao',
     customer_name: 'Patrícia Rocha Santos', customer_phone: '51955558765',
-    vehicle: { plate: 'STU6K34', make: 'HONDA', model: 'Civic 1.5T Touring', year_model: 2023, year_manuf: 2023, color: 'CINZA', fuel: 'GASOLINA' },
+    vehicle: { plate: 'STU6K34', make: 'HONDA', model: 'Civic 1.5T Touring', year_model: 2023, year_manuf: 2023, color: 'CINZA', fuel: 'GASOLINA', chassis: '2HGFE2F59PH678901' },
     created_by_user_id: 2, assigned_buyer_id: 3,
     creator_name: 'João Vendas', buyer_name: 'Maria Compras',
     notes_vendas: 'Revisão 40.000 km. Trocar óleo, filtros e velas.',
@@ -1738,7 +1738,7 @@ const SEED_QUOTATIONS = [
   {
     id: 9, quote_number: 'COT-2026-0009', status: 'cotado',
     customer_name: 'Dárlley Alves de Almeida', customer_phone: '15998569990',
-    vehicle: { plate: '25S6S52S', make: 'CHEVROLET', model: 'Onix 1.0 Turbo LTZ', year_model: 2023, year_manuf: 2022, color: 'BRANCO', fuel: 'FLEX' },
+    vehicle: { plate: '25S6S52S', make: 'CHEVROLET', model: 'Onix 1.0 Turbo LTZ', year_model: 2023, year_manuf: 2022, color: 'BRANCO', fuel: 'FLEX', chassis: '9BGJF19BX0B789012' },
     created_by_user_id: 2, assigned_buyer_id: 3,
     creator_name: 'João Vendas', buyer_name: 'Maria Compras',
     notes_vendas: 'Freio traseiro com ruído ao frear. Verificar pastilha e disco.',
