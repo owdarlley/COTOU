@@ -84,7 +84,9 @@ function normalize(data) {
     year_manuf: parseInt(anoFab)    || null,
     color:      data.cor       || '',
     fuel:       combustivel,
-    chassis:    data.CHASSI || data.chassi || data.chassis || data.CHASSIS || extra.chassi || extra.CHASSI || '',
+    chassis:    [data.CHASSI, data.chassi, data.chassis, data.CHASSIS, extra.chassi, extra.CHASSI]
+                  .filter(Boolean)
+                  .sort((a, b) => b.length - a.length)[0] || '',
     city:       data.municipio || extra.municipio || '',
     uf:         data.uf        || extra.uf        || '',
     situation:  data.situacao  || '',
