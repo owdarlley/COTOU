@@ -41,9 +41,17 @@ app.use('/uploads', express.static(path.join(__dirname, '../public/uploads')));
 const dataDir = path.resolve('./data');
 if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
 
+const sessionSecret = process.env.SESSION_SECRET;
+if (!sessionSecret) {
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error('SESSION_SECRET não definida. Configure a variável de ambiente.');
+  }
+  console.warn('[AVISO] SESSION_SECRET não definida — usando valor temporário. Configure o .env antes de ir para produção.');
+}
+
 app.use(session({
   store: new MemoryStore({ checkPeriod: 86400000 }),
-  secret: process.env.SESSION_SECRET || 'cotou-secret',
+  secret: sessionSecret || 'cotou-dev-only',
   resave: false,
   saveUninitialized: false,
   cookie: {

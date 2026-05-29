@@ -122,7 +122,7 @@ router.post('/whatsapp/enviar/:id', async (req, res) => {
     Quotation.markWhatsappSent(quotation.id, req.session.userId);
     res.json({ ok: true, message: 'Mensagem enviada com sucesso!' });
   } catch (err) {
-    res.json({ ok: false, message: err.message });
+    res.status(502).json({ ok: false, message: err.message });
   }
 });
 
@@ -131,7 +131,7 @@ router.get('/customers',        (req, res) => res.json({ ok: true, data: Custome
 router.get('/customers/search', (req, res) => res.json(Customer.search(req.query.q || '')));
 router.put('/customers/:id',    requireRole('admin', 'vendas'), (req, res) => {
   if (!req.body?.name) return res.status(400).json({ ok: false, message: 'Nome é obrigatório.' });
-  Customer.update(req.params.id, req.body);
+  Customer.update(parseInt(req.params.id, 10), req.body);
   res.json({ ok: true });
 });
 
@@ -144,11 +144,11 @@ router.post('/suppliers',       requireRole('admin', 'compras'), (req, res) => {
 });
 router.put('/suppliers/:id',    requireRole('admin', 'compras'), (req, res) => {
   if (!req.body?.name) return res.status(400).json({ ok: false, message: 'Nome é obrigatório.' });
-  Supplier.update(req.params.id, req.body);
+  Supplier.update(parseInt(req.params.id, 10), req.body);
   res.json({ ok: true });
 });
 router.delete('/suppliers/:id', requireRole('admin', 'compras'), (req, res) => {
-  Supplier.remove(req.params.id);
+  Supplier.remove(parseInt(req.params.id, 10));
   res.json({ ok: true });
 });
 
