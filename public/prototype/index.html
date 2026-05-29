@@ -4144,16 +4144,6 @@ function NewQuotation() {
             <Field label="Ano fabricação"><input className="input mono" type="number" value={vehicle.year_manuf} onChange={e => setVehicle({ ...vehicle, year_manuf: e.target.value })} placeholder="2018" /></Field>
             <Field label="Ano modelo"><input className="input mono" type="number" value={vehicle.year_model} onChange={e => setVehicle({ ...vehicle, year_model: e.target.value })} placeholder="2019" /></Field>
             <Field label="Cor"><input className="input" value={vehicle.color} onChange={e => setVehicle({ ...vehicle, color: e.target.value })} placeholder="PRATA" /></Field>
-            <Field label="Combustível">
-              <select className="select" value={vehicle.fuel} onChange={e => setVehicle({ ...vehicle, fuel: e.target.value })}>
-                <option value="">—</option>
-                <option value="FLEX">Flex</option>
-                <option value="GASOLINA">Gasolina</option>
-                <option value="DIESEL">Diesel</option>
-                <option value="ELÉTRICO">Elétrico</option>
-                <option value="HIBRIDO">Híbrido</option>
-              </select>
-            </Field>
             <Field label="Chassi">
               <input className="input mono" value={vehicle.chassis} onChange={e => setVehicle({ ...vehicle, chassis: e.target.value.toUpperCase() })} placeholder="9BWZZZ377VT004251" style={{ letterSpacing: '0.05em' }} />
             </Field>
