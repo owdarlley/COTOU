@@ -1870,6 +1870,8 @@ function renderTemplate(settings, quotation, items) {
     .replace(/\[PRAZO DE ENTREGA\]/g, deadline);
 }
 
+const STATE_VERSION = 1;
+
 const initialState = {
   currentUserId: 2, // start as Vendas
   users: SEED_USERS,
@@ -2159,7 +2161,24 @@ function reducer(state, action) {
 }
 
 function StoreProvider({ children }) {
-  const [state, dispatch] = useReducer(reducer, initialState);
+  const [state, dispatch] = useReducer(reducer, initialState, (init) => {
+    try {
+      const raw = localStorage.getItem('cotou_state');
+      if (raw) {
+        const saved = JSON.parse(raw);
+        if (saved._v === STATE_VERSION) {
+          return { ...init, ...saved, toasts: [], waConnectOpen: false };
+        }
+      }
+    } catch (_) {}
+    return init;
+  });
+
+  useEffect(() => {
+    const { toasts, waConnectOpen, ...persist } = state;
+    localStorage.setItem('cotou_state', JSON.stringify({ ...persist, _v: STATE_VERSION }));
+  }, [state]);
+
   const value = useMemo(() => {
     const currentUser = state.users.find(u => u.id === state.currentUserId);
     const myNotifs = state.notifications.filter(n => n.user_id === state.currentUserId);
@@ -5253,6 +5272,19 @@ function AdminSettingsScreen() {
       </div>
 
     </div>
+
+    {/* ── Zona de perigo ── */}
+    <div className="card card-pad" style={{ marginTop: 20, borderColor: 'var(--error)' }}>
+      <div className="bold" style={{ color: 'var(--error)' }}>Zona de perigo</div>
+      <p className="tiny faint" style={{ margin: '6px 0 12px' }}>
+        Apaga todos os dados do protótipo e restaura os dados de demonstração.
+      </p>
+      <Button variant="danger" icon="bi-trash3"
+        onClick={() => { localStorage.removeItem('cotou_state'); location.reload(); }}>
+        Resetar para dados iniciais
+      </Button>
+    </div>
+
   );
 }
 
