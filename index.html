@@ -52,6 +52,14 @@
   --r-md: 10px;
   --r-lg: 14px;
   --r-xl: 20px;
+
+  /* Semantic / utility colors */
+  --error:    #dc2626;
+  --success:  #16a34a;
+  --warning:  #f59e0b;
+  --whatsapp: #25d366;
+  --wa-bubble: #dcf8c6;
+  --wa-bg:     #e5ddd5;
 }
 
 [data-theme="dark"] {
@@ -80,6 +88,9 @@
   --st-peca-bg: #1e1339;
   --st-cancelado: #a8a29e;
   --st-cancelado-bg: #1c1917;
+
+  --wa-bubble: #005c4b;
+  --wa-bg:     #0b141a;
 }
 
 * { box-sizing: border-box; }
@@ -119,7 +130,8 @@ a { color: inherit; }
 }
 
 .sidebar-brand {
-  padding: 18px 18px 16px;
+  height: 65px;
+  padding: 0 18px;
   display: flex;
   align-items: center;
   gap: 10px;
@@ -223,7 +235,8 @@ a { color: inherit; }
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 14px 28px;
+  height: 65px;
+  padding: 0 28px;
   background: var(--surface);
   border-bottom: 1px solid var(--border);
   position: sticky;
@@ -1012,6 +1025,22 @@ a { color: inherit; }
   .grid-side { grid-template-columns: 1fr; }
   .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
 }
+@media (max-width: 768px) {
+  .app-root { grid-template-columns: 1fr; }
+  .sidebar { display: none; }
+  .page { padding: 16px; }
+  .stat-grid { grid-template-columns: 1fr 1fr; }
+  .hide-mobile { display: none !important; }
+  .modal { margin: 0; border-radius: 0; max-width: 100vw; width: 100vw; max-height: 100vh; }
+  .modal-md, .modal-lg { max-width: 100vw; width: 100vw; }
+}
+
+/* text truncation utility */
+.truncate { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* modal size variants */
+.modal-md { max-width: 520px; }
+.modal-lg { max-width: 900px; }
 </style>
 </head>
 <body>
@@ -1563,11 +1592,11 @@ const { createContext, useContext, useReducer, useEffect, useMemo, useState, use
    ========================================================= */
 
 const SEED_USERS = [
-  { id: 1, name: 'Admin Sistema',     email: 'admin@cotou.com.br',   role: 'admin',   active: true,  phone_whatsapp: '11999990001', whatsapp_instance: null, whatsapp_connected: false, zapi_instance_id: null, zapi_token: null, zapi_client_token: null, created_at: '2025-11-04T10:00:00Z' },
+  { id: 1, name: 'Admin Sistema',     email: 'admin@cotou.com.br',   role: 'admin',   active: true,  phone_whatsapp: '11999990001', whatsapp_instance: 'cotou-user-1', whatsapp_connected: true,  zapi_instance_id: '3F3C259A242D519EE38E32FB845BEA5C', zapi_token: '5E919A9D9695FE48AFAA3D4E', zapi_client_token: 'F97feb2c3b05f4e1dafdbaa743fda1b17S', created_at: '2025-11-04T10:00:00Z' },
   { id: 2, name: 'João Vendas',       email: 'vendas@cotou.com.br',  role: 'vendas',  active: true,  phone_whatsapp: '11988887777', whatsapp_instance: 'cotou-user-2', whatsapp_connected: true,  zapi_instance_id: '3F3C259A242D519EE38E32FB845BEA5C', zapi_token: '5E919A9D9695FE48AFAA3D4E', zapi_client_token: 'F97feb2c3b05f4e1dafdbaa743fda1b17S', created_at: '2025-11-12T10:00:00Z' },
-  { id: 3, name: 'Maria Compras',     email: 'compras@cotou.com.br', role: 'compras', active: true,  phone_whatsapp: '11977776666', whatsapp_instance: null, whatsapp_connected: false, zapi_instance_id: null, zapi_token: null, zapi_client_token: null, created_at: '2025-11-12T10:00:00Z' },
-  { id: 4, name: 'Ricardo Atende',    email: 'ricardo@cotou.com.br', role: 'vendas',  active: true,  phone_whatsapp: '11966665555', whatsapp_instance: null, whatsapp_connected: false, zapi_instance_id: null, zapi_token: null, zapi_client_token: null, created_at: '2026-01-15T10:00:00Z' },
-  { id: 5, name: 'Lucia Suprimentos', email: 'lucia@cotou.com.br',   role: 'compras', active: false, phone_whatsapp: '11955554444', whatsapp_instance: null, whatsapp_connected: false, zapi_instance_id: null, zapi_token: null, zapi_client_token: null, created_at: '2026-02-04T10:00:00Z' },
+  { id: 3, name: 'Maria Compras',     email: 'compras@cotou.com.br', role: 'compras', active: true,  phone_whatsapp: '11977776666', whatsapp_instance: 'cotou-user-3', whatsapp_connected: true,  zapi_instance_id: '3F3C259A242D519EE38E32FB845BEA5C', zapi_token: '5E919A9D9695FE48AFAA3D4E', zapi_client_token: 'F97feb2c3b05f4e1dafdbaa743fda1b17S', created_at: '2025-11-12T10:00:00Z' },
+  { id: 4, name: 'Ricardo Atende',    email: 'ricardo@cotou.com.br', role: 'vendas',  active: true,  phone_whatsapp: '11966665555', whatsapp_instance: 'cotou-user-4', whatsapp_connected: true,  zapi_instance_id: '3F3C259A242D519EE38E32FB845BEA5C', zapi_token: '5E919A9D9695FE48AFAA3D4E', zapi_client_token: 'F97feb2c3b05f4e1dafdbaa743fda1b17S', created_at: '2026-01-15T10:00:00Z' },
+  { id: 5, name: 'Lucia Suprimentos', email: 'lucia@cotou.com.br',   role: 'compras', active: false, phone_whatsapp: '11955554444', whatsapp_instance: 'cotou-user-5', whatsapp_connected: true,  zapi_instance_id: '3F3C259A242D519EE38E32FB845BEA5C', zapi_token: '5E919A9D9695FE48AFAA3D4E', zapi_client_token: 'F97feb2c3b05f4e1dafdbaa743fda1b17S', created_at: '2026-02-04T10:00:00Z' },
 ];
 
 const SEED_PARTS = [
@@ -1613,6 +1642,7 @@ const SEED_SUPPLIERS = [
   { id: 2, name: 'GlassWay Vidros',          phone: '31999990002', notes: 'Vidros e acessórios', active: 1, created_at: '2026-01-01T10:00:00Z' },
   { id: 3, name: 'EletroParts',              phone: '31999990003', notes: 'Elétrica e eletrônica', active: 1, created_at: '2026-01-01T10:00:00Z' },
   { id: 4, name: 'FreioParts',               phone: '31999990004', notes: 'Freios e suspensão', active: 1, created_at: '2026-01-01T10:00:00Z' },
+  { id: 5, name: 'Darlley',                  phone: '15998569990', notes: '', active: 1, created_at: '2026-05-30T10:00:00Z' },
 ];
 
 // Helper to compute total from items
@@ -1921,9 +1951,20 @@ function reducer(state, action) {
         created_at: q.created_at,
         time_label: 'agora',
       }));
+      const existingCustomer = state.customers.find(c => c.phone === action.payload.customer_phone);
+      const newCustomers = existingCustomer
+        ? state.customers
+        : [...state.customers, {
+            id: nextId(state.customers),
+            name: action.payload.customer_name,
+            phone: action.payload.customer_phone,
+            created_at: q.created_at,
+            updated_at: q.created_at,
+          }];
       return {
         ...state,
         quotations: [q, ...state.quotations],
+        customers: newCustomers,
         notifications: [...notifs, ...state.notifications],
         toasts: [...state.toasts, { id: Date.now(), type: 'success', message: `Cotação ${quote_number} criada` }],
         route: { name: 'quotation-detail', params: { id } },
@@ -2286,7 +2327,7 @@ function Modal({ open, onClose, title, icon, children, footer, size }) {
   if (!open) return null;
   return ReactDOM.createPortal(
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal" style={size === 'lg' ? { maxWidth: 960 } : null} onClick={e => e.stopPropagation()}>
+      <div className={`modal${size === 'lg' ? ' modal-lg' : size === 'md' ? ' modal-md' : ''}`} onClick={e => e.stopPropagation()}>
         {title && (
           <div className="modal-head">
             {icon && <i className={`bi ${icon}`} style={{ fontSize: 18, color: 'var(--text-muted)' }}></i>}
@@ -2686,13 +2727,10 @@ function Topbar({ title, subtitle, actions }) {
 
   return (
     <div className="topbar">
-      <div>
-        <h1>{title}</h1>
-        {subtitle && <div className="tiny faint" style={{ marginTop: 1 }}>{subtitle}</div>}
-      </div>
-      <RoleSwitcher />
+      <h1>{title}</h1>
       <div className="topbar-actions">
         {actions}
+        <RoleSwitcher />
         <button
           className="icon-btn"
           onClick={() => {
@@ -3155,8 +3193,8 @@ function QuotationDetail() {
                 {qt.items.map(it => (
                   <tr key={it.id}>
                     <td>
-                      <div className="semibold">{it.part_name}</div>
-                      {it.supplier_name && <div className="tiny faint">via {it.supplier_name}</div>}
+                      <div className="semibold truncate" style={{ maxWidth: 240 }}>{it.part_name}</div>
+                      {it.supplier_name && <div className="tiny faint truncate" style={{ maxWidth: 200 }}>via {it.supplier_name}</div>}
                       {it.notes && <div className="tiny" style={{ color: 'var(--text-muted)', marginTop: 3, fontStyle: 'italic' }}>"{it.notes}"</div>}
                     </td>
                     <td><span className="mono tiny faint">{it.part_code || '—'}</span></td>
@@ -3458,7 +3496,7 @@ function RespondModal({ quotation, onClose }) {
     notes: '',
   })));
   const [notesCompras, setNotesCompras] = useState('');
-  const [consultarItem, setConsultarItem] = useState(null); // { item, formItem, supplier }
+  const [consultarItem, setConsultarItem] = useState(null); // { items, supplier, quotationId }
 
   function update(idx, field, v) {
     setItems(prev => prev.map((it, i) => i === idx ? { ...it, [field]: v } : it));
@@ -3504,8 +3542,10 @@ function RespondModal({ quotation, onClose }) {
           {quotation.items.map((it, i) => {
             const activeSupplier = activeSuppliers.find(s => s.name === items[i].supplier_name);
             const canConsult = !!(activeSupplier?.phone);
+            const sameSupplierCount = items.filter(f => f.supplier_name && f.supplier_name === items[i].supplier_name).length;
             const consultTitle = !items[i].supplier_name ? 'Selecione um fornecedor' :
               !activeSupplier?.phone ? 'Fornecedor sem telefone cadastrado' :
+              sameSupplierCount > 1 ? `Consultar ${activeSupplier.name} (${sameSupplierCount} itens) via WhatsApp` :
               `Consultar ${activeSupplier.name} via WhatsApp`;
             return (
               <div key={it.id} className="card card-pad" style={{ background: 'var(--surface-2)', border: '1px solid var(--border)' }}>
@@ -3552,7 +3592,14 @@ function RespondModal({ quotation, onClose }) {
                       <button
                         title={consultTitle}
                         disabled={!canConsult}
-                        onClick={() => canConsult && setConsultarItem({ item: it, formItem: items[i], supplier: activeSupplier, quotationId: quotation.id })}
+                        onClick={() => {
+                          if (!canConsult) return;
+                          const grouped = quotation.items.reduce((acc, qItem, j) => {
+                            if (items[j].supplier_name === items[i].supplier_name) acc.push(qItem);
+                            return acc;
+                          }, []);
+                          setConsultarItem({ items: grouped, supplier: activeSupplier, quotationId: quotation.id });
+                        }}
                         style={{ flexShrink: 0, width: 34, borderRadius: 'var(--r-md)', border: '1px solid var(--border)', background: canConsult ? '#25d366' : 'var(--surface)', color: canConsult ? 'white' : 'var(--text-faint)', cursor: canConsult ? 'pointer' : 'not-allowed', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                         <i className="bi bi-whatsapp" style={{ fontSize: 15 }}></i>
                       </button>
@@ -3585,7 +3632,7 @@ function RespondModal({ quotation, onClose }) {
       </Modal>
       {consultarItem && (
         <ConsultarFornecedorModal
-          item={consultarItem.item}
+          items={consultarItem.items}
           supplier={consultarItem.supplier}
           quotationId={consultarItem.quotationId}
           onClose={() => setConsultarItem(null)}
@@ -3598,7 +3645,7 @@ function RespondModal({ quotation, onClose }) {
 /* =========================================================
    Consultar Fornecedor via WhatsApp
    ========================================================= */
-function ConsultarFornecedorModal({ item, supplier, quotationId, onClose }) {
+function ConsultarFornecedorModal({ items, supplier, quotationId, onClose }) {
   const { currentUser, dispatch, state } = useStore();
   const quotation = state.quotations.find(q => q.id === quotationId) || {};
   const vehicle = quotation.vehicle || {};
@@ -3606,16 +3653,28 @@ function ConsultarFornecedorModal({ item, supplier, quotationId, onClose }) {
   function buildMsg() {
     let m = `Olá, *${supplier.name}*! 👋\n\n`;
     if (quotation.quote_number) m += `📋 *Cotação:* ${quotation.quote_number}\n\n`;
-    m += `Estamos verificando disponibilidade de peça:\n\n`;
-    m += `🔧 *${item.part_name}*`;
-    if (item.part_code) m += ` (Cód: ${item.part_code})`;
-    m += `\n📦 Quantidade: ${item.quantity} unidade${item.quantity > 1 ? 's' : ''}`;
+    if (items.length === 1) {
+      const it = items[0];
+      m += `Estamos verificando disponibilidade de peça:\n\n`;
+      m += `🔧 *${it.part_name}*`;
+      if (it.part_code) m += ` (Cód: ${it.part_code})`;
+      m += `\n📦 Quantidade: ${it.quantity} unidade${it.quantity > 1 ? 's' : ''}`;
+    } else {
+      m += `Estamos verificando disponibilidade de *${items.length} peças*:\n\n`;
+      items.forEach((it, idx) => {
+        m += `${idx + 1}. *${it.part_name}*`;
+        if (it.part_code) m += ` (Cód: ${it.part_code})`;
+        m += `\n   📦 Qtd: ${it.quantity} unidade${it.quantity > 1 ? 's' : ''}\n\n`;
+      });
+      m = m.trimEnd();
+    }
     if (vehicle.make || vehicle.model) {
       const vDesc = [vehicle.make, vehicle.model, vehicle.year_model].filter(Boolean).join(' ');
       m += `\n\n🚗 *Veículo:* ${vDesc}`;
       if (vehicle.chassis) m += `\n🔑 *Chassi:* ${vehicle.chassis}`;
     }
-    m += `\n\nVocê tem disponível? Qual o valor unitário e prazo de entrega?\n\nObrigado! 😊`;
+    const disp = items.length > 1 ? 'disponíveis' : 'disponível';
+    m += `\n\nVocê tem ${disp}? Qual o valor unitário e prazo de entrega?\n\nObrigado! 😊`;
     return m;
   }
 
@@ -3751,8 +3810,8 @@ function WhatsAppModal({ quotation, onClose }) {
             <div className="tiny faint mono">{fmt.phone(quotation.customer_phone)}</div>
           </div>
         </div>
-        <div style={{ background: '#e5ddd5', borderRadius: 12, padding: 16, minHeight: 200 }}>
-          <div style={{ background: '#dcf8c6', borderRadius: 8, padding: 12, fontSize: 13, lineHeight: 1.5, whiteSpace: 'pre-wrap', maxWidth: 360, marginLeft: 'auto', color: '#111' }}>
+        <div style={{ background: 'var(--wa-bg)', borderRadius: 12, padding: 16, minHeight: 200 }}>
+          <div style={{ background: 'var(--wa-bubble)', borderRadius: 8, padding: 12, fontSize: 13, lineHeight: 1.5, whiteSpace: 'pre-wrap', maxWidth: 360, marginLeft: 'auto', color: '#111' }}>
             {msg}
             <div style={{ textAlign: 'right', fontSize: 10, color: '#666', marginTop: 6 }}>
               {new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })} <i className="bi bi-check2-all" style={{ color: '#34b7f1' }}></i>
@@ -4089,6 +4148,7 @@ function NewQuotation() {
           year_model: Number(vehicle.year_model) || null,
           year_manuf: Number(vehicle.year_manuf) || null,
           color: vehicle.color, fuel: vehicle.fuel,
+          chassis: vehicle.chassis || '',
         },
         items: validItems,
         notes_vendas: notesVendas,
@@ -5175,8 +5235,8 @@ function AdminSettingsScreen() {
           <div style={{ fontSize: 12, color: 'var(--text-faint)', marginTop: 2 }}>Como o cliente vai receber o texto.</div>
         </div>
 
-        <div style={{ flex: 1, background: '#e5ddd5', overflowY: 'auto', padding: '14px 12px' }}>
-          <div style={{ background: '#dcf8c6', borderRadius: '8px 8px 0 8px', padding: '9px 12px', maxWidth: '86%', marginLeft: 'auto', boxShadow: '0 1px 1px rgba(0,0,0,.1)' }}>
+        <div style={{ flex: 1, background: 'var(--wa-bg)', overflowY: 'auto', padding: '14px 12px' }}>
+          <div style={{ background: 'var(--wa-bubble)', borderRadius: '8px 8px 0 8px', padding: '9px 12px', maxWidth: '86%', marginLeft: 'auto', boxShadow: '0 1px 1px rgba(0,0,0,.1)' }}>
             <div style={{ fontSize: 13, lineHeight: 1.6, color: '#111' }}>
               {renderWAText(preview)}
             </div>
@@ -5221,8 +5281,8 @@ function CustomersScreen() {
     return { count: qs.length, last, total };
   }
 
-  const TH = ({ children, w }) => (
-    <th style={{ textAlign: 'left', padding: '8px 12px', fontSize: 11, fontWeight: 600,
+  const TH = ({ children, w, className }) => (
+    <th className={className} style={{ textAlign: 'left', padding: '8px 12px', fontSize: 11, fontWeight: 600,
       color: 'var(--text-faint)', textTransform: 'uppercase', letterSpacing: '0.05em', width: w }}>
       {children}
     </th>
@@ -5256,8 +5316,8 @@ function CustomersScreen() {
                 <TH>Nome</TH>
                 <TH>Telefone</TH>
                 <TH w={90}>Cotações</TH>
-                <TH w={110}>Total gasto</TH>
-                <TH w={140}>Último atendimento</TH>
+                <TH w={110} className="hide-mobile">Total gasto</TH>
+                <TH w={140} className="hide-mobile">Último atendimento</TH>
                 <TH w={80}></TH>
               </tr>
             </thead>
@@ -5284,10 +5344,10 @@ function CustomersScreen() {
                         {count}
                       </span>
                     </td>
-                    <td style={{ padding: '10px 12px', fontFamily: 'monospace', fontSize: 12, fontWeight: 600 }}>
+                    <td className="hide-mobile" style={{ padding: '10px 12px', fontFamily: 'monospace', fontSize: 12, fontWeight: 600 }}>
                       {total > 0 ? fmt.brl(total) : <span className="faint">—</span>}
                     </td>
-                    <td style={{ padding: '10px 12px', fontSize: 12, color: 'var(--text-faint)' }}>
+                    <td className="hide-mobile" style={{ padding: '10px 12px', fontSize: 12, color: 'var(--text-faint)' }}>
                       {last ? fmt.ago(last) : '—'}
                     </td>
                     <td style={{ padding: '10px 12px' }} onClick={e => e.stopPropagation()}>
