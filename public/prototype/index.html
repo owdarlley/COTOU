@@ -3495,7 +3495,7 @@ function RespondModal({ quotation, onClose }) {
     notes: '',
   })));
   const [notesCompras, setNotesCompras] = useState('');
-  const [consultarItem, setConsultarItem] = useState(null); // { item, formItem, supplier }
+  const [consultarItem, setConsultarItem] = useState(null); // { items, supplier, quotationId }
 
   function update(idx, field, v) {
     setItems(prev => prev.map((it, i) => i === idx ? { ...it, [field]: v } : it));
@@ -3541,8 +3541,10 @@ function RespondModal({ quotation, onClose }) {
           {quotation.items.map((it, i) => {
             const activeSupplier = activeSuppliers.find(s => s.name === items[i].supplier_name);
             const canConsult = !!(activeSupplier?.phone);
+            const sameSupplierCount = items.filter(f => f.supplier_name && f.supplier_name === items[i].supplier_name).length;
             const consultTitle = !items[i].supplier_name ? 'Selecione um fornecedor' :
               !activeSupplier?.phone ? 'Fornecedor sem telefone cadastrado' :
+              sameSupplierCount > 1 ? `Consultar ${activeSupplier.name} (${sameSupplierCount} itens) via WhatsApp` :
               `Consultar ${activeSupplier.name} via WhatsApp`;
             return (
               <div key={it.id} className="card card-pad" style={{ background: 'var(--surface-2)', border: '1px solid var(--border)' }}>
@@ -3589,7 +3591,14 @@ function RespondModal({ quotation, onClose }) {
                       <button
                         title={consultTitle}
                         disabled={!canConsult}
-                        onClick={() => canConsult && setConsultarItem({ item: it, formItem: items[i], supplier: activeSupplier, quotationId: quotation.id })}
+                        onClick={() => {
+                          if (!canConsult) return;
+                          const grouped = quotation.items.reduce((acc, qItem, j) => {
+                            if (items[j].supplier_name === items[i].supplier_name) acc.push(qItem);
+                            return acc;
+                          }, []);
+                          setConsultarItem({ items: grouped, supplier: activeSupplier, quotationId: quotation.id });
+                        }}
                         style={{ flexShrink: 0, width: 34, borderRadius: 'var(--r-md)', border: '1px solid var(--border)', background: canConsult ? '#25d366' : 'var(--surface)', color: canConsult ? 'white' : 'var(--text-faint)', cursor: canConsult ? 'pointer' : 'not-allowed', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                         <i className="bi bi-whatsapp" style={{ fontSize: 15 }}></i>
                       </button>
@@ -3622,7 +3631,7 @@ function RespondModal({ quotation, onClose }) {
       </Modal>
       {consultarItem && (
         <ConsultarFornecedorModal
-          item={consultarItem.item}
+          items={consultarItem.items}
           supplier={consultarItem.supplier}
           quotationId={consultarItem.quotationId}
           onClose={() => setConsultarItem(null)}
@@ -3635,7 +3644,7 @@ function RespondModal({ quotation, onClose }) {
 /* =========================================================
    Consultar Fornecedor via WhatsApp
    ========================================================= */
-function ConsultarFornecedorModal({ item, supplier, quotationId, onClose }) {
+function ConsultarFornecedorModal({ items, supplier, quotationId, onClose }) {
   const { currentUser, dispatch, state } = useStore();
   const quotation = state.quotations.find(q => q.id === quotationId) || {};
   const vehicle = quotation.vehicle || {};
@@ -3643,16 +3652,28 @@ function ConsultarFornecedorModal({ item, supplier, quotationId, onClose }) {
   function buildMsg() {
     let m = `Olá, *${supplier.name}*! 👋\n\n`;
     if (quotation.quote_number) m += `📋 *Cotação:* ${quotation.quote_number}\n\n`;
-    m += `Estamos verificando disponibilidade de peça:\n\n`;
-    m += `🔧 *${item.part_name}*`;
-    if (item.part_code) m += ` (Cód: ${item.part_code})`;
-    m += `\n📦 Quantidade: ${item.quantity} unidade${item.quantity > 1 ? 's' : ''}`;
+    if (items.length === 1) {
+      const it = items[0];
+      m += `Estamos verificando disponibilidade de peça:\n\n`;
+      m += `🔧 *${it.part_name}*`;
+      if (it.part_code) m += ` (Cód: ${it.part_code})`;
+      m += `\n📦 Quantidade: ${it.quantity} unidade${it.quantity > 1 ? 's' : ''}`;
+    } else {
+      m += `Estamos verificando disponibilidade de *${items.length} peças*:\n\n`;
+      items.forEach((it, idx) => {
+        m += `${idx + 1}. *${it.part_name}*`;
+        if (it.part_code) m += ` (Cód: ${it.part_code})`;
+        m += `\n   📦 Qtd: ${it.quantity} unidade${it.quantity > 1 ? 's' : ''}\n\n`;
+      });
+      m = m.trimEnd();
+    }
     if (vehicle.make || vehicle.model) {
       const vDesc = [vehicle.make, vehicle.model, vehicle.year_model].filter(Boolean).join(' ');
       m += `\n\n🚗 *Veículo:* ${vDesc}`;
       if (vehicle.chassis) m += `\n🔑 *Chassi:* ${vehicle.chassis}`;
     }
-    m += `\n\nVocê tem disponível? Qual o valor unitário e prazo de entrega?\n\nObrigado! 😊`;
+    const disp = items.length > 1 ? 'disponíveis' : 'disponível';
+    m += `\n\nVocê tem ${disp}? Qual o valor unitário e prazo de entrega?\n\nObrigado! 😊`;
     return m;
   }
 
