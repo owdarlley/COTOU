@@ -824,137 +824,105 @@ a { color: inherit; }
 @keyframes slideInRight { from { transform: translateX(20px); opacity: 0 } to { transform: translateX(0); opacity: 1 } }
 
 /* =========================================================
-   Onboarding Guide
+   Guided Tour (spotlight)
    ========================================================= */
 
-.guide-modal {
-  max-width: 520px;
-  width: 100%;
+.tour-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9000;
+  cursor: pointer;
 }
-.guide-header {
-  background: linear-gradient(135deg, var(--brand) 0%, var(--brand-hover) 100%);
-  border-radius: var(--r-lg) var(--r-lg) 0 0;
-  padding: 32px 28px 24px;
-  color: #fff;
-  text-align: center;
-  position: relative;
+.tour-spotlight {
+  position: fixed;
+  z-index: 9001;
+  pointer-events: none;
+  border-radius: 10px;
+  box-shadow: 0 0 0 4px var(--brand), 0 0 0 9999px rgba(0,0,0,0.58);
+  transition: top 0.28s cubic-bezier(.4,0,.2,1),
+              left 0.28s cubic-bezier(.4,0,.2,1),
+              width 0.28s cubic-bezier(.4,0,.2,1),
+              height 0.28s cubic-bezier(.4,0,.2,1);
 }
-.guide-role-chip {
+.tour-tooltip {
+  position: fixed;
+  z-index: 9002;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-lg);
+  width: 288px;
+  padding: 20px 20px 16px;
+  cursor: default;
+  animation: tourIn 0.22s cubic-bezier(.4,0,.2,1);
+}
+@keyframes tourIn { from { opacity: 0; transform: translateY(6px) } to { opacity: 1; transform: none } }
+.tour-arrow {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  transform: rotate(45deg);
+}
+.tour-badge {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  background: rgba(255,255,255,0.18);
-  border: 1px solid rgba(255,255,255,0.25);
-  border-radius: 99px;
-  padding: 3px 12px;
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  margin-bottom: 18px;
-}
-.guide-icon-wrap {
-  width: 72px;
-  height: 72px;
-  border-radius: 50%;
-  background: rgba(255,255,255,0.15);
-  border: 2px solid rgba(255,255,255,0.3);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin: 0 auto 16px;
-  font-size: 32px;
-}
-.guide-header h2 {
-  font-size: 20px;
-  font-weight: 700;
-  margin: 0 0 8px;
-  line-height: 1.3;
-}
-.guide-header p {
-  font-size: 13.5px;
-  opacity: 0.85;
-  line-height: 1.55;
-  margin: 0;
-}
-.guide-steps {
-  padding: 24px 28px;
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-}
-.guide-step {
-  display: flex;
-  gap: 14px;
-  align-items: flex-start;
-  padding: 14px 16px;
-  background: var(--surface-2);
-  border: 1px solid var(--border);
-  border-radius: var(--r-md);
-  transition: border-color 0.15s, background 0.15s;
-}
-.guide-step:hover {
-  border-color: var(--brand);
-  background: var(--brand-soft);
-}
-.guide-step-icon {
-  width: 36px;
-  height: 36px;
-  border-radius: 9px;
   background: var(--brand-soft);
   color: var(--brand);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 17px;
-  flex-shrink: 0;
-}
-.guide-step-body h4 {
-  font-size: 13px;
+  border-radius: 99px;
+  padding: 2px 10px;
+  font-size: 11px;
   font-weight: 700;
-  margin: 0 0 3px;
-  color: var(--text);
+  letter-spacing: 0.03em;
+  margin-bottom: 10px;
 }
-.guide-step-body p {
+.tour-tooltip h3 {
+  font-size: 14.5px;
+  font-weight: 700;
+  margin: 0 0 6px;
+  color: var(--text);
+  line-height: 1.3;
+}
+.tour-tooltip p {
   font-size: 12.5px;
   color: var(--text-muted);
-  margin: 0;
-  line-height: 1.5;
+  margin: 0 0 14px;
+  line-height: 1.55;
 }
-.guide-progress {
+.tour-dots {
   display: flex;
   gap: 5px;
-  justify-content: center;
-  padding: 4px 0 12px;
+  align-items: center;
 }
-.guide-dot {
+.tour-dot {
   width: 6px;
   height: 6px;
   border-radius: 99px;
   background: var(--border-strong);
-  transition: background 0.2s, width 0.2s;
+  transition: background 0.18s, width 0.18s;
+  cursor: pointer;
+  border: none;
+  padding: 0;
 }
-.guide-dot.active {
-  background: var(--brand);
-  width: 18px;
-}
-.guide-footer {
+.tour-dot.on { background: var(--brand); width: 16px; }
+.tour-nav {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
-  padding: 14px 28px 20px;
-  border-top: 1px solid var(--border);
+  gap: 8px;
+  margin-top: 14px;
 }
-.guide-skip {
-  font-size: 12.5px;
-  color: var(--text-faint);
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 0;
+.tour-close {
+  position: absolute;
+  top: 10px; right: 10px;
+  background: none; border: none; cursor: pointer;
+  color: var(--text-faint); font-size: 13px; padding: 3px 5px;
+  border-radius: 5px;
+  line-height: 1;
 }
-.guide-skip:hover { color: var(--text-muted); text-decoration: underline; }
+.tour-close:hover { background: var(--surface-2); color: var(--text); }
 
 /* =========================================================
    Login screen
@@ -2520,127 +2488,136 @@ function Toasts() {
 }
 
 /* =========================================================
-   Onboarding Guide Modal
+   Guided Tour
    ========================================================= */
 
-const GUIDE_STEPS = {
+const TOUR_STEPS = {
   vendas: [
-    {
-      icon: 'bi-stars',
-      title: 'Bem-vindo ao COTOU, Vendas!',
-      intro: 'Você está no painel de vendas. Aqui você abre cotações no balcão, acompanha o andamento e envia o preço ao cliente via WhatsApp.',
-      steps: [
-        { icon: 'bi-plus-circle-fill', title: 'Abrir nova cotação', desc: 'Clique em "Nova cotação" no menu lateral. Informe o nome e telefone do cliente, a placa do veículo e as peças solicitadas.' },
-        { icon: 'bi-clock-history',    title: 'Acompanhar o andamento', desc: 'Na lista de cotações você vê o status em tempo real: Pendente → Em cotação → Cotado. O setor de compras responde com preço e prazo.' },
-        { icon: 'bi-whatsapp',         title: 'Enviar para o cliente', desc: 'Quando a cotação estiver respondida, abra o detalhe e clique em "Enviar WhatsApp". O cliente recebe o orçamento direto no celular.' },
-        { icon: 'bi-chat-dots-fill',   title: 'Chat com compras', desc: 'Dentro de cada cotação há um chat interno. Use para tirar dúvidas, pedir urgência ou passar informações ao setor de compras.' },
-      ],
-    },
+    { target: 'dashboard',     title: 'Dashboard',         icon: 'bi-grid',           desc: 'Sua tela inicial. Veja em tempo real quantas cotações estão abertas, respondidas e aguardando envio ao cliente.' },
+    { target: 'new-quotation', title: 'Nova cotação',      icon: 'bi-plus-square',    desc: 'Clique aqui para abrir uma cotação. Informe o cliente, a placa do veículo e as peças que o cliente pediu.' },
+    { target: 'quotations',    title: 'Lista de cotações', icon: 'bi-list-ul',        desc: 'Acompanhe todas as suas cotações. O status muda conforme compras responde: Pendente → Em cotação → Cotado.' },
+    { target: 'customers',     title: 'Clientes',          icon: 'bi-people',         desc: 'Histórico completo de cada cliente: cotações abertas, aprovadas e dados de contato.' },
+    { target: 'wa-strip',      title: 'Seu WhatsApp',      icon: 'bi-whatsapp',       desc: 'Conecte seu WhatsApp aqui. Assim que compras responder, você envia o orçamento direto para o cliente com um clique.' },
+    { target: 'notif-bell',    title: 'Notificações',      icon: 'bi-bell',           desc: 'O sino acende quando compras responde uma cotação sua. Nunca perca uma atualização.' },
+    { target: 'tour-help',     title: 'Pronto!',           icon: 'bi-question-circle',desc: 'Qualquer dúvida, clique neste botão para rever o tour a qualquer momento. Boas vendas!' },
   ],
   compras: [
-    {
-      icon: 'bi-bag-check-fill',
-      title: 'Bem-vindo ao COTOU, Compras!',
-      intro: 'Você é responsável por pesquisar preços com fornecedores e responder as cotações abertas pelo setor de vendas.',
-      steps: [
-        { icon: 'bi-bell-fill',         title: 'Receber cotações pendentes', desc: 'Ao entrar você verá as cotações aguardando cotação. Clique em "Assumir" para ficar responsável e evitar trabalho duplicado.' },
-        { icon: 'bi-currency-exchange',  title: 'Responder com preços', desc: 'Dentro da cotação, preencha o preço unitário, prazo de entrega e nome do fornecedor para cada peça. Salve ao terminar.' },
-        { icon: 'bi-telephone-fill',     title: 'Consultar fornecedor pelo app', desc: 'Use o botão "Consultar fornecedor" para gerar uma mensagem pronta para enviar ao seu contato pelo WhatsApp.' },
-        { icon: 'bi-box-seam-fill',      title: 'Registrar chegada da peça', desc: 'Quando a peça chegar ao estoque, abra a cotação aprovada e clique em "Peça chegou" para fechar o ciclo.' },
-      ],
-    },
+    { target: 'notif-bell',    title: 'Notificações',       icon: 'bi-bell',            desc: 'Quando vendas abre uma nova cotação, você recebe um alerta aqui imediatamente.' },
+    { target: 'quotations',    title: 'Cotações pendentes', icon: 'bi-list-ul',         desc: 'Veja as cotações aguardando resposta. Clique em "Assumir" para ficar responsável e evitar trabalho duplicado.' },
+    { target: 'catalog',       title: 'Catálogo de peças',  icon: 'bi-grid',            desc: 'Consulte preços de referência das peças mais cotadas. Ajuda a responder mais rápido.' },
+    { target: 'wa-strip',      title: 'WhatsApp',           icon: 'bi-whatsapp',        desc: 'Use para enviar a mensagem de consulta gerada pelo app direto para o seu fornecedor.' },
+    { target: 'suppliers',     title: 'Fornecedores',       icon: 'bi-truck',           desc: 'Lista de todos os fornecedores cadastrados com telefone para consulta rápida.' },
+    { target: 'tour-help',     title: 'Pronto!',            icon: 'bi-question-circle', desc: 'Clique aqui para rever o tour sempre que quiser. Bom trabalho!' },
   ],
   admin: [
-    {
-      icon: 'bi-shield-check',
-      title: 'Bem-vindo ao COTOU, Admin!',
-      intro: 'Você tem acesso total ao sistema. Gerencie usuários, fornecedores, catálogo de peças e configurações globais.',
-      steps: [
-        { icon: 'bi-bar-chart-line-fill', title: 'Dashboard de métricas', desc: 'A tela inicial mostra KPIs do dia: cotações abertas, respondidas, taxa de aprovação e gráfico dos últimos 14 dias.' },
-        { icon: 'bi-people-fill',         title: 'Gerenciar usuários', desc: 'Em Admin → Usuários você cria, edita e desativa contas. Defina o papel de cada um: Vendas, Compras ou Admin.' },
-        { icon: 'bi-building',            title: 'Fornecedores e catálogo', desc: 'Cadastre fornecedores em Fornecedores e as peças mais cotadas em Catálogo para agilizar o preenchimento das cotações.' },
-        { icon: 'bi-gear-fill',           title: 'Configurações do sistema', desc: 'Em Configurações você personaliza o template da mensagem WhatsApp e pode resetar os dados para o estado inicial.' },
-      ],
-    },
+    { target: 'dashboard',      title: 'Dashboard',          icon: 'bi-grid',            desc: 'Visão completa: todas as cotações do sistema, KPIs do dia e gráfico dos últimos 14 dias.' },
+    { target: 'admin-users',    title: 'Usuários',           icon: 'bi-people',          desc: 'Crie e gerencie contas. Defina o papel de cada pessoa: Vendas, Compras ou Admin.' },
+    { target: 'suppliers',      title: 'Fornecedores',       icon: 'bi-truck',           desc: 'Cadastre os fornecedores que o setor de compras consulta, com telefone para contato direto.' },
+    { target: 'catalog',        title: 'Catálogo de peças',  icon: 'bi-box-seam',        desc: 'Mantenha atualizado o catálogo de peças frequentes para agilizar o preenchimento das cotações.' },
+    { target: 'admin-settings', title: 'Configurações',      icon: 'bi-gear',            desc: 'Personalize o template do WhatsApp e redefina os dados do sistema quando necessário.' },
+    { target: 'tour-help',      title: 'Tudo configurado!',  icon: 'bi-question-circle', desc: 'Clique aqui para rever o tour a qualquer momento.' },
   ],
 };
 
-function OnboardingModal({ onClose }) {
+function GuidedTour({ onClose }) {
   const { currentUser } = useStore();
   const role = currentUser?.role || 'vendas';
-  const config = (GUIDE_STEPS[role] || GUIDE_STEPS.vendas)[0];
-  const totalPages = config.steps.length + 1; // +1 for intro
-  const [page, setPage] = useState(0);
+  const steps = TOUR_STEPS[role] || TOUR_STEPS.vendas;
+  const [step, setStep] = useState(0);
+  const [spot, setSpot] = useState(null);
+  const tooltipRef = useRef(null);
 
-  const isIntro = page === 0;
-  const stepIdx = page - 1;
-  const step = isIntro ? null : config.steps[stepIdx];
+  const current = steps[step];
+  const total = steps.length;
 
-  const next = () => { if (page < totalPages - 1) setPage(p => p + 1); else onClose(); };
-  const prev = () => { if (page > 0) setPage(p => p - 1); };
+  // Measure target element on step change and on resize
+  useEffect(() => {
+    function measure() {
+      const el = document.querySelector(`[data-tour="${current.target}"]`);
+      if (!el) { setSpot(null); return; }
+      const r = el.getBoundingClientRect();
+      setSpot({ top: r.top, left: r.left, width: r.width, height: r.height });
+    }
+    measure();
+    window.addEventListener('resize', measure);
+    return () => window.removeEventListener('resize', measure);
+  }, [step, current.target]);
 
-  const roleLabel = { vendas: 'Vendas', compras: 'Compras', admin: 'Administrador' }[role] || role;
-  const roleIcon  = { vendas: 'bi-person-badge-fill', compras: 'bi-bag-fill', admin: 'bi-shield-fill' }[role] || 'bi-person-fill';
+  // Tooltip placement: right of sidebar elements, left side if near right edge
+  function tooltipPos() {
+    if (!spot) return { top: '50%', left: '50%', transform: 'translate(-50%,-50%)' };
+    const PAD = 16;
+    const TW = 292; // tooltip width
+    const TH = 200; // approx height
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+    const isSidebar = spot.left < 260;
+    if (isSidebar) {
+      // Place to the right of the element
+      const top = Math.min(Math.max(PAD, spot.top + spot.height / 2 - TH / 2), vh - TH - PAD);
+      return { top, left: spot.left + spot.width + PAD };
+    }
+    // Place below (topbar bell etc.)
+    const left = Math.min(Math.max(PAD, spot.left + spot.width / 2 - TW / 2), vw - TW - PAD);
+    return { top: spot.top + spot.height + PAD, left };
+  }
+
+  const pos = tooltipPos();
+  const isSidebar = spot && spot.left < 260;
+
+  const next = () => { if (step < total - 1) setStep(s => s + 1); else onClose(); };
+  const prev = () => { if (step > 0) setStep(s => s - 1); };
 
   return ReactDOM.createPortal(
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal guide-modal" onClick={e => e.stopPropagation()} style={{ padding: 0, overflow: 'hidden' }}>
+    <>
+      {/* Dark overlay — click closes */}
+      <div className="tour-overlay" onClick={onClose} />
 
-        {/* Header */}
-        <div className="guide-header">
-          <button
-            onClick={onClose}
-            style={{ position: 'absolute', top: 14, right: 14, background: 'rgba(255,255,255,0.15)', border: 'none', borderRadius: 8, width: 30, height: 30, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#fff', fontSize: 14 }}
-          >
-            <i className="bi bi-x-lg"></i>
-          </button>
-          <div className="guide-role-chip">
-            <i className={`bi ${roleIcon}`}></i>
-            {roleLabel}
-          </div>
-          <div className="guide-icon-wrap">
-            <i className={`bi ${isIntro ? config.icon : step.icon}`}></i>
-          </div>
-          <h2>{isIntro ? config.title : step.title}</h2>
-          <p>{isIntro ? config.intro : step.desc}</p>
+      {/* Spotlight hole */}
+      {spot && (
+        <div className="tour-spotlight" style={{
+          top:    spot.top    - 7,
+          left:   spot.left   - 7,
+          width:  spot.width  + 14,
+          height: spot.height + 14,
+        }} />
+      )}
+
+      {/* Tooltip */}
+      <div
+        ref={tooltipRef}
+        className="tour-tooltip"
+        style={{ top: pos.top, left: pos.left, width: 292 }}
+        onClick={e => e.stopPropagation()}
+      >
+        <button className="tour-close" onClick={onClose} title="Fechar tour"><i className="bi bi-x-lg"></i></button>
+
+        <div className="tour-badge">
+          <i className={`bi ${current.icon}`}></i>
+          {step + 1} de {total}
         </div>
+        <h3>{current.title}</h3>
+        <p>{current.desc}</p>
 
-        {/* Step list (only on intro page) */}
-        {isIntro && (
-          <div className="guide-steps">
-            {config.steps.map((s, i) => (
-              <button key={i} className="guide-step" style={{ width: '100%', textAlign: 'left', cursor: 'pointer', background: 'none' }} onClick={() => setPage(i + 1)}>
-                <div className="guide-step-icon"><i className={`bi ${s.icon}`}></i></div>
-                <div className="guide-step-body">
-                  <h4>{s.title}</h4>
-                  <p>{s.desc.slice(0, 72)}{s.desc.length > 72 ? '…' : ''}</p>
-                </div>
-                <i className="bi bi-chevron-right" style={{ color: 'var(--text-faint)', marginLeft: 'auto', alignSelf: 'center', flexShrink: 0 }}></i>
-              </button>
-            ))}
-          </div>
-        )}
-
-        {/* Progress dots */}
-        <div className="guide-progress">
-          {Array.from({ length: totalPages }).map((_, i) => (
-            <div key={i} className={`guide-dot ${i === page ? 'active' : ''}`} onClick={() => setPage(i)} style={{ cursor: 'pointer' }} />
+        {/* Dots */}
+        <div className="tour-dots">
+          {steps.map((_, i) => (
+            <button key={i} className={`tour-dot ${i === step ? 'on' : ''}`} onClick={() => setStep(i)} title={steps[i].title} />
           ))}
         </div>
 
-        {/* Footer */}
-        <div className="guide-footer">
-          {page > 0
-            ? <button className="btn btn-ghost btn-sm" onClick={prev}><i className="bi bi-arrow-left" style={{ marginRight: 5 }}></i>Anterior</button>
-            : <button className="guide-skip" onClick={onClose}>Pular tutorial</button>
+        {/* Nav */}
+        <div className="tour-nav">
+          {step > 0
+            ? <button className="btn btn-ghost btn-sm" onClick={prev} style={{ gap: 5 }}><i className="bi bi-arrow-left"></i> Anterior</button>
+            : <span style={{ fontSize: 11.5, color: 'var(--text-faint)', cursor: 'pointer' }} onClick={onClose}>Pular tour</span>
           }
-          <button className="btn btn-primary btn-sm" onClick={next} style={{ minWidth: 110 }}>
-            {page < totalPages - 1 ? <><span>Próximo</span><i className="bi bi-arrow-right" style={{ marginLeft: 6 }}></i></> : <><i className="bi bi-check2" style={{ marginRight: 6 }}></i><span>Entendido!</span></>}
+          <button className="btn btn-primary btn-sm" onClick={next} style={{ gap: 5 }}>
+            {step < total - 1 ? <>Próximo <i className="bi bi-arrow-right"></i></> : <><i className="bi bi-check2"></i> Entendido!</>}
           </button>
         </div>
-
       </div>
-    </div>,
+    </>,
     document.body
   );
 }
@@ -2831,6 +2808,7 @@ function Sidebar() {
           return (
             <button
               key={key}
+              data-tour={key}
               className={`nav-item ${active ? 'active' : ''}`}
               onClick={() => dispatch({ type: 'navigate', name: key })}
               title={meta.label}
@@ -2871,6 +2849,7 @@ function Sidebar() {
             padding: '7px 10px', cursor: 'pointer', transition: 'background 0.15s',
           }}
           title={connected ? 'Desconectar WhatsApp' : 'Conectar meu WhatsApp'}
+          data-tour="wa-strip"
         >
           <i className="bi bi-whatsapp" style={{ fontSize: 15, color: connected ? '#16a34a' : 'var(--text-faint)', flexShrink: 0 }}></i>
           <div style={{ flex: 1, minWidth: 0, textAlign: 'left' }}>
@@ -2893,7 +2872,7 @@ function Sidebar() {
           <div className="semibold" style={{ fontSize: 12.5, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{currentUser.name}</div>
           <div className="faint tiny" style={{ fontFamily: 'var(--mono)' }}>{currentUser.role}</div>
         </div>
-        <button className="icon-btn" title="Ajuda / Tutorial" onClick={() => setShowGuide(true)}>
+        <button className="icon-btn" data-tour="tour-help" title="Ajuda / Tutorial" onClick={() => setShowGuide(true)}>
           <i className="bi bi-question-circle" style={{ fontSize: 14 }}></i>
         </button>
         <button className="icon-btn" onClick={() => dispatch({ type: 'logout' })} title="Sair">
@@ -2901,7 +2880,7 @@ function Sidebar() {
         </button>
       </div>
 
-      {showGuide && <OnboardingModal onClose={() => setShowGuide(false)} />}
+      {showGuide && <GuidedTour onClose={() => setShowGuide(false)} />}
     </aside>
   );
 }
@@ -2921,7 +2900,7 @@ function NotificationsBell() {
   const recent = myNotifs.slice(0, 7);
   return (
     <div ref={ref} style={{ position: 'relative' }}>
-      <button className="icon-btn" onClick={() => setOpen(o => !o)} title="Notificações">
+      <button className="icon-btn" data-tour="notif-bell" onClick={() => setOpen(o => !o)} title="Notificações">
         <i className="bi bi-bell"></i>
         {unreadCount > 0 && <span className="dot"></span>}
       </button>
@@ -6004,7 +5983,7 @@ function Router() {
           onClose={() => dispatch({ type: 'close_wa_connect' })}
         />
       )}
-      {showGuide && <OnboardingModal onClose={() => setShowGuide(false)} />}
+      {showGuide && <GuidedTour onClose={() => setShowGuide(false)} />}
     </div>
   );
 }
