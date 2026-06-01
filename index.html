@@ -824,6 +824,139 @@ a { color: inherit; }
 @keyframes slideInRight { from { transform: translateX(20px); opacity: 0 } to { transform: translateX(0); opacity: 1 } }
 
 /* =========================================================
+   Onboarding Guide
+   ========================================================= */
+
+.guide-modal {
+  max-width: 520px;
+  width: 100%;
+}
+.guide-header {
+  background: linear-gradient(135deg, var(--brand) 0%, var(--brand-hover) 100%);
+  border-radius: var(--r-lg) var(--r-lg) 0 0;
+  padding: 32px 28px 24px;
+  color: #fff;
+  text-align: center;
+  position: relative;
+}
+.guide-role-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255,255,255,0.18);
+  border: 1px solid rgba(255,255,255,0.25);
+  border-radius: 99px;
+  padding: 3px 12px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  margin-bottom: 18px;
+}
+.guide-icon-wrap {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.15);
+  border: 2px solid rgba(255,255,255,0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 16px;
+  font-size: 32px;
+}
+.guide-header h2 {
+  font-size: 20px;
+  font-weight: 700;
+  margin: 0 0 8px;
+  line-height: 1.3;
+}
+.guide-header p {
+  font-size: 13.5px;
+  opacity: 0.85;
+  line-height: 1.55;
+  margin: 0;
+}
+.guide-steps {
+  padding: 24px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.guide-step {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  padding: 14px 16px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  transition: border-color 0.15s, background 0.15s;
+}
+.guide-step:hover {
+  border-color: var(--brand);
+  background: var(--brand-soft);
+}
+.guide-step-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 9px;
+  background: var(--brand-soft);
+  color: var(--brand);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 17px;
+  flex-shrink: 0;
+}
+.guide-step-body h4 {
+  font-size: 13px;
+  font-weight: 700;
+  margin: 0 0 3px;
+  color: var(--text);
+}
+.guide-step-body p {
+  font-size: 12.5px;
+  color: var(--text-muted);
+  margin: 0;
+  line-height: 1.5;
+}
+.guide-progress {
+  display: flex;
+  gap: 5px;
+  justify-content: center;
+  padding: 4px 0 12px;
+}
+.guide-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 99px;
+  background: var(--border-strong);
+  transition: background 0.2s, width 0.2s;
+}
+.guide-dot.active {
+  background: var(--brand);
+  width: 18px;
+}
+.guide-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 14px 28px 20px;
+  border-top: 1px solid var(--border);
+}
+.guide-skip {
+  font-size: 12.5px;
+  color: var(--text-faint);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+}
+.guide-skip:hover { color: var(--text-muted); text-decoration: underline; }
+
+/* =========================================================
    Login screen
    ========================================================= */
 
@@ -2387,6 +2520,132 @@ function Toasts() {
 }
 
 /* =========================================================
+   Onboarding Guide Modal
+   ========================================================= */
+
+const GUIDE_STEPS = {
+  vendas: [
+    {
+      icon: 'bi-stars',
+      title: 'Bem-vindo ao COTOU, Vendas!',
+      intro: 'Você está no painel de vendas. Aqui você abre cotações no balcão, acompanha o andamento e envia o preço ao cliente via WhatsApp.',
+      steps: [
+        { icon: 'bi-plus-circle-fill', title: 'Abrir nova cotação', desc: 'Clique em "Nova cotação" no menu lateral. Informe o nome e telefone do cliente, a placa do veículo e as peças solicitadas.' },
+        { icon: 'bi-clock-history',    title: 'Acompanhar o andamento', desc: 'Na lista de cotações você vê o status em tempo real: Pendente → Em cotação → Cotado. O setor de compras responde com preço e prazo.' },
+        { icon: 'bi-whatsapp',         title: 'Enviar para o cliente', desc: 'Quando a cotação estiver respondida, abra o detalhe e clique em "Enviar WhatsApp". O cliente recebe o orçamento direto no celular.' },
+        { icon: 'bi-chat-dots-fill',   title: 'Chat com compras', desc: 'Dentro de cada cotação há um chat interno. Use para tirar dúvidas, pedir urgência ou passar informações ao setor de compras.' },
+      ],
+    },
+  ],
+  compras: [
+    {
+      icon: 'bi-bag-check-fill',
+      title: 'Bem-vindo ao COTOU, Compras!',
+      intro: 'Você é responsável por pesquisar preços com fornecedores e responder as cotações abertas pelo setor de vendas.',
+      steps: [
+        { icon: 'bi-bell-fill',         title: 'Receber cotações pendentes', desc: 'Ao entrar você verá as cotações aguardando cotação. Clique em "Assumir" para ficar responsável e evitar trabalho duplicado.' },
+        { icon: 'bi-currency-exchange',  title: 'Responder com preços', desc: 'Dentro da cotação, preencha o preço unitário, prazo de entrega e nome do fornecedor para cada peça. Salve ao terminar.' },
+        { icon: 'bi-telephone-fill',     title: 'Consultar fornecedor pelo app', desc: 'Use o botão "Consultar fornecedor" para gerar uma mensagem pronta para enviar ao seu contato pelo WhatsApp.' },
+        { icon: 'bi-box-seam-fill',      title: 'Registrar chegada da peça', desc: 'Quando a peça chegar ao estoque, abra a cotação aprovada e clique em "Peça chegou" para fechar o ciclo.' },
+      ],
+    },
+  ],
+  admin: [
+    {
+      icon: 'bi-shield-check',
+      title: 'Bem-vindo ao COTOU, Admin!',
+      intro: 'Você tem acesso total ao sistema. Gerencie usuários, fornecedores, catálogo de peças e configurações globais.',
+      steps: [
+        { icon: 'bi-bar-chart-line-fill', title: 'Dashboard de métricas', desc: 'A tela inicial mostra KPIs do dia: cotações abertas, respondidas, taxa de aprovação e gráfico dos últimos 14 dias.' },
+        { icon: 'bi-people-fill',         title: 'Gerenciar usuários', desc: 'Em Admin → Usuários você cria, edita e desativa contas. Defina o papel de cada um: Vendas, Compras ou Admin.' },
+        { icon: 'bi-building',            title: 'Fornecedores e catálogo', desc: 'Cadastre fornecedores em Fornecedores e as peças mais cotadas em Catálogo para agilizar o preenchimento das cotações.' },
+        { icon: 'bi-gear-fill',           title: 'Configurações do sistema', desc: 'Em Configurações você personaliza o template da mensagem WhatsApp e pode resetar os dados para o estado inicial.' },
+      ],
+    },
+  ],
+};
+
+function OnboardingModal({ onClose }) {
+  const { currentUser } = useStore();
+  const role = currentUser?.role || 'vendas';
+  const config = (GUIDE_STEPS[role] || GUIDE_STEPS.vendas)[0];
+  const totalPages = config.steps.length + 1; // +1 for intro
+  const [page, setPage] = useState(0);
+
+  const isIntro = page === 0;
+  const stepIdx = page - 1;
+  const step = isIntro ? null : config.steps[stepIdx];
+
+  const next = () => { if (page < totalPages - 1) setPage(p => p + 1); else onClose(); };
+  const prev = () => { if (page > 0) setPage(p => p - 1); };
+
+  const roleLabel = { vendas: 'Vendas', compras: 'Compras', admin: 'Administrador' }[role] || role;
+  const roleIcon  = { vendas: 'bi-person-badge-fill', compras: 'bi-bag-fill', admin: 'bi-shield-fill' }[role] || 'bi-person-fill';
+
+  return ReactDOM.createPortal(
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal guide-modal" onClick={e => e.stopPropagation()} style={{ padding: 0, overflow: 'hidden' }}>
+
+        {/* Header */}
+        <div className="guide-header">
+          <button
+            onClick={onClose}
+            style={{ position: 'absolute', top: 14, right: 14, background: 'rgba(255,255,255,0.15)', border: 'none', borderRadius: 8, width: 30, height: 30, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#fff', fontSize: 14 }}
+          >
+            <i className="bi bi-x-lg"></i>
+          </button>
+          <div className="guide-role-chip">
+            <i className={`bi ${roleIcon}`}></i>
+            {roleLabel}
+          </div>
+          <div className="guide-icon-wrap">
+            <i className={`bi ${isIntro ? config.icon : step.icon}`}></i>
+          </div>
+          <h2>{isIntro ? config.title : step.title}</h2>
+          <p>{isIntro ? config.intro : step.desc}</p>
+        </div>
+
+        {/* Step list (only on intro page) */}
+        {isIntro && (
+          <div className="guide-steps">
+            {config.steps.map((s, i) => (
+              <button key={i} className="guide-step" style={{ width: '100%', textAlign: 'left', cursor: 'pointer', background: 'none' }} onClick={() => setPage(i + 1)}>
+                <div className="guide-step-icon"><i className={`bi ${s.icon}`}></i></div>
+                <div className="guide-step-body">
+                  <h4>{s.title}</h4>
+                  <p>{s.desc.slice(0, 72)}{s.desc.length > 72 ? '…' : ''}</p>
+                </div>
+                <i className="bi bi-chevron-right" style={{ color: 'var(--text-faint)', marginLeft: 'auto', alignSelf: 'center', flexShrink: 0 }}></i>
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* Progress dots */}
+        <div className="guide-progress">
+          {Array.from({ length: totalPages }).map((_, i) => (
+            <div key={i} className={`guide-dot ${i === page ? 'active' : ''}`} onClick={() => setPage(i)} style={{ cursor: 'pointer' }} />
+          ))}
+        </div>
+
+        {/* Footer */}
+        <div className="guide-footer">
+          {page > 0
+            ? <button className="btn btn-ghost btn-sm" onClick={prev}><i className="bi bi-arrow-left" style={{ marginRight: 5 }}></i>Anterior</button>
+            : <button className="guide-skip" onClick={onClose}>Pular tutorial</button>
+          }
+          <button className="btn btn-primary btn-sm" onClick={next} style={{ minWidth: 110 }}>
+            {page < totalPages - 1 ? <><span>Próximo</span><i className="bi bi-arrow-right" style={{ marginLeft: 6 }}></i></> : <><i className="bi bi-check2" style={{ marginRight: 6 }}></i><span>Entendido!</span></>}
+          </button>
+        </div>
+
+      </div>
+    </div>,
+    document.body
+  );
+}
+
+/* =========================================================
    Empty state
    ========================================================= */
 function EmptyState({ icon = 'bi-inbox', title, message, action }) {
@@ -2553,6 +2812,7 @@ function Sidebar() {
   const { state, dispatch, currentUser, unreadCount } = useStore();
   const visible = NAV_ITEMS_BY_ROLE[currentUser.role] || [];
   const connected = currentUser.whatsapp_connected;
+  const [showGuide, setShowGuide] = useState(false);
   return (
     <aside className="sidebar">
       <div className="sidebar-brand">
@@ -2633,11 +2893,15 @@ function Sidebar() {
           <div className="semibold" style={{ fontSize: 12.5, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{currentUser.name}</div>
           <div className="faint tiny" style={{ fontFamily: 'var(--mono)' }}>{currentUser.role}</div>
         </div>
+        <button className="icon-btn" title="Ajuda / Tutorial" onClick={() => setShowGuide(true)}>
+          <i className="bi bi-question-circle" style={{ fontSize: 14 }}></i>
+        </button>
         <button className="icon-btn" onClick={() => dispatch({ type: 'logout' })} title="Sair">
           <i className="bi bi-box-arrow-right" style={{ fontSize: 14 }}></i>
         </button>
       </div>
 
+      {showGuide && <OnboardingModal onClose={() => setShowGuide(false)} />}
     </aside>
   );
 }
@@ -5424,6 +5688,7 @@ function CustomerDetailModal({ customer, onClose }) {
       footer={<Button variant="ghost" onClick={onClose}>Fechar</Button>}>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+        {/* Info header */}
         <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
           <div className="card card-pad" style={{ flex: 1, minWidth: 140, background: 'var(--surface-2)' }}>
             <div className="tiny faint" style={{ marginBottom: 4 }}>Telefone</div>
@@ -5448,6 +5713,7 @@ function CustomerDetailModal({ customer, onClose }) {
           </div>
         </div>
 
+        {/* Quotation history */}
         <div>
           <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 10 }}>Histórico de cotações</div>
           {quotations.length === 0 ? (
@@ -5545,7 +5811,7 @@ function SuppliersScreen() {
         <div className="row between" style={{ marginBottom: 16 }}>
           <div>
             <div style={{ fontWeight: 700, fontSize: 18 }}>Fornecedores</div>
-            <div className="small faint" style={{ marginTop: 2 }}>Cadastro para consulta rápida no módulo de compras</div>
+            <div className="small faint" style={{ marginTop: 2 }}>Cadastro de fornecedores para consulta rápida no módulo de compras</div>
           </div>
           <Button variant="primary" icon="bi-plus-lg" onClick={() => { setEditSupplier(null); setModalOpen(true); }}>
             Novo Fornecedor
@@ -5577,11 +5843,11 @@ function SuppliersScreen() {
               {suppliers.map(s => (
                 <tr key={s.id} style={{ borderBottom: '1px solid var(--border)' }}>
                   <td style={{ padding: '10px 12px', fontWeight: 600, fontSize: 13 }}>{s.name}</td>
-                  <td style={{ padding: '10px 12px', fontSize: 12 }}>
+                  <td style={{ padding: '10px 12px', fontFamily: 'monospace', fontSize: 12 }}>
                     {s.phone
-                      ? <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontFamily: 'monospace' }}>
+                      ? <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                           <i className="bi bi-whatsapp" style={{ color: '#25d366', fontSize: 13 }}></i>
-                          {s.phone}
+                          {fmt.phone ? fmt.phone(s.phone) : s.phone}
                         </span>
                       : <span style={{ color: 'var(--text-faint)' }}>—</span>}
                   </td>
@@ -5682,6 +5948,18 @@ const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
 
 function Router() {
   const { state, dispatch, currentUser } = useStore();
+  const [showGuide, setShowGuide] = useState(false);
+
+  // Show guide on first login per user
+  useEffect(() => {
+    if (!state.loggedIn || !currentUser) return;
+    const key = `cotou_guide_seen_${currentUser.id}`;
+    if (!localStorage.getItem(key)) {
+      setShowGuide(true);
+      localStorage.setItem(key, '1');
+    }
+  }, [state.loggedIn, currentUser?.id]);
+
   if (!state.loggedIn) return <LoginScreen />;
 
   let screen = null;
@@ -5726,6 +6004,7 @@ function Router() {
           onClose={() => dispatch({ type: 'close_wa_connect' })}
         />
       )}
+      {showGuide && <OnboardingModal onClose={() => setShowGuide(false)} />}
     </div>
   );
 }
