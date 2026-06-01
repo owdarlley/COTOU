@@ -2498,34 +2498,44 @@ function Toasts() {
 
 const TOUR_STEPS = {
   vendas: [
-    { target: 'dashboard',     title: 'Dashboard',         icon: 'bi-grid',           desc: 'Sua tela inicial. Veja em tempo real quantas cotações estão abertas, respondidas e aguardando envio ao cliente.' },
-    { target: 'new-quotation', title: 'Nova cotação',      icon: 'bi-plus-square',    desc: 'Clique aqui para abrir uma cotação. Informe o cliente, a placa do veículo e as peças que o cliente pediu.' },
-    { target: 'quotations',    title: 'Lista de cotações', icon: 'bi-list-ul',        desc: 'Acompanhe todas as suas cotações. O status muda conforme compras responde: Pendente → Em cotação → Cotado.' },
-    { target: 'customers',     title: 'Clientes',          icon: 'bi-people',         desc: 'Histórico completo de cada cliente: cotações abertas, aprovadas e dados de contato.' },
-    { target: 'wa-strip',      title: 'Seu WhatsApp',      icon: 'bi-whatsapp',       desc: 'Conecte seu WhatsApp aqui. Assim que compras responder, você envia o orçamento direto para o cliente com um clique.' },
-    { target: 'notif-bell',    title: 'Notificações',      icon: 'bi-bell',           desc: 'O sino acende quando compras responde uma cotação sua. Nunca perca uma atualização.' },
-    { target: 'tour-help',     title: 'Pronto!',           icon: 'bi-question-circle',desc: 'Qualquer dúvida, clique neste botão para rever o tour a qualquer momento. Boas vendas!' },
+    { navigate: 'dashboard',     target: 'dashboard',     title: 'Bem-vindo ao COTOU!',      icon: 'bi-grid',           desc: 'Esta é sua central de comando. Veja em tempo real: cotações abertas, em andamento, respondidas por compras e aguardando aprovação do cliente.' },
+    { navigate: 'dashboard',     target: 'notif-bell',    title: 'Notificações',              icon: 'bi-bell',           desc: 'O sino acende quando compras responde uma cotação. Clique para ver os alertas e ir direto para o orçamento pronto — nunca perca uma resposta.' },
+    { navigate: 'new-quotation', target: 'new-quotation', title: 'Abrir nova cotação',        icon: 'bi-plus-square',    desc: 'Clique aqui para iniciar uma cotação. O sistema notifica o time de compras automaticamente e acompanha todo o processo até a entrega da peça.' },
+    { navigate: 'new-quotation', target: 'form-stepper',  title: 'Fluxo em 4 etapas',        icon: 'bi-list-ol',        desc: 'Toda cotação segue 4 passos: (1) Dados do cliente, (2) Veículo, (3) Peças solicitadas, (4) Observações. Avance uma etapa de cada vez.' },
+    { navigate: 'new-quotation', target: 'form-step1',    title: 'Etapa 1 — Cliente',        icon: 'bi-person',         desc: 'Preencha nome e WhatsApp com DDD. O número é essencial: ao enviar o orçamento aprovado, o app abre o WhatsApp diretamente na conversa com o cliente.' },
+    { navigate: 'quotations',    target: 'quotations',    title: 'Lista de cotações',         icon: 'bi-list-ul',        desc: 'Todas as suas cotações abertas em um lugar. Cada linha mostra cliente, veículo, peças e status atual. Clique em qualquer linha para ver detalhes e ações.' },
+    { navigate: 'quotations',    target: 'filter-tabs',   title: 'Filtrar por status',        icon: 'bi-funnel',         desc: 'Use as abas para focar: Pendente (aguarda compras), Em cotação (sendo trabalhada), Cotada (pronta p/ enviar ao cliente), Peça chegou (finalização).' },
+    { navigate: 'customers',     target: 'customers',     title: 'Clientes',                  icon: 'bi-people',         desc: 'Histórico completo de cada cliente: todas as cotações passadas, valores e dados de contato. Clique em um nome para ver o histórico de atendimento.' },
+    { navigate: 'dashboard',     target: 'wa-strip',      title: 'Seu WhatsApp',              icon: 'bi-whatsapp',       desc: 'Conecte seu WhatsApp para enviar orçamentos direto do sistema. Clique em "Conectar" e escaneie o QR Code com seu celular — leva menos de 1 minuto.' },
+    { navigate: 'dashboard',     target: 'tour-help',     title: 'Pronto!',                   icon: 'bi-question-circle',desc: 'Você conhece todas as funções de vendas! Clique aqui a qualquer momento para rever este tour. Boas vendas!' },
   ],
   compras: [
-    { target: 'notif-bell',    title: 'Notificações',       icon: 'bi-bell',            desc: 'Quando vendas abre uma nova cotação, você recebe um alerta aqui imediatamente.' },
-    { target: 'quotations',    title: 'Cotações pendentes', icon: 'bi-list-ul',         desc: 'Veja as cotações aguardando resposta. Clique em "Assumir" para ficar responsável e evitar trabalho duplicado.' },
-    { target: 'catalog',       title: 'Catálogo de peças',  icon: 'bi-grid',            desc: 'Consulte preços de referência das peças mais cotadas. Ajuda a responder mais rápido.' },
-    { target: 'wa-strip',      title: 'WhatsApp',           icon: 'bi-whatsapp',        desc: 'Use para enviar a mensagem de consulta gerada pelo app direto para o seu fornecedor.' },
-    { target: 'suppliers',     title: 'Fornecedores',       icon: 'bi-truck',           desc: 'Lista de todos os fornecedores cadastrados com telefone para consulta rápida.' },
-    { target: 'tour-help',     title: 'Pronto!',            icon: 'bi-question-circle', desc: 'Clique aqui para rever o tour sempre que quiser. Bom trabalho!' },
+    { navigate: 'dashboard',     target: 'dashboard',     title: 'Bem-vindo ao COTOU!',      icon: 'bi-grid',           desc: 'Sua visão geral: veja quantas cotações estão na fila e o gráfico de atividade dos últimos 14 dias. Ideal para organizar a prioridade do dia.' },
+    { navigate: 'dashboard',     target: 'notif-bell',    title: 'Notificações',              icon: 'bi-bell',           desc: 'Quando vendas abre uma nova cotação, você recebe um alerta imediatamente. Clique para ver e ir direto para a cotação que precisa de atenção.' },
+    { navigate: 'quotations',    target: 'quotations',    title: 'Fila de trabalho',          icon: 'bi-list-ul',        desc: 'Aqui ficam todas as cotações aguardando sua resposta. Veja cliente, veículo, peças solicitadas e o vendedor que abriu. Clique em qualquer linha para abrir.' },
+    { navigate: 'quotations',    target: 'filter-tabs',   title: 'Aba Pendentes',             icon: 'bi-funnel',         desc: 'Fique na aba "Pendentes" para ver sua fila de trabalho. "Em cotação" mostra as que você já assumiu. As mais antigas aparecem primeiro — priorize-as.' },
+    { navigate: 'quotations',    target: 'quotation-table', title: 'Assumir e preencher',     icon: 'bi-bag-check',      desc: 'Clique em uma cotação pendente → pressione "Assumir e cotar" para ficar responsável → preencha o preço unitário e prazo de entrega de cada peça.' },
+    { navigate: 'suppliers',     target: 'suppliers',     title: 'Fornecedores',              icon: 'bi-truck',          desc: 'Fornecedores cadastrados com telefone para consulta rápida. Use para ligar ou enviar mensagem pedindo preço antes de preencher a cotação.' },
+    { navigate: 'catalog',       target: 'catalog',       title: 'Catálogo de peças',         icon: 'bi-box-seam',       desc: 'Preços de referência das peças mais cotadas. Consulte aqui antes de responder para ter uma base de custo sem precisar ligar para o fornecedor.' },
+    { navigate: 'dashboard',     target: 'wa-strip',      title: 'WhatsApp',                  icon: 'bi-whatsapp',       desc: 'Conecte seu WhatsApp para enviar a consulta de preço gerada pelo sistema direto para o fornecedor com um clique, sem copiar e colar.' },
+    { navigate: 'dashboard',     target: 'tour-help',     title: 'Pronto!',                   icon: 'bi-question-circle',desc: 'Você já conhece tudo! Clique aqui para rever o tour quando quiser. Bom trabalho!' },
   ],
   admin: [
-    { target: 'dashboard',      title: 'Dashboard',          icon: 'bi-grid',            desc: 'Visão completa: todas as cotações do sistema, KPIs do dia e gráfico dos últimos 14 dias.' },
-    { target: 'admin-users',    title: 'Usuários',           icon: 'bi-people',          desc: 'Crie e gerencie contas. Defina o papel de cada pessoa: Vendas, Compras ou Admin.' },
-    { target: 'suppliers',      title: 'Fornecedores',       icon: 'bi-truck',           desc: 'Cadastre os fornecedores que o setor de compras consulta, com telefone para contato direto.' },
-    { target: 'catalog',        title: 'Catálogo de peças',  icon: 'bi-box-seam',        desc: 'Mantenha atualizado o catálogo de peças frequentes para agilizar o preenchimento das cotações.' },
-    { target: 'admin-settings', title: 'Configurações',      icon: 'bi-gear',            desc: 'Personalize o template do WhatsApp e redefina os dados do sistema quando necessário.' },
-    { target: 'tour-help',      title: 'Tudo configurado!',  icon: 'bi-question-circle', desc: 'Clique aqui para rever o tour a qualquer momento.' },
+    { navigate: 'dashboard',      target: 'dashboard',          title: 'Bem-vindo ao COTOU!',      icon: 'bi-grid',           desc: 'Visão completa do sistema: todas as cotações, KPIs do dia e gráfico dos últimos 14 dias. Acompanhe o desempenho do time em tempo real.' },
+    { navigate: 'dashboard',      target: 'notif-bell',         title: 'Notificações',              icon: 'bi-bell',           desc: 'Central de alertas: novas cotações, respostas de compras e aprovações de clientes. Clique para ver e navegar direto para qualquer evento.' },
+    { navigate: 'admin-users',    target: 'admin-users',        title: 'Gerenciar usuários',        icon: 'bi-people',         desc: 'Cadastre e gerencie toda a equipe. Cada membro tem um papel: Vendas (abre cotações), Compras (responde preços) ou Admin (gestão total).' },
+    { navigate: 'admin-users',    target: 'user-create-btn',    title: 'Criar usuário',             icon: 'bi-person-plus',    desc: 'Clique em "Novo usuário" para adicionar um membro. Defina nome de exibição, login, senha inicial e papel. O membro pode alterar a senha depois.' },
+    { navigate: 'suppliers',      target: 'suppliers',          title: 'Fornecedores',              icon: 'bi-truck',          desc: 'Cadastro de fornecedores disponível para o time de compras durante a cotação. Mantenha nome, telefone e observações sempre atualizados.' },
+    { navigate: 'suppliers',      target: 'supplier-create-btn',title: 'Adicionar fornecedor',      icon: 'bi-plus-circle',    desc: 'Clique em "Novo Fornecedor" para cadastrar um parceiro. O time de compras terá o contato disponível na hora de cotar, sem precisar procurar.' },
+    { navigate: 'catalog',        target: 'catalog',            title: 'Catálogo de peças',         icon: 'bi-box-seam',       desc: 'Mantenha o catálogo com as peças mais cotadas e preços de referência. Isso agiliza o preenchimento e serve como guia de custo para compras.' },
+    { navigate: 'admin-settings', target: 'admin-settings',     title: 'Configurações',             icon: 'bi-gear',           desc: 'Configure o sistema: edite o template da mensagem WhatsApp enviada ao cliente com o orçamento aprovado, ajustando ao estilo do seu negócio.' },
+    { navigate: 'admin-settings', target: 'wa-template',        title: 'Template WhatsApp',         icon: 'bi-whatsapp',       desc: 'Escolha ou personalize o modelo de mensagem. Variáveis como [NOME DO CLIENTE], [VEÍCULO] e [LISTA DE PEÇAS] são substituídas automaticamente.' },
+    { navigate: 'dashboard',      target: 'tour-help',          title: 'Tudo configurado!',         icon: 'bi-question-circle',desc: 'O sistema está pronto. Clique aqui para rever o tour a qualquer momento. Boa gestão!' },
   ],
 };
 
 function GuidedTour({ onClose }) {
-  const { currentUser } = useStore();
+  const { currentUser, dispatch } = useStore();
   const role = currentUser?.role || 'vendas';
   const steps = TOUR_STEPS[role] || TOUR_STEPS.vendas;
   const [step, setStep] = useState(0);
@@ -2535,36 +2545,44 @@ function GuidedTour({ onClose }) {
   const current = steps[step];
   const total = steps.length;
 
-  // Measure target element on step change and on resize
+  // Navigate to the right screen, then measure the target element
   useEffect(() => {
-    function measure() {
-      const el = document.querySelector(`[data-tour="${current.target}"]`);
-      if (!el) { setSpot(null); return; }
-      const r = el.getBoundingClientRect();
-      setSpot({ top: r.top, left: r.left, width: r.width, height: r.height });
+    if (current.navigate) {
+      dispatch({ type: 'navigate', name: current.navigate });
     }
-    measure();
-    window.addEventListener('resize', measure);
-    return () => window.removeEventListener('resize', measure);
-  }, [step, current.target]);
+    const delay = current.navigate ? 120 : 0;
+    const tid = setTimeout(() => {
+      function measure() {
+        const el = document.querySelector(`[data-tour="${current.target}"]`);
+        if (!el) { setSpot(null); return; }
+        const r = el.getBoundingClientRect();
+        setSpot({ top: r.top, left: r.left, width: r.width, height: r.height });
+      }
+      measure();
+      window.addEventListener('resize', measure);
+      return () => window.removeEventListener('resize', measure);
+    }, delay);
+    return () => clearTimeout(tid);
+  }, [step, current.target, current.navigate]);
 
-  // Tooltip placement: right of sidebar elements, left side if near right edge
+  // Tooltip placement: sidebar → right; content area → below, flips above if near bottom
   function tooltipPos() {
     if (!spot) return { top: '50%', left: '50%', transform: 'translate(-50%,-50%)' };
     const PAD = 16;
-    const TW = 292; // tooltip width
-    const TH = 200; // approx height
+    const TW = 300;
+    const TH = 230;
     const vw = window.innerWidth;
     const vh = window.innerHeight;
     const isSidebar = spot.left < 260;
     if (isSidebar) {
-      // Place to the right of the element
       const top = Math.min(Math.max(PAD, spot.top + spot.height / 2 - TH / 2), vh - TH - PAD);
       return { top, left: spot.left + spot.width + PAD };
     }
-    // Place below (topbar bell etc.)
     const left = Math.min(Math.max(PAD, spot.left + spot.width / 2 - TW / 2), vw - TW - PAD);
-    return { top: spot.top + spot.height + PAD, left };
+    const belowTop = spot.top + spot.height + PAD;
+    const aboveTop = spot.top - TH - PAD;
+    if (belowTop + TH > vh - PAD && aboveTop > PAD) return { top: aboveTop, left };
+    return { top: belowTop, left };
   }
 
   const pos = tooltipPos();
@@ -2592,7 +2610,7 @@ function GuidedTour({ onClose }) {
       <div
         ref={tooltipRef}
         className="tour-tooltip"
-        style={{ top: pos.top, left: pos.left, width: 292 }}
+        style={{ top: pos.top, left: pos.left, width: 300 }}
         onClick={e => e.stopPropagation()}
       >
         <button className="tour-close" onClick={onClose} title="Fechar tour"><i className="bi bi-x-lg"></i></button>
@@ -3252,7 +3270,7 @@ function QuotationsList() {
       </div>
 
       {/* Status tabs */}
-      <div className="card" style={{ marginBottom: 16, overflow: 'visible' }}>
+      <div className="card" data-tour="filter-tabs" style={{ marginBottom: 16, overflow: 'visible' }}>
         <div style={{ padding: '12px 16px', display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
           {[
             { k: 'todos', label: 'Todas' },
@@ -3279,7 +3297,7 @@ function QuotationsList() {
       </div>
 
       {/* Table */}
-      <div className="card">
+      <div className="card" data-tour="quotation-table">
         {list.length === 0 ? (
           <EmptyState
             icon="bi-inbox"
@@ -4438,7 +4456,7 @@ function NewQuotation() {
 
       {/* Stepper */}
       <div className="card card-pad" style={{ marginBottom: 16 }}>
-        <div className="timeline">
+        <div className="timeline" data-tour="form-stepper">
           {[
             { k: 1, label: 'Cliente', icon: 'bi-person' },
             { k: 2, label: 'Veículo', icon: 'bi-car-front' },
@@ -4455,7 +4473,7 @@ function NewQuotation() {
 
       {/* Step 1: customer */}
       {step === 1 && (
-        <div className="card card-pad" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+        <div className="card card-pad" data-tour="form-step1" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           <h3 style={{ margin: 0 }}>Dados do cliente</h3>
           <div className="grid-2">
             <Field label="Nome completo *" error={step1Touched && !customerName.trim() ? 'Nome é obrigatório' : ''}>
@@ -5211,7 +5229,7 @@ function AdminUsersScreen() {
         </div>
         <div className="row" style={{ gap: 8 }}>
           <input className="input" placeholder="Buscar…" value={q} onChange={e => setQ(e.target.value)} style={{ width: 240 }} />
-          <Button variant="primary" icon="bi-person-plus" onClick={() => setEditing('new')}>Novo usuário</Button>
+          <Button variant="primary" icon="bi-person-plus" data-tour="user-create-btn" onClick={() => setEditing('new')}>Novo usuário</Button>
         </div>
       </div>
 
@@ -5458,7 +5476,7 @@ function AdminSettingsScreen() {
     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
 
       {/* ── Seleção ── */}
-      <div className="card" style={{ padding: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+      <div className="card" data-tour="wa-template" style={{ padding: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
 
         <div style={{ padding: '14px 18px', borderBottom: '1px solid var(--border)' }}>
           <div style={{ fontWeight: 700, fontSize: 14 }}>Modelo da mensagem</div>
@@ -5797,7 +5815,7 @@ function SuppliersScreen() {
             <div style={{ fontWeight: 700, fontSize: 18 }}>Fornecedores</div>
             <div className="small faint" style={{ marginTop: 2 }}>Cadastro de fornecedores para consulta rápida no módulo de compras</div>
           </div>
-          <Button variant="primary" icon="bi-plus-lg" onClick={() => { setEditSupplier(null); setModalOpen(true); }}>
+          <Button variant="primary" icon="bi-plus-lg" data-tour="supplier-create-btn" onClick={() => { setEditSupplier(null); setModalOpen(true); }}>
             Novo Fornecedor
           </Button>
         </div>
