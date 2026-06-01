@@ -131,12 +131,13 @@ a { color: inherit; }
 }
 
 .sidebar-brand {
-  height: 65px;
-  padding: 0 18px;
+  height: 56px;
+  padding: 0 14px;
   display: flex;
   align-items: center;
   gap: 10px;
   border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
 }
 .sidebar-brand-mark {
   width: 32px; height: 32px;
@@ -163,13 +164,13 @@ a { color: inherit; }
   font-weight: 500;
 }
 
-.sidebar-nav { padding: 10px; flex: 1; overflow-y: auto; }
+.sidebar-nav { padding: 6px 8px; flex: 1; overflow-y: auto; min-height: 0; }
 .sidebar-section {
   font-size: 10px;
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--text-faint);
-  padding: 14px 10px 6px;
+  padding: 8px 8px 4px;
   font-family: var(--mono);
   font-weight: 500;
 }
@@ -178,15 +179,15 @@ a { color: inherit; }
   width: 100%;
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 8px 10px;
+  gap: 9px;
+  padding: 6px 8px;
   border-radius: var(--r-sm);
   background: none;
   border: 0;
   cursor: pointer;
   text-align: left;
   color: var(--text-muted);
-  font-size: 13.5px;
+  font-size: 13px;
   font-weight: 500;
   transition: background 120ms, color 120ms;
 }
@@ -210,11 +211,12 @@ a { color: inherit; }
 }
 
 .sidebar-user {
-  padding: 12px;
+  padding: 8px 10px;
   border-top: 1px solid var(--border);
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
+  flex-shrink: 0;
 }
 .avatar {
   width: 32px; height: 32px;
@@ -2824,7 +2826,7 @@ function Sidebar() {
           );
         })}
 
-        <div className="sidebar-section" style={{ marginTop: 12 }}>Atalhos</div>
+        <div className="sidebar-section" style={{ marginTop: 4 }}>Atalhos</div>
         <button className="nav-item" onClick={() => dispatch({ type: 'navigate', name: 'quotations', params: { filter: 'pendente' } })}>
           <i className="bi bi-hourglass-split nav-icon" style={{ color: 'var(--st-pendente)' }}></i>
           <span>Pendentes</span>
@@ -2840,7 +2842,7 @@ function Sidebar() {
       </nav>
 
       {/* WhatsApp connection strip */}
-      <div style={{ padding: '8px 12px', borderTop: '1px solid var(--border)' }}>
+      <div style={{ padding: '6px 10px', borderTop: '1px solid var(--border)', flexShrink: 0 }}>
         <button
           onClick={() => connected
             ? dispatch({ type: 'whatsapp_disconnect', userId: currentUser.id })
