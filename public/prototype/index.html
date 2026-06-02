@@ -3369,6 +3369,7 @@ function QuotationDetail() {
   const [respondOpen, setRespondOpen] = useState(false);
   const [cancelOpen, setCancelOpen] = useState(false);
   const [waOpen, setWaOpen] = useState(false);
+  const [quickConsultOpen, setQuickConsultOpen] = useState(false);
 
   if (!qt) {
     return (
@@ -3428,6 +3429,11 @@ function QuotationDetail() {
                 dispatch({ type: 'assign_quotation', id: qt.id });
                 setRespondOpen(true);
               }}>Assumir e cotar</Button>
+            )}
+            {canRespond && (
+              <Button variant="whatsapp" icon="bi-whatsapp" onClick={() => setQuickConsultOpen(true)}>
+                Consultar fornecedor
+              </Button>
             )}
             {canRespond && (
               <Button variant="primary" icon="bi-currency-exchange" onClick={() => setRespondOpen(true)}>
@@ -3665,6 +3671,7 @@ function QuotationDetail() {
       </div>
 
       {respondOpen && <RespondModal quotation={qt} onClose={() => setRespondOpen(false)} />}
+      {quickConsultOpen && <QuickConsultarModal quotation={qt} onClose={() => setQuickConsultOpen(false)} />}
       <ConfirmDialog
         open={cancelOpen}
         onClose={() => setCancelOpen(false)}
@@ -4025,6 +4032,145 @@ function ConsultarFornecedorModal({ items, supplier, quotationId, onClose }) {
           A mensagem será enviada do seu WhatsApp para o número do fornecedor.
         </p>
       </div>
+    </Modal>
+  );
+}
+
+/* =========================================================
+   Quick supplier consultation — opened directly from quotation detail
+   without requiring prices to be filled first
+   ========================================================= */
+function QuickConsultarModal({ quotation, onClose }) {
+  const { state, currentUser, dispatch } = useStore();
+  const [supplier, setSupplier] = useState(null);
+  const [msg, setMsg] = useState('');
+  const [sending, setSending] = useState(false);
+  const [sent, setSent] = useState(false);
+
+  const activeSuppliers = (state.suppliers || []).filter(s => s.active && s.phone);
+  const vehicle = quotation.vehicle || {};
+
+  function buildMsg(sup) {
+    let m = `Olá, *${sup.name}*! 👋\n\n`;
+    if (quotation.quote_number) m += `📋 *Cotação:* ${quotation.quote_number}\n\n`;
+    const its = quotation.items;
+    if (its.length === 1) {
+      const it = its[0];
+      m += `Estamos verificando disponibilidade de peça:\n\n`;
+      m += `🔧 *${it.part_name}*`;
+      if (it.part_code) m += ` (Cód: ${it.part_code})`;
+      m += `\n📦 Quantidade: ${it.quantity} unidade${it.quantity > 1 ? 's' : ''}`;
+    } else {
+      m += `Estamos verificando disponibilidade de *${its.length} peças*:\n\n`;
+      its.forEach((it, idx) => {
+        m += `${idx + 1}. *${it.part_name}*`;
+        if (it.part_code) m += ` (Cód: ${it.part_code})`;
+        m += `\n   📦 Qtd: ${it.quantity} unidade${it.quantity > 1 ? 's' : ''}\n\n`;
+      });
+      m = m.trimEnd();
+    }
+    if (vehicle.make || vehicle.model) {
+      const vDesc = [vehicle.make, vehicle.model, vehicle.year_model].filter(Boolean).join(' ');
+      m += `\n\n🚗 *Veículo:* ${vDesc}`;
+      if (vehicle.chassis) m += `\n🔑 *Chassi:* ${vehicle.chassis}`;
+    }
+    const disp = its.length > 1 ? 'disponíveis' : 'disponível';
+    m += `\n\nVocê tem ${disp}? Qual o valor unitário e prazo de entrega?\n\nObrigado! 😊`;
+    return m;
+  }
+
+  function selectSupplier(s) { setSupplier(s); setMsg(buildMsg(s)); }
+
+  const canSendViaWA = currentUser?.whatsapp_connected;
+
+  async function send() {
+    setSending(true);
+    try {
+      await fetch('/api/whatsapp/consultar-fornecedor', {
+        method: 'POST', credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ supplierPhone: supplier.phone, message: msg }),
+      });
+    } catch (_) {}
+    setSent(true);
+    setSending(false);
+    dispatch({ type: 'toast', tone: 'success', message: `Consulta enviada para ${supplier.name}!` });
+    setTimeout(onClose, 1500);
+  }
+
+  return (
+    <Modal open onClose={onClose}
+      title={supplier ? `Consultar ${supplier.name}` : 'Consultar Fornecedor'}
+      icon="bi-whatsapp" size="md"
+      footer={
+        <>
+          <Button variant="ghost" onClick={supplier ? () => setSupplier(null) : onClose}>
+            {supplier ? '← Trocar fornecedor' : 'Cancelar'}
+          </Button>
+          {supplier && (
+            <Button variant="whatsapp"
+              icon={sending ? 'bi-arrow-clockwise' : sent ? 'bi-check-lg' : 'bi-whatsapp'}
+              onClick={send} disabled={sending || sent}>
+              {sending ? 'Enviando…' : sent ? 'Enviado!' : 'Enviar via WhatsApp'}
+            </Button>
+          )}
+        </>
+      }
+    >
+      {!supplier ? (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <p className="small" style={{ color: 'var(--text-faint)', margin: '0 0 4px' }}>
+            Selecione o fornecedor para consultar o preço das {quotation.items.length} peça{quotation.items.length !== 1 ? 's' : ''}:
+          </p>
+          {activeSuppliers.length === 0 ? (
+            <div style={{ padding: 20, textAlign: 'center', color: 'var(--text-faint)', fontSize: 13 }}>
+              <i className="bi bi-person-x" style={{ fontSize: 24, display: 'block', marginBottom: 8 }}></i>
+              Nenhum fornecedor com telefone cadastrado.
+            </div>
+          ) : activeSuppliers.map(s => (
+            <button key={s.id} onClick={() => selectSupplier(s)}
+              style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px',
+                background: 'var(--surface-2)', border: '1px solid var(--border)',
+                borderRadius: 'var(--r-md)', cursor: 'pointer', textAlign: 'left', width: '100%' }}>
+              <i className="bi bi-person-circle" style={{ color: '#25d366', fontSize: 22, flexShrink: 0 }}></i>
+              <div>
+                <div className="bold" style={{ fontSize: 13 }}>{s.name}</div>
+                <div className="tiny faint mono">{s.phone}</div>
+              </div>
+              <i className="bi bi-chevron-right" style={{ marginLeft: 'auto', color: 'var(--text-faint)', fontSize: 12 }}></i>
+            </button>
+          ))}
+        </div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px',
+            background: 'var(--surface-2)', borderRadius: 'var(--r-md)' }}>
+            <i className="bi bi-person-circle" style={{ color: '#25d366', fontSize: 22 }}></i>
+            <div>
+              <div className="bold" style={{ fontSize: 13 }}>{supplier.name}</div>
+              <div className="tiny faint mono">{supplier.phone}</div>
+            </div>
+          </div>
+          {!canSendViaWA && (
+            <div style={{ display: 'flex', gap: 8, padding: '9px 12px',
+              background: 'rgba(245,158,11,.08)', borderRadius: 'var(--r-md)',
+              border: '1px solid rgba(245,158,11,.2)' }}>
+              <i className="bi bi-exclamation-triangle" style={{ color: '#f59e0b', flexShrink: 0 }}></i>
+              <span className="tiny" style={{ color: '#92400e' }}>
+                WhatsApp não conectado. No protótipo, o envio é simulado.
+              </span>
+            </div>
+          )}
+          <Field label="Mensagem (editável antes de enviar)">
+            <textarea className="textarea" rows={9} value={msg}
+              onChange={e => setMsg(e.target.value)}
+              style={{ lineHeight: 1.6, fontSize: 13 }} />
+          </Field>
+          <p className="tiny faint" style={{ margin: 0 }}>
+            A mensagem será enviada do seu WhatsApp para o número do fornecedor.
+          </p>
+        </div>
+      )}
     </Modal>
   );
 }

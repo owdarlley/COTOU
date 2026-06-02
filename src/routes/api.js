@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { requireAuth, requireRole } = require('../middleware/auth');
 const { lookupPlate, getBalance, isValidPlate } = require('../services/plateService');
-const { sendQuoteMessage, createInstance, getQRCode, getStatus, deleteInstance } = require('../services/whatsappService');
+const { sendQuoteMessage, sendTextMessage, createInstance, getQRCode, getStatus, deleteInstance } = require('../services/whatsappService');
 const User = require('../models/User');
 const PartsCatalog = require('../models/PartsCatalog');
 const Notification = require('../models/Notification');
@@ -104,6 +104,24 @@ router.delete('/whatsapp/instancia/desconectar', async (req, res) => {
     User.clearWhatsappInstance(req.session.userId);
   }
   res.json({ ok: true });
+});
+
+// Consulta de preço para fornecedor (sem exigir valores preenchidos)
+router.post('/whatsapp/consultar-fornecedor', async (req, res) => {
+  const { supplierPhone, message } = req.body;
+  if (!supplierPhone || !message) {
+    return res.status(400).json({ ok: false, message: 'supplierPhone e message são obrigatórios.' });
+  }
+  const user = User.findById(req.session.userId);
+  if (!user?.whatsapp_instance_name) {
+    return res.status(400).json({ ok: false, message: 'Instância WhatsApp não configurada. Conecte seu WhatsApp primeiro.' });
+  }
+  try {
+    await sendTextMessage(supplierPhone, message, user.whatsapp_instance_name);
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(502).json({ ok: false, message: err.message });
+  }
 });
 
 // Envio WhatsApp

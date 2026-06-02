@@ -75,7 +75,7 @@ function getClient() {
 }
 
 async function sendQuoteMessage(customerPhone, quotation, items, instanceName, approvalToken) {
-  const { apiUrl, apiKey } = getClient();
+  const { apiUrl, headers, agent } = getClient();
   const instance = instanceName || process.env.WHATSAPP_INSTANCE_NAME;
   if (!instance) throw new Error('Instância WhatsApp não definida. Conecte seu WhatsApp nas configurações.');
 
@@ -89,6 +89,18 @@ async function sendQuoteMessage(customerPhone, quotation, items, instanceName, a
   );
 
   return { ok: true, data };
+}
+
+async function sendTextMessage(phone, text, instanceName) {
+  const { apiUrl, headers, agent } = getClient();
+  const instance = instanceName || process.env.WHATSAPP_INSTANCE_NAME;
+  if (!instance) throw new Error('Instância WhatsApp não definida.');
+  const { data } = await axios.post(
+    `${apiUrl}/message/sendText/${instance}`,
+    { number: formatPhone(phone), text },
+    { headers, httpsAgent: agent, timeout: 15000 }
+  );
+  return data;
 }
 
 async function createInstance(instanceName) {
@@ -128,4 +140,4 @@ async function deleteInstance(instanceName) {
   );
 }
 
-module.exports = { sendQuoteMessage, buildMessage, createInstance, getQRCode, getStatus, deleteInstance };
+module.exports = { sendQuoteMessage, sendTextMessage, buildMessage, createInstance, getQRCode, getStatus, deleteInstance };
