@@ -3053,6 +3053,13 @@ function LoginScreen() {
     const u = state.users.find(u => u.email === email && u.active);
     if (!u) { dispatch({ type: 'toast', tone: 'error', message: 'Usuário não encontrado' }); return; }
     dispatch({ type: 'login', userId: u.id });
+    // Establish real backend session so WhatsApp API calls work
+    fetch('/auth/login', {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password }),
+    }).catch(() => {});
   };
 
   return (

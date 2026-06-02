@@ -28,8 +28,15 @@ const app = express();
 
 app.use(helmet());
 app.use(compression());
+const allowedOrigins = [
+  process.env.FRONTEND_URL || 'http://localhost:5173',
+  'http://localhost:3000',
+];
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+  origin: (origin, cb) => {
+    if (!origin || allowedOrigins.includes(origin)) return cb(null, true);
+    cb(new Error('Not allowed by CORS'));
+  },
   credentials: true
 }));
 app.use(express.json({ limit: '2mb' }));
@@ -37,6 +44,9 @@ app.use(express.urlencoded({ extended: true, limit: '2mb' }));
 
 // Serve uploaded photos
 app.use('/uploads', express.static(path.join(__dirname, '../public/uploads')));
+
+// Serve prototype at /prototype/index.html
+app.use('/prototype', express.static(path.join(__dirname, '../public/prototype')));
 
 const dataDir = path.resolve('./data');
 if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });

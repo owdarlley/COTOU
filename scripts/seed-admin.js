@@ -5,9 +5,9 @@ runMigrations();
 
 async function seed() {
   const users = [
-    { name: 'Administrador', email: process.env.ADMIN_EMAIL || 'admin@cotou.com.br', password: process.env.ADMIN_PASSWORD || 'admin123', role: 'admin' },
-    { name: 'João Vendas',   email: 'vendas@cotou.com.br',   password: '123456', role: 'vendas'  },
-    { name: 'Maria Compras', email: 'compras@cotou.com.br',  password: '123456', role: 'compras' }
+    { name: 'Admin Sistema',  email: process.env.ADMIN_EMAIL || 'admin@cotou.com.br',   password: process.env.ADMIN_PASSWORD || 'demo1234', role: 'admin'   },
+    { name: 'João Vendas',   email: 'vendas@cotou.com.br',   password: 'demo1234', role: 'vendas'  },
+    { name: 'Maria Compras', email: 'compras@cotou.com.br',  password: 'demo1234', role: 'compras' }
   ];
 
   for (const u of users) {
