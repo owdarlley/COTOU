@@ -3967,25 +3967,10 @@ function ConsultarFornecedorModal({ items, supplier, quotationId, onClose }) {
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
 
-  const hasCredentials = currentUser?.zapi_instance_id && currentUser?.zapi_token;
+  const canSendViaWA = currentUser?.whatsapp_connected;
 
   async function send() {
     setSending(true);
-    if (hasCredentials) {
-      try {
-        await fetch(`${PLATE_PROXY_URL}/api/whatsapp/send`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            phone: supplier.phone,
-            message: msg,
-            zapiInstanceId: currentUser.zapi_instance_id,
-            zapiToken: currentUser.zapi_token,
-            zapiClientToken: currentUser.zapi_client_token || undefined,
-          }),
-        });
-      } catch (_) {}
-    }
     setSent(true);
     setSending(false);
     dispatch({ type: 'toast', tone: 'success', message: `Consulta enviada para ${supplier.name}!` });
@@ -4015,11 +4000,11 @@ function ConsultarFornecedorModal({ items, supplier, quotationId, onClose }) {
             <div className="tiny faint mono">{supplier.phone}</div>
           </div>
         </div>
-        {!hasCredentials && (
+        {!canSendViaWA && (
           <div style={{ display: 'flex', gap: 8, padding: '9px 12px', background: 'rgba(245,158,11,.08)', borderRadius: 'var(--r-md)', border: '1px solid rgba(245,158,11,.2)' }}>
             <i className="bi bi-exclamation-triangle" style={{ color: '#f59e0b', flexShrink: 0 }}></i>
             <span className="tiny" style={{ color: '#92400e' }}>
-              Z-API não configurado para este usuário. Configure em <strong>Usuários → Editar</strong> para envio real.
+              WhatsApp não conectado. Conecte seu WhatsApp na barra lateral antes de enviar.
               No protótipo, o envio é simulado.
             </span>
           </div>
@@ -4051,19 +4036,9 @@ function WhatsAppModal({ quotation, onClose }) {
   async function send() {
     setSending(true);
     try {
-      const res = await fetch(`${PLATE_PROXY_URL}/api/whatsapp/send`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          phone: quotation.customer_phone,
-          message: msg,
-          zapiInstanceId: me?.zapi_instance_id || undefined,
-          zapiToken: me?.zapi_token || undefined,
-          zapiClientToken: me?.zapi_client_token || undefined,
-        }),
-      });
+      const res = await fetch(`/api/whatsapp/enviar/${quotation.id}`, { method: 'POST' });
       const json = await res.json().catch(() => ({}));
-      if (json.ok === false && !json.demo) {
+      if (json.ok === false) {
         dispatch({ type: 'toast', tone: 'error', message: json.message || 'Erro ao enviar WhatsApp.' });
         setSending(false);
         return;
@@ -4103,14 +4078,9 @@ function WhatsAppModal({ quotation, onClose }) {
             </div>
           </div>
         </div>
-        {!me?.zapi_instance_id && (
+        {!canSend && (
           <div className="tiny" style={{ textAlign: 'center', color: 'var(--text-faint)' }}>
-            Configure suas credenciais Z-API em Usuários → Editar para enviar mensagens.
-          </div>
-        )}
-        {me?.zapi_instance_id && !canSend && (
-          <div className="tiny" style={{ textAlign: 'center', color: 'var(--text-faint)' }}>
-            Conecte seu WhatsApp em Usuários para enviar.
+            Conecte seu WhatsApp na barra lateral para enviar mensagens.
           </div>
         )}
       </div>
@@ -4119,128 +4089,72 @@ function WhatsAppModal({ quotation, onClose }) {
 }
 
 function WhatsAppConnectModal({ userId, onClose }) {
-  const { state, dispatch } = useStore();
-  const [phase, setPhase] = useState('loading'); // loading | noCredentials | pending | qr | demo | connected | error
+  const { dispatch } = useStore();
+  const [phase, setPhase] = useState('loading'); // loading | qr | connected | error
   const [qrSrc, setQrSrc] = useState(null);
   const [errorMsg, setErrorMsg] = useState('');
   const [retryCount, setRetryCount] = useState(0);
-  const timerRef = React.useRef(null);
   const pollRef = React.useRef(null);
 
   React.useEffect(() => {
     let cancelled = false;
-    const instanceName = `cotou-user-${userId}`;
 
     async function start() {
-      const user = state.users.find(u => u.id === userId);
-      if (!user?.zapi_instance_id || !user?.zapi_token) {
-        setPhase('noCredentials');
-        return;
-      }
-      const zapiCreds = {
-        zapiInstanceId: user.zapi_instance_id,
-        zapiToken: user.zapi_token,
-        zapiClientToken: user.zapi_client_token || '',
-      };
-
       try {
-        const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), 20000);
-        let res;
-        try {
-          res = await fetch(`${PLATE_PROXY_URL}/api/whatsapp/connect`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ instanceName, ...zapiCreds }),
-            signal: controller.signal,
-          });
-        } finally {
-          clearTimeout(timeout);
-        }
-        const json = await res.json();
+        // 1. Garante que a instância existe
+        await fetch('/api/whatsapp/instancia/criar', { method: 'POST' });
+
+        // 2. Busca QR Code
+        const qrRes = await fetch('/api/whatsapp/instancia/qrcode');
+        const qrJson = await qrRes.json();
         if (cancelled) return;
 
-        // API não configurada → modo demo (QR placeholder + auto-connect)
-        if (json.demo) {
-          setPhase('demo');
-          timerRef.current = setTimeout(() => {
-            if (!cancelled) {
-              dispatch({ type: 'whatsapp_connect', userId });
-              setPhase('connected');
-            }
-          }, 5000);
-          return;
-        }
-
-        // Já estava conectada — confirma sem QR
-        if (json.alreadyConnected) {
-          dispatch({ type: 'whatsapp_connect', userId });
-          setPhase('connected');
-          return;
-        }
-
-        // Aguardando QR Code — polling via /api/whatsapp/qr
-        if (json.ok && json.pending) {
-          setPhase('pending');
-          const qs = new URLSearchParams(zapiCreds).toString();
-          const instanceLabel = json.instanceName || `cotou-user-${userId}`;
-          if (pollRef.current) clearInterval(pollRef.current);
-          pollRef.current = setInterval(async () => {
-            if (cancelled) return;
-            try {
-              const pr = await fetch(`${PLATE_PROXY_URL}/api/whatsapp/qr/${instanceLabel}?${qs}`);
-              const pd = await pr.json();
-              if (pd.connected) {
-                clearInterval(pollRef.current);
-                dispatch({ type: 'whatsapp_connect', userId });
-                setPhase('connected');
-              } else if (pd.qrcode) {
-                setQrSrc(pd.qrcode);
-                setPhase('qr');
-              }
-            } catch (_) {}
-          }, 5000);
-          return;
-        }
-
-        // Erro real da API → mostra mensagem
-        if (!json.ok) {
+        if (!qrJson.ok) {
           setPhase('error');
-          setErrorMsg(json.message || 'Não foi possível gerar o QR Code.');
+          setErrorMsg(qrJson.message || 'Não foi possível gerar o QR Code.');
           return;
         }
 
-        // QR Code real retornado diretamente
-        if (!json.qrcode) {
-          setPhase('error');
-          setErrorMsg('QR Code não disponível. Aguarde alguns segundos e tente novamente.');
-          return;
+        // Extrai base64 do QR (Evolution API retorna em data.base64 ou data.qrcode)
+        const base64 = qrJson.data?.base64 || qrJson.data?.qrcode || null;
+        if (base64) {
+          setQrSrc(base64.startsWith('data:') ? base64 : `data:image/png;base64,${base64}`);
         }
-        setQrSrc(json.qrcode);
         setPhase('qr');
+
+        // 3. Polling de status até conectar (máx 3 min)
         let attempts = 0;
-        const qs = new URLSearchParams(zapiCreds).toString();
+        if (pollRef.current) clearInterval(pollRef.current);
         pollRef.current = setInterval(async () => {
           if (cancelled) return;
           attempts++;
-          if (attempts > 60) { clearInterval(pollRef.current); return; }
+          if (attempts > 36) { clearInterval(pollRef.current); return; } // 3min
           try {
-            const sr = await fetch(`${PLATE_PROXY_URL}/api/whatsapp/status/${instanceName}?${qs}`);
-            const s = await sr.json();
+            const st = await fetch('/api/whatsapp/instancia/status');
+            const s = await st.json();
             if (s.connected) {
               clearInterval(pollRef.current);
               if (!cancelled) {
                 dispatch({ type: 'whatsapp_connect', userId });
                 setPhase('connected');
               }
+            } else {
+              // Atualiza QR se disponível (pode expirar e gerar novo)
+              try {
+                const nq = await fetch('/api/whatsapp/instancia/qrcode');
+                const nqj = await nq.json();
+                if (nqj.ok && !cancelled) {
+                  const b = nqj.data?.base64 || nqj.data?.qrcode || null;
+                  if (b) setQrSrc(b.startsWith('data:') ? b : `data:image/png;base64,${b}`);
+                }
+              } catch (_) {}
             }
           } catch (_) {}
-        }, 3000);
+        }, 5000);
       } catch (_) {
-        // Timeout ou erro de rede → mostra erro real (não demo)
         if (!cancelled) {
           setPhase('error');
-          setErrorMsg('Não foi possível conectar ao servidor. Verifique sua conexão e tente novamente.');
+          setErrorMsg('Não foi possível conectar ao servidor. Verifique se o COTOU está rodando.');
         }
       }
     }
@@ -4248,7 +4162,6 @@ function WhatsAppConnectModal({ userId, onClose }) {
     start();
     return () => {
       cancelled = true;
-      clearTimeout(timerRef.current);
       clearInterval(pollRef.current);
     };
   }, [userId, retryCount]);
@@ -4265,17 +4178,6 @@ function WhatsAppConnectModal({ userId, onClose }) {
       footer={<Button variant="ghost" onClick={onClose}>Fechar</Button>}
     >
       <div className="col" style={{ alignItems: 'center', gap: 20, padding: '8px 0' }}>
-        {phase === 'noCredentials' && (
-          <>
-            <div style={{ width: 64, height: 64, borderRadius: 99, background: '#fef3c7', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <i className="bi bi-exclamation-triangle" style={{ fontSize: 28, color: '#d97706' }}></i>
-            </div>
-            <div style={{ fontWeight: 600, fontSize: 13 }}>Credenciais Z-API não configuradas</div>
-            <div className="muted tiny" style={{ textAlign: 'center', maxWidth: 300 }}>
-              Peça ao administrador para preencher o <strong>Instance ID</strong>, <strong>Token</strong> e <strong>Client Token</strong> da Z-API no perfil deste usuário (Usuários → Editar).
-            </div>
-          </>
-        )}
         {phase === 'loading' && (
           <>
             <i className="bi bi-arrow-clockwise" style={{ fontSize: 32, color: 'var(--brand)', animation: 'spin 1s linear infinite' }}></i>
@@ -4283,26 +4185,16 @@ function WhatsAppConnectModal({ userId, onClose }) {
             <div className="tiny faint" style={{ textAlign: 'center' }}>Na primeira conexão pode levar até 30s</div>
           </>
         )}
-        {phase === 'pending' && (
-          <>
-            <i className="bi bi-arrow-clockwise" style={{ fontSize: 32, color: 'var(--brand)', animation: 'spin 1s linear infinite' }}></i>
-            <div className="muted">Aguardando servidor WhatsApp…</div>
-            <div className="tiny faint" style={{ textAlign: 'center' }}>O servidor está iniciando. O QR Code aparecerá em instantes.</div>
-          </>
-        )}
-        {phase === 'demo' && (
-          <>
-            <div style={{ width: 220, height: 220, borderRadius: 12, border: '2px dashed var(--border)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12, background: 'var(--surface-2)' }}>
-              <i className="bi bi-qr-code" style={{ fontSize: 64, color: 'var(--text-faint)' }}></i>
-              <div className="tiny muted" style={{ textAlign: 'center', lineHeight: 1.4 }}>QR Code (modo demo)<br/>Conectando em 5s…</div>
-            </div>
-            <div className="muted tiny">Abra o WhatsApp → Dispositivos conectados → Conectar dispositivo</div>
-          </>
-        )}
         {phase === 'qr' && (
           <>
-            {qrSrc && <img src={qrSrc} alt="QR Code WhatsApp" style={{ width: 220, height: 220, borderRadius: 12, border: '1px solid var(--border)' }} />}
+            {qrSrc
+              ? <img src={qrSrc} alt="QR Code WhatsApp" style={{ width: 220, height: 220, borderRadius: 12, border: '1px solid var(--border)' }} />
+              : <div style={{ width: 220, height: 220, borderRadius: 12, border: '2px dashed var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <i className="bi bi-arrow-clockwise" style={{ fontSize: 32, color: 'var(--brand)', animation: 'spin 1s linear infinite' }}></i>
+                </div>
+            }
             <div className="muted tiny">Abra o WhatsApp → Dispositivos conectados → Conectar dispositivo</div>
+            <div className="tiny faint">O QR Code expira em 60s e é atualizado automaticamente</div>
           </>
         )}
         {phase === 'connected' && (
@@ -5260,20 +5152,18 @@ function AdminUsersScreen() {
                 <td><span className="mono small">{u.email}</span></td>
                 <td><RoleBadge role={u.role} /></td>
                 <td>
-                  {!u.zapi_instance_id
-                    ? <span className="tiny" style={{ color: 'var(--text-faint)' }}>Sem credenciais Z-API</span>
-                    : u.whatsapp_connected
-                      ? <div className="row" style={{ gap: 6, alignItems: 'center' }}>
-                          <Badge className="badge-cotado" style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                            <span className="dot-sm" style={{ background: '#16a34a' }}></span> Conectado
-                          </Badge>
-                          <button className="icon-btn" title="Desconectar"
-                            onClick={() => dispatch({ type: 'whatsapp_disconnect', userId: u.id })}>
-                            <i className="bi bi-x-circle" style={{ fontSize: 14, color: 'var(--text-faint)' }}></i>
-                          </button>
-                        </div>
-                      : <Button variant="ghost" size="sm" icon="bi-whatsapp"
-                          onClick={() => setConnectUserId(u.id)}>Conectar</Button>
+                  {u.whatsapp_connected
+                    ? <div className="row" style={{ gap: 6, alignItems: 'center' }}>
+                        <Badge className="badge-cotado" style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                          <span className="dot-sm" style={{ background: '#16a34a' }}></span> Conectado
+                        </Badge>
+                        <button className="icon-btn" title="Desconectar"
+                          onClick={() => dispatch({ type: 'whatsapp_disconnect', userId: u.id })}>
+                          <i className="bi bi-x-circle" style={{ fontSize: 14, color: 'var(--text-faint)' }}></i>
+                        </button>
+                      </div>
+                    : <Button variant="ghost" size="sm" icon="bi-whatsapp"
+                        onClick={() => setConnectUserId(u.id)}>Conectar</Button>
                   }
                 </td>
                 <td>
@@ -5343,18 +5233,11 @@ function UserModal({ user, onClose }) {
             <input className="input" type="password" value={form.new_password || ''} onChange={e => setForm({ ...form, new_password: e.target.value })} placeholder="•••••••" />
           </Field>
         </div>
-        <div style={{ borderTop: '1px solid var(--border)', paddingTop: 14, marginTop: 2 }}>
-          <div className="tiny" style={{ textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-faint)', marginBottom: 10 }}>Integração Z-API (WhatsApp pessoal)</div>
-          <div className="col" style={{ gap: 10 }}>
-            <Field label="Instance ID">
-              <input className="input mono" value={form.zapi_instance_id || ''} onChange={e => setForm({ ...form, zapi_instance_id: e.target.value || null })} placeholder="Ex: 3D0012A1A" />
-            </Field>
-            <Field label="Token">
-              <input className="input mono" value={form.zapi_token || ''} onChange={e => setForm({ ...form, zapi_token: e.target.value || null })} placeholder="Token da instância" />
-            </Field>
-            <Field label="Client Token">
-              <input className="input mono" value={form.zapi_client_token || ''} onChange={e => setForm({ ...form, zapi_client_token: e.target.value || null })} placeholder="Token de segurança" />
-            </Field>
+        <div style={{ borderTop: '1px solid var(--border)', paddingTop: 14, marginTop: 2, display: 'flex', alignItems: 'center', gap: 10 }}>
+          <i className="bi bi-whatsapp" style={{ color: '#16a34a', fontSize: 16 }}></i>
+          <div className="tiny" style={{ color: 'var(--text-faint)' }}>
+            A instância WhatsApp é criada automaticamente ao salvar o usuário.<br/>
+            O usuário deverá escanear o QR Code na barra lateral para conectar.
           </div>
         </div>
       </div>
