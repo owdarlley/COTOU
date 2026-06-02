@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const rateLimit = require('express-rate-limit');
+const { rateLimit, ipKeyGenerator } = require('express-rate-limit');
 const User = require('../models/User');
 const { requireAuth } = require('../middleware/auth');
 
@@ -9,7 +9,7 @@ const loginLimiter = rateLimit({
   max: 10,
   standardHeaders: true,
   legacyHeaders: false,
-  keyGenerator: (req) => req.body?.email || req.ip,
+  keyGenerator: (req) => req.body?.email || ipKeyGenerator(req),
   message: { ok: false, error: 'Muitas tentativas. Aguarde 15 minutos.' },
 });
 

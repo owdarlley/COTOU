@@ -1,5 +1,9 @@
 const axios = require('axios');
+const https = require('https');
 const Settings = require('../models/Settings');
+
+// Self-hosted Evolution API uses self-signed cert — skip TLS verification
+const httpsAgent = new https.Agent({ rejectUnauthorized: false });
 
 const DEFAULT_TEMPLATE = `Olá, [NOME DO CLIENTE]! 👋
 
@@ -65,7 +69,9 @@ function getClient() {
   const apiUrl = process.env.WHATSAPP_API_URL;
   const apiKey = process.env.WHATSAPP_API_KEY;
   if (!apiUrl || !apiKey) throw new Error('WhatsApp API não configurada. Verifique WHATSAPP_API_URL e WHATSAPP_API_KEY no .env');
-  return { apiUrl, apiKey };
+  const headers = { apikey: apiKey };
+  const agent = apiUrl.startsWith('https') ? httpsAgent : undefined;
+  return { apiUrl, apiKey, headers, agent };
 }
 
 async function sendQuoteMessage(customerPhone, quotation, items, instanceName, approvalToken) {
@@ -79,46 +85,46 @@ async function sendQuoteMessage(customerPhone, quotation, items, instanceName, a
   const { data } = await axios.post(
     `${apiUrl}/message/sendText/${instance}`,
     { number, text },
-    { headers: { apikey: apiKey }, timeout: 15000 }
+    { headers, httpsAgent: agent, timeout: 15000 }
   );
 
   return { ok: true, data };
 }
 
 async function createInstance(instanceName) {
-  const { apiUrl, apiKey } = getClient();
+  const { apiUrl, headers, agent } = getClient();
   const { data } = await axios.post(
     `${apiUrl}/instance/create`,
     { instanceName, qrcode: true, integration: 'WHATSAPP-BAILEYS' },
-    { headers: { apikey: apiKey }, timeout: 15000 }
+    { headers, httpsAgent: agent, timeout: 15000 }
   );
   return data;
 }
 
 async function getQRCode(instanceName) {
-  const { apiUrl, apiKey } = getClient();
+  const { apiUrl, headers, agent } = getClient();
   const { data } = await axios.get(
     `${apiUrl}/instance/connect/${instanceName}`,
-    { headers: { apikey: apiKey }, timeout: 15000 }
+    { headers, httpsAgent: agent, timeout: 15000 }
   );
   return data;
 }
 
 async function getStatus(instanceName) {
-  const { apiUrl, apiKey } = getClient();
+  const { apiUrl, headers, agent } = getClient();
   const { data } = await axios.get(
     `${apiUrl}/instance/connectionState/${instanceName}`,
-    { headers: { apikey: apiKey }, timeout: 10000 }
+    { headers, httpsAgent: agent, timeout: 10000 }
   );
   const connected = data?.instance?.state === 'open';
   return { connected, state: data?.instance?.state };
 }
 
 async function deleteInstance(instanceName) {
-  const { apiUrl, apiKey } = getClient();
+  const { apiUrl, headers, agent } = getClient();
   await axios.delete(
     `${apiUrl}/instance/delete/${instanceName}`,
-    { headers: { apikey: apiKey }, timeout: 10000 }
+    { headers, httpsAgent: agent, timeout: 10000 }
   );
 }
 
