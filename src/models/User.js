@@ -10,20 +10,27 @@ class User {
     return db.prepare('SELECT * FROM users WHERE email = ? AND active = 1').get(email);
   }
 
-  static findAllByRole(role) {
+  static findAllByRole(role, tenantId = null) {
+    if (tenantId !== null) {
+      return db.prepare('SELECT id, name, email, role, phone_whatsapp, whatsapp_instance_name, whatsapp_connected_at, active FROM users WHERE role = ? AND active = 1 AND tenant_id = ?').all(role, tenantId);
+    }
     return db.prepare('SELECT id, name, email, role, phone_whatsapp, whatsapp_instance_name, whatsapp_connected_at, active FROM users WHERE role = ? AND active = 1').all(role);
   }
 
-  static findAll() {
+  static findAll(tenantId = null) {
+    if (tenantId !== null) {
+      return db.prepare('SELECT id, name, email, role, phone_whatsapp, whatsapp_instance_name, whatsapp_connected_at, active, created_at FROM users WHERE tenant_id = ? ORDER BY name').all(tenantId);
+    }
     return db.prepare('SELECT id, name, email, role, phone_whatsapp, whatsapp_instance_name, whatsapp_connected_at, active, created_at FROM users ORDER BY name').all();
   }
 
-  static async create({ name, email, password, role, phone_whatsapp }) {
+  static async create({ name, email, password, role, phone_whatsapp, tenant_id = null }) {
     const hash = await bcrypt.hash(password, 10);
     const result = db.prepare(
-      'INSERT INTO users (name, email, password_hash, role, phone_whatsapp) VALUES (?, ?, ?, ?, ?)'
-    ).run(name, email, hash, role, phone_whatsapp || null);
-    return Number(result.lastInsertRowid);
+      'INSERT INTO users (name, email, password_hash, role, phone_whatsapp, tenant_id) VALUES (?, ?, ?, ?, ?, ?)'
+    ).run(name, email, hash, role, phone_whatsapp || null, tenant_id);
+    const id = Number(result.lastInsertRowid);
+    return { id, name, email, role, phone_whatsapp: phone_whatsapp || null, tenant_id };
   }
 
   static update(id, { name, email, role, phone_whatsapp, active }) {

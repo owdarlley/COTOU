@@ -3,12 +3,14 @@ const router = express.Router();
 const { requireAuth, requireRole } = require('../middleware/auth');
 const User = require('../models/User');
 const Settings = require('../models/Settings');
+const db = require('../config/database');
+const { createInstance } = require('../services/whatsappService');
 
-router.use(requireAuth, requireRole('admin'));
+router.use(requireAuth, requireRole('admin', 'super_admin'));
 
-// GET /admin/usuarios — lista usuários
+// GET /admin/usuarios — lista usuários do tenant atual
 router.get('/usuarios', (req, res) => {
-  const users = User.findAll();
+  const users = User.findAll(req.session.tenantId ?? null);
   res.json({ ok: true, users });
 });
 
@@ -22,8 +24,16 @@ router.post('/usuarios', async (req, res) => {
     return res.status(400).json({ ok: false, error: 'Role inválida. Use: vendas, compras ou admin.' });
   }
   try {
-    const user = await User.create({ name: name.trim(), email: email.trim().toLowerCase(), password, role, phone_whatsapp });
-    res.status(201).json({ ok: true, user: { id: user.id, name: user.name, role: user.role } });
+    const tenantId = req.session.tenantId ?? null;
+    const user = await User.create({ name: name.trim(), email: email.trim().toLowerCase(), password, role, phone_whatsapp, tenant_id: tenantId });
+    const instanceName = `cotou-user-${user.id}`;
+    try {
+      await createInstance(instanceName);
+      User.setWhatsappInstance(user.id, instanceName);
+    } catch (waErr) {
+      console.warn(`[WhatsApp] Falha ao criar instância para usuário ${user.id}:`, waErr.message);
+    }
+    res.status(201).json({ ok: true, user: { id: user.id, name: user.name, role: user.role, whatsapp_instance_name: instanceName } });
   } catch (e) {
     res.status(409).json({ ok: false, error: 'E-mail já cadastrado.' });
   }
@@ -70,6 +80,30 @@ router.post('/usuarios/:id/senha', async (req, res) => {
     return res.status(400).json({ ok: false, error: 'Senha deve ter pelo menos 6 caracteres.' });
   }
   await User.updatePassword(parseInt(req.params.id), new_password);
+  res.json({ ok: true });
+});
+
+// GET /admin/tenants — lista todas as oficinas (super_admin only)
+router.get('/tenants', requireRole('super_admin'), (req, res) => {
+  const tenants = db.prepare('SELECT * FROM tenants ORDER BY id').all();
+  res.json({ ok: true, tenants });
+});
+
+// POST /admin/tenants — cria nova oficina (super_admin only)
+router.post('/tenants', requireRole('super_admin'), (req, res) => {
+  const { name, slug } = req.body;
+  if (!name || !slug) return res.status(400).json({ ok: false, error: 'name e slug são obrigatórios.' });
+  try {
+    const result = db.prepare('INSERT INTO tenants (name, slug) VALUES (?, ?)').run(name.trim(), slug.trim().toLowerCase());
+    res.status(201).json({ ok: true, id: result.lastInsertRowid });
+  } catch (e) {
+    res.status(409).json({ ok: false, error: 'Slug já existe.' });
+  }
+});
+
+// PUT /admin/tenants/:id/toggle — ativa/desativa oficina (super_admin only)
+router.put('/tenants/:id/toggle', requireRole('super_admin'), (req, res) => {
+  db.prepare('UPDATE tenants SET active = CASE WHEN active = 1 THEN 0 ELSE 1 END WHERE id = ?').run(parseInt(req.params.id));
   res.json({ ok: true });
 });
 

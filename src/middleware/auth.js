@@ -14,4 +14,9 @@ function requireRole(...roles) {
   };
 }
 
-module.exports = { requireAuth, requireRole };
+function injectTenant(req, res, next) {
+  req.tenantId = req.session.tenantId ?? null;
+  next();
+}
+
+module.exports = { requireAuth, requireRole, injectTenant };
