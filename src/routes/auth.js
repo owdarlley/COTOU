@@ -33,7 +33,6 @@ router.post('/login', loginLimiter, async (req, res) => {
   req.session.userId   = user.id;
   req.session.userRole = user.role;
   req.session.userName = user.name;
-  req.session.tenantId = user.tenant_id ?? null;
 
   req.session.save((err) => {
     if (err) {

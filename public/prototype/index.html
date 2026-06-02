@@ -495,11 +495,9 @@ a { color: inherit; }
 .badge-role-vendas { background: #dbeafe; color: #1d4ed8; }
 .badge-role-compras { background: #d1fae5; color: #047857; }
 .badge-role-admin { background: #ede9fe; color: #6d28d9; }
-.badge-role-super_admin { background: #fef9c3; color: #92400e; }
 [data-theme="dark"] .badge-role-vendas { background: #0c1e3f; color: #93c5fd; }
 [data-theme="dark"] .badge-role-compras { background: #042f1f; color: #6ee7b7; }
 [data-theme="dark"] .badge-role-admin { background: #1e1339; color: #c4b5fd; }
-[data-theme="dark"] .badge-role-super_admin { background: #2d1f00; color: #fbbf24; }
 
 /* =========================================================
    Tables
@@ -1699,70 +1697,58 @@ const { createContext, useContext, useReducer, useEffect, useMemo, useState, use
    Seed data
    ========================================================= */
 
-const SEED_OFICINAS = [
-  { id: 1, name: 'Autopeças Darlley', active: true, created_at: '2025-11-01T00:00:00Z' },
-  { id: 2, name: 'AutoCenter Omega',  active: true, created_at: '2026-01-15T00:00:00Z' },
-];
-
 const SEED_USERS = [
-  { id: 1,  oficina_id: 1, name: 'Admin Sistema',     email: 'admin@cotou.com.br',   role: 'admin',   active: true,  phone_whatsapp: '11999990001', whatsapp_instance: 'cotou-user-1', whatsapp_connected: true,  created_at: '2025-11-04T10:00:00Z' },
-  { id: 2,  oficina_id: 1, name: 'João Vendas',       email: 'vendas@cotou.com.br',  role: 'vendas',  active: true,  phone_whatsapp: '11988887777', whatsapp_instance: 'cotou-user-2', whatsapp_connected: true,  created_at: '2025-11-12T10:00:00Z' },
-  { id: 3,  oficina_id: 1, name: 'Maria Compras',     email: 'compras@cotou.com.br', role: 'compras', active: true,  phone_whatsapp: '11977776666', whatsapp_instance: 'cotou-user-3', whatsapp_connected: true,  created_at: '2025-11-12T10:00:00Z' },
-  { id: 4,  oficina_id: 1, name: 'Ricardo Atende',    email: 'ricardo@cotou.com.br', role: 'vendas',  active: true,  phone_whatsapp: '11966665555', whatsapp_instance: 'cotou-user-4', whatsapp_connected: true,  created_at: '2026-01-15T10:00:00Z' },
-  { id: 5,  oficina_id: 1, name: 'Lucia Suprimentos', email: 'lucia@cotou.com.br',   role: 'compras', active: false, phone_whatsapp: '11955554444', whatsapp_instance: 'cotou-user-5', whatsapp_connected: true,  created_at: '2026-02-04T10:00:00Z' },
-  { id: 6,  oficina_id: 2, name: 'Admin Omega',        email: 'admin@omega.com.br',   role: 'admin',   active: true,  phone_whatsapp: '11944443333', whatsapp_instance: 'cotou-user-6', whatsapp_connected: false, created_at: '2026-01-15T10:00:00Z' },
-  { id: 7,  oficina_id: 2, name: 'Pedro Vendas',       email: 'pedro@omega.com.br',   role: 'vendas',  active: true,  phone_whatsapp: '11933332222', whatsapp_instance: 'cotou-user-7', whatsapp_connected: false, created_at: '2026-01-16T10:00:00Z' },
-  { id: 8,  oficina_id: 2, name: 'Silvia Compras',     email: 'silvia@omega.com.br',  role: 'compras', active: true,  phone_whatsapp: '11922221111', whatsapp_instance: 'cotou-user-8', whatsapp_connected: false, created_at: '2026-01-16T10:00:00Z' },
-  { id: 99, oficina_id: null, name: 'Super Admin',     email: 'super@cotou.com.br',   role: 'super_admin', active: true, phone_whatsapp: '', whatsapp_instance: '', whatsapp_connected: false, created_at: '2025-10-01T00:00:00Z' },
+  { id: 1, name: 'Admin Sistema',     email: 'admin@cotou.com.br',   role: 'admin',   active: true,  phone_whatsapp: '11999990001', whatsapp_instance: 'cotou-user-1', whatsapp_connected: true,  zapi_instance_id: '3F3C259A242D519EE38E32FB845BEA5C', zapi_token: '5E919A9D9695FE48AFAA3D4E', zapi_client_token: 'F97feb2c3b05f4e1dafdbaa743fda1b17S', created_at: '2025-11-04T10:00:00Z' },
+  { id: 2, name: 'João Vendas',       email: 'vendas@cotou.com.br',  role: 'vendas',  active: true,  phone_whatsapp: '11988887777', whatsapp_instance: 'cotou-user-2', whatsapp_connected: true,  zapi_instance_id: '3F3C259A242D519EE38E32FB845BEA5C', zapi_token: '5E919A9D9695FE48AFAA3D4E', zapi_client_token: 'F97feb2c3b05f4e1dafdbaa743fda1b17S', created_at: '2025-11-12T10:00:00Z' },
+  { id: 3, name: 'Maria Compras',     email: 'compras@cotou.com.br', role: 'compras', active: true,  phone_whatsapp: '11977776666', whatsapp_instance: 'cotou-user-3', whatsapp_connected: true,  zapi_instance_id: '3F3C259A242D519EE38E32FB845BEA5C', zapi_token: '5E919A9D9695FE48AFAA3D4E', zapi_client_token: 'F97feb2c3b05f4e1dafdbaa743fda1b17S', created_at: '2025-11-12T10:00:00Z' },
+  { id: 4, name: 'Ricardo Atende',    email: 'ricardo@cotou.com.br', role: 'vendas',  active: true,  phone_whatsapp: '11966665555', whatsapp_instance: 'cotou-user-4', whatsapp_connected: true,  zapi_instance_id: '3F3C259A242D519EE38E32FB845BEA5C', zapi_token: '5E919A9D9695FE48AFAA3D4E', zapi_client_token: 'F97feb2c3b05f4e1dafdbaa743fda1b17S', created_at: '2026-01-15T10:00:00Z' },
+  { id: 5, name: 'Lucia Suprimentos', email: 'lucia@cotou.com.br',   role: 'compras', active: false, phone_whatsapp: '11955554444', whatsapp_instance: 'cotou-user-5', whatsapp_connected: true,  zapi_instance_id: '3F3C259A242D519EE38E32FB845BEA5C', zapi_token: '5E919A9D9695FE48AFAA3D4E', zapi_client_token: 'F97feb2c3b05f4e1dafdbaa743fda1b17S', created_at: '2026-02-04T10:00:00Z' },
 ];
 
 const SEED_PARTS = [
-  { id: 1,  oficina_id: 1, code: 'PF-1023', name: 'Pastilha de Freio Dianteira',  description: 'Kit com 4 pastilhas',                 default_price: 89.90,  category: 'Freios' },
-  { id: 2,  oficina_id: 1, code: 'DF-4401', name: 'Disco de Freio Dianteiro',     description: 'Par de discos ventilados',            default_price: 210.00, category: 'Freios' },
-  { id: 3,  oficina_id: 1, code: 'PT-2298', name: 'Pastilha de Freio Traseira',   description: 'Kit com 4 pastilhas',                 default_price: 78.50,  category: 'Freios' },
-  { id: 4,  oficina_id: 1, code: 'AT-2210', name: 'Amortecedor Traseiro',         description: 'Par com mola',                        default_price: 380.00, category: 'Suspensão' },
-  { id: 5,  oficina_id: 1, code: 'AD-2208', name: 'Amortecedor Dianteiro',        description: 'Par a gás',                           default_price: 420.00, category: 'Suspensão' },
-  { id: 6,  oficina_id: 1, code: 'KE-7731', name: 'Kit Embreagem Completo',       description: 'Disco + platô + rolamento',           default_price: 480.00, category: 'Embreagem' },
-  { id: 7,  oficina_id: 1, code: 'CE-1104', name: 'Cabo de Embreagem',            description: 'Cabo + bucha',                        default_price: 45.00,  category: 'Embreagem' },
-  { id: 8,  oficina_id: 1, code: 'FO-1122', name: 'Filtro de Óleo',               description: 'Rosca 3/4-16',                         default_price: 28.00,  category: 'Motor' },
-  { id: 9,  oficina_id: 1, code: 'FA-3344', name: 'Filtro de Ar Motor',           description: 'Elemento filtrante',                  default_price: 42.00,  category: 'Motor' },
-  { id: 10, oficina_id: 1, code: 'FC-5511', name: 'Filtro de Combustível',        description: 'Linha pressurizada',                  default_price: 55.00,  category: 'Motor' },
-  { id: 11, oficina_id: 1, code: 'BAT-60',  name: 'Bateria 60Ah',                 description: 'Selada livre de manutenção',          default_price: 380.00, category: 'Elétrica' },
-  { id: 12, oficina_id: 1, code: 'BAT-70',  name: 'Bateria 70Ah',                 description: 'Selada livre de manutenção',          default_price: 460.00, category: 'Elétrica' },
-  { id: 13, oficina_id: 1, code: 'BD-5510', name: 'Bomba D\'Água',                description: 'Com junta',                           default_price: 165.00, category: 'Motor' },
-  { id: 14, oficina_id: 1, code: 'VT-3302', name: 'Vidro Traseiro Liso',          description: 'Original',                            default_price: 320.00, category: 'Carroceria' },
-  { id: 15, oficina_id: 1, code: 'SE-6612', name: 'Sensor de Estacionamento',     description: 'Kit 4 sensores traseiro',             default_price: 280.00, category: 'Elétrica' },
-  { id: 16, oficina_id: 1, code: 'CO-2233', name: 'Correia Dentada',              description: 'Kit com tensor',                      default_price: 195.00, category: 'Motor' },
-  { id: 17, oficina_id: 1, code: 'VE-7788', name: 'Vela de Ignição',              description: 'Jogo com 4',                          default_price: 68.00,  category: 'Motor' },
-  { id: 18, oficina_id: 1, code: 'RAD-9911',name: 'Radiador',                     description: 'Alumínio com reservatório',           default_price: 540.00, category: 'Motor' },
-  { id: 19, oficina_id: 1, code: 'LF-1010', name: 'Lâmpada Farol H4',             description: 'Par 60/55W',                          default_price: 38.00,  category: 'Elétrica' },
-  { id: 20, oficina_id: 1, code: 'RT-4422', name: 'Retentor Comando',             description: 'Borracha NBR',                        default_price: 22.00,  category: 'Motor' },
-  { id: 21, oficina_id: 1, code: 'PI-7700', name: 'Pivô da Suspensão',            description: 'Par lado direito/esquerdo',           default_price: 145.00, category: 'Suspensão' },
-  { id: 22, oficina_id: 1, code: 'MO-1198', name: 'Mola Helicoidal Dianteira',    description: 'Par',                                  default_price: 220.00, category: 'Suspensão' },
+  { id: 1,  code: 'PF-1023', name: 'Pastilha de Freio Dianteira',  description: 'Kit com 4 pastilhas',                 default_price: 89.90,  category: 'Freios' },
+  { id: 2,  code: 'DF-4401', name: 'Disco de Freio Dianteiro',     description: 'Par de discos ventilados',            default_price: 210.00, category: 'Freios' },
+  { id: 3,  code: 'PT-2298', name: 'Pastilha de Freio Traseira',   description: 'Kit com 4 pastilhas',                 default_price: 78.50,  category: 'Freios' },
+  { id: 4,  code: 'AT-2210', name: 'Amortecedor Traseiro',         description: 'Par com mola',                        default_price: 380.00, category: 'Suspensão' },
+  { id: 5,  code: 'AD-2208', name: 'Amortecedor Dianteiro',        description: 'Par a gás',                           default_price: 420.00, category: 'Suspensão' },
+  { id: 6,  code: 'KE-7731', name: 'Kit Embreagem Completo',       description: 'Disco + platô + rolamento',           default_price: 480.00, category: 'Embreagem' },
+  { id: 7,  code: 'CE-1104', name: 'Cabo de Embreagem',            description: 'Cabo + bucha',                        default_price: 45.00,  category: 'Embreagem' },
+  { id: 8,  code: 'FO-1122', name: 'Filtro de Óleo',               description: 'Rosca 3/4-16',                         default_price: 28.00,  category: 'Motor' },
+  { id: 9,  code: 'FA-3344', name: 'Filtro de Ar Motor',           description: 'Elemento filtrante',                  default_price: 42.00,  category: 'Motor' },
+  { id: 10, code: 'FC-5511', name: 'Filtro de Combustível',        description: 'Linha pressurizada',                  default_price: 55.00,  category: 'Motor' },
+  { id: 11, code: 'BAT-60',  name: 'Bateria 60Ah',                 description: 'Selada livre de manutenção',          default_price: 380.00, category: 'Elétrica' },
+  { id: 12, code: 'BAT-70',  name: 'Bateria 70Ah',                 description: 'Selada livre de manutenção',          default_price: 460.00, category: 'Elétrica' },
+  { id: 13, code: 'BD-5510', name: 'Bomba D\'Água',                description: 'Com junta',                           default_price: 165.00, category: 'Motor' },
+  { id: 14, code: 'VT-3302', name: 'Vidro Traseiro Liso',          description: 'Original',                            default_price: 320.00, category: 'Carroceria' },
+  { id: 15, code: 'SE-6612', name: 'Sensor de Estacionamento',     description: 'Kit 4 sensores traseiro',             default_price: 280.00, category: 'Elétrica' },
+  { id: 16, code: 'CO-2233', name: 'Correia Dentada',              description: 'Kit com tensor',                      default_price: 195.00, category: 'Motor' },
+  { id: 17, code: 'VE-7788', name: 'Vela de Ignição',              description: 'Jogo com 4',                          default_price: 68.00,  category: 'Motor' },
+  { id: 18, code: 'RAD-9911',name: 'Radiador',                     description: 'Alumínio com reservatório',           default_price: 540.00, category: 'Motor' },
+  { id: 19, code: 'LF-1010', name: 'Lâmpada Farol H4',             description: 'Par 60/55W',                          default_price: 38.00,  category: 'Elétrica' },
+  { id: 20, code: 'RT-4422', name: 'Retentor Comando',             description: 'Borracha NBR',                        default_price: 22.00,  category: 'Motor' },
+  { id: 21, code: 'PI-7700', name: 'Pivô da Suspensão',            description: 'Par lado direito/esquerdo',           default_price: 145.00, category: 'Suspensão' },
+  { id: 22, code: 'MO-1198', name: 'Mola Helicoidal Dianteira',    description: 'Par',                                  default_price: 220.00, category: 'Suspensão' },
 ];
 
 const SEED_CUSTOMERS = [
-  { id: 1,  oficina_id: 1, name: 'Carlos Eduardo Mendes',   phone: '11987654321', created_at: '2026-05-20T08:00:00Z' },
-  { id: 2,  oficina_id: 1, name: 'Ana Paula Ferreira',       phone: '21992345678', created_at: '2026-05-21T09:00:00Z' },
-  { id: 3,  oficina_id: 1, name: 'Roberto Souza Lima',       phone: '31976543210', created_at: '2026-05-22T10:00:00Z' },
-  { id: 4,  oficina_id: 1, name: 'Fernanda Oliveira Costa',  phone: '11912345678', created_at: '2026-05-23T11:00:00Z' },
-  { id: 5,  oficina_id: 1, name: 'Marcelo Andrade',          phone: '41988881234', created_at: '2026-05-23T14:00:00Z' },
-  { id: 6,  oficina_id: 1, name: 'Juliana Nascimento',       phone: '85977779999', created_at: '2026-05-24T08:30:00Z' },
-  { id: 7,  oficina_id: 1, name: 'Diego Carvalho',           phone: '11965432109', created_at: '2026-05-24T15:00:00Z' },
-  { id: 8,  oficina_id: 1, name: 'Patrícia Rocha Santos',    phone: '51955558765', created_at: '2026-05-25T09:00:00Z' },
-  { id: 9,  oficina_id: 1, name: 'Dárlley Alves de Almeida', phone: '15998569990', created_at: '2026-05-27T10:00:00Z' },
-  { id: 10, oficina_id: 1, name: 'Roberto Nascimento',       phone: '11976543210', created_at: '2026-05-29T08:30:00Z' },
-  { id: 11, oficina_id: 2, name: 'Lucas Ferreira',           phone: '11922224444', created_at: '2026-02-01T09:00:00Z' },
-  { id: 12, oficina_id: 2, name: 'Camila Rocha',             phone: '11933335555', created_at: '2026-03-10T10:00:00Z' },
+  { id: 1,  name: 'Carlos Eduardo Mendes',   phone: '11987654321', created_at: '2026-05-20T08:00:00Z' },
+  { id: 2,  name: 'Ana Paula Ferreira',       phone: '21992345678', created_at: '2026-05-21T09:00:00Z' },
+  { id: 3,  name: 'Roberto Souza Lima',       phone: '31976543210', created_at: '2026-05-22T10:00:00Z' },
+  { id: 4,  name: 'Fernanda Oliveira Costa',  phone: '11912345678', created_at: '2026-05-23T11:00:00Z' },
+  { id: 5,  name: 'Marcelo Andrade',          phone: '41988881234', created_at: '2026-05-23T14:00:00Z' },
+  { id: 6,  name: 'Juliana Nascimento',       phone: '85977779999', created_at: '2026-05-24T08:30:00Z' },
+  { id: 7,  name: 'Diego Carvalho',           phone: '11965432109', created_at: '2026-05-24T15:00:00Z' },
+  { id: 8,  name: 'Patrícia Rocha Santos',    phone: '51955558765', created_at: '2026-05-25T09:00:00Z' },
+  { id: 9,  name: 'Dárlley Alves de Almeida', phone: '15998569990', created_at: '2026-05-27T10:00:00Z' },
+  { id: 10, name: 'Roberto Nascimento',       phone: '11976543210', created_at: '2026-05-29T08:30:00Z' },
 ];
 
 const SEED_SUPPLIERS = [
-  { id: 1, oficina_id: 1, name: 'AutoPeças Belo Horizonte', phone: '31999990001', notes: 'Mecânica pesada', active: 1, created_at: '2026-01-01T10:00:00Z' },
-  { id: 2, oficina_id: 1, name: 'GlassWay Vidros',          phone: '31999990002', notes: 'Vidros e acessórios', active: 1, created_at: '2026-01-01T10:00:00Z' },
-  { id: 3, oficina_id: 1, name: 'EletroParts',              phone: '31999990003', notes: 'Elétrica e eletrônica', active: 1, created_at: '2026-01-01T10:00:00Z' },
-  { id: 4, oficina_id: 1, name: 'FreioParts',               phone: '31999990004', notes: 'Freios e suspensão', active: 1, created_at: '2026-01-01T10:00:00Z' },
-  { id: 5, oficina_id: 1, name: 'Darlley',                  phone: '15998569990', notes: '', active: 1, created_at: '2026-05-30T10:00:00Z' },
-  { id: 6, oficina_id: 2, name: 'OmegaSupply',              phone: '11988880001', notes: 'Fornecedor principal Omega', active: 1, created_at: '2026-01-15T10:00:00Z' },
+  { id: 1, name: 'AutoPeças Belo Horizonte', phone: '31999990001', notes: 'Mecânica pesada', active: 1, created_at: '2026-01-01T10:00:00Z' },
+  { id: 2, name: 'GlassWay Vidros',          phone: '31999990002', notes: 'Vidros e acessórios', active: 1, created_at: '2026-01-01T10:00:00Z' },
+  { id: 3, name: 'EletroParts',              phone: '31999990003', notes: 'Elétrica e eletrônica', active: 1, created_at: '2026-01-01T10:00:00Z' },
+  { id: 4, name: 'FreioParts',               phone: '31999990004', notes: 'Freios e suspensão', active: 1, created_at: '2026-01-01T10:00:00Z' },
+  { id: 5, name: 'Darlley',                  phone: '15998569990', notes: '', active: 1, created_at: '2026-05-30T10:00:00Z' },
 ];
 
 // Helper to compute total from items
@@ -1774,7 +1760,7 @@ function calcTotals(items) {
 
 const SEED_QUOTATIONS = [
   {
-    oficina_id: 1, id: 1, quote_number: 'COT-2026-0001', status: 'pendente',
+    id: 1, quote_number: 'COT-2026-0001', status: 'pendente',
     customer_name: 'Carlos Eduardo Mendes', customer_phone: '11987654321',
     vehicle: { plate: 'ABC1D23', make: 'VOLKSWAGEN', model: 'Gol 1.0', year_model: 2019, year_manuf: 2018, color: 'PRATA', fuel: 'FLEX', chassis: '9BWZZZ377VT004251' },
     created_by_user_id: 2, assigned_buyer_id: null,
@@ -1791,7 +1777,7 @@ const SEED_QUOTATIONS = [
     ],
   },
   {
-    oficina_id: 1, id: 2, quote_number: 'COT-2026-0002', status: 'em_cotacao',
+    id: 2, quote_number: 'COT-2026-0002', status: 'em_cotacao',
     customer_name: 'Ana Paula Ferreira', customer_phone: '21992345678',
     vehicle: { plate: 'XYZ5E67', make: 'TOYOTA', model: 'Corolla 2.0 XEi', year_model: 2022, year_manuf: 2021, color: 'PRETO', fuel: 'FLEX', chassis: '9BFZF26P288196922' },
     created_by_user_id: 2, assigned_buyer_id: 3,
@@ -1809,7 +1795,7 @@ const SEED_QUOTATIONS = [
     ],
   },
   {
-    oficina_id: 1, id: 3, quote_number: 'COT-2026-0003', status: 'cotado',
+    id: 3, quote_number: 'COT-2026-0003', status: 'cotado',
     customer_name: 'Roberto Souza Lima', customer_phone: '31976543210',
     vehicle: { plate: 'MNO3F89', make: 'CHEVROLET', model: 'Onix Plus 1.0 Turbo', year_model: 2023, year_manuf: 2023, color: 'BRANCO', fuel: 'FLEX', chassis: '9BGJF19BX0B123456' },
     created_by_user_id: 2, assigned_buyer_id: 3,
@@ -1828,7 +1814,7 @@ const SEED_QUOTATIONS = [
     ],
   },
   {
-    oficina_id: 1, id: 4, quote_number: 'COT-2026-0004', status: 'cotado',
+    id: 4, quote_number: 'COT-2026-0004', status: 'cotado',
     customer_name: 'Fernanda Oliveira Costa', customer_phone: '11912345678',
     vehicle: { plate: 'DEF2G45', make: 'FORD', model: 'Ka 1.5 SE', year_model: 2020, year_manuf: 2019, color: 'VERMELHO', fuel: 'FLEX', chassis: '9BFZF26P0J8234567' },
     created_by_user_id: 4, assigned_buyer_id: 3,
@@ -1842,7 +1828,7 @@ const SEED_QUOTATIONS = [
     ],
   },
   {
-    oficina_id: 1, id: 5, quote_number: 'COT-2026-0005', status: 'peca_chegou',
+    id: 5, quote_number: 'COT-2026-0005', status: 'peca_chegou',
     customer_name: 'Marcelo Andrade', customer_phone: '41988881234',
     vehicle: { plate: 'GHI7H01', make: 'HYUNDAI', model: 'HB20 1.0 Sense', year_model: 2021, year_manuf: 2021, color: 'PRATA', fuel: 'FLEX', chassis: 'MALAM51ASLM345678' },
     created_by_user_id: 2, assigned_buyer_id: 3,
@@ -1856,7 +1842,7 @@ const SEED_QUOTATIONS = [
     ],
   },
   {
-    oficina_id: 1, id: 6, quote_number: 'COT-2026-0006', status: 'cancelado',
+    id: 6, quote_number: 'COT-2026-0006', status: 'cancelado',
     customer_name: 'Juliana Nascimento', customer_phone: '85977779999',
     vehicle: { plate: 'JKL4I56', make: 'FIAT', model: 'Strada Endurance', year_model: 2022, year_manuf: 2022, color: 'PRETO', fuel: 'FLEX', chassis: '9BD158A38N0456789' },
     created_by_user_id: 2, assigned_buyer_id: null,
@@ -1869,7 +1855,7 @@ const SEED_QUOTATIONS = [
     ],
   },
   {
-    oficina_id: 1, id: 7, quote_number: 'COT-2026-0007', status: 'pendente',
+    id: 7, quote_number: 'COT-2026-0007', status: 'pendente',
     customer_name: 'Diego Carvalho', customer_phone: '11965432109',
     vehicle: { plate: 'PQR8J90', make: 'RENAULT', model: 'Kwid Zen 1.0', year_model: 2020, year_manuf: 2020, color: 'BRANCO', fuel: 'FLEX', chassis: '93YAAZHC2KJ567890' },
     created_by_user_id: 4, assigned_buyer_id: null,
@@ -1883,7 +1869,7 @@ const SEED_QUOTATIONS = [
     ],
   },
   {
-    oficina_id: 1, id: 8, quote_number: 'COT-2026-0008', status: 'em_cotacao',
+    id: 8, quote_number: 'COT-2026-0008', status: 'em_cotacao',
     customer_name: 'Patrícia Rocha Santos', customer_phone: '51955558765',
     vehicle: { plate: 'STU6K34', make: 'HONDA', model: 'Civic 1.5T Touring', year_model: 2023, year_manuf: 2023, color: 'CINZA', fuel: 'GASOLINA', chassis: '2HGFE2F59PH678901' },
     created_by_user_id: 2, assigned_buyer_id: 3,
@@ -1899,7 +1885,7 @@ const SEED_QUOTATIONS = [
     ],
   },
   {
-    oficina_id: 1, id: 9, quote_number: 'COT-2026-0009', status: 'cotado',
+    id: 9, quote_number: 'COT-2026-0009', status: 'cotado',
     customer_name: 'Dárlley Alves de Almeida', customer_phone: '15998569990',
     vehicle: { plate: '25S6S52S', make: 'CHEVROLET', model: 'Onix 1.0 Turbo LTZ', year_model: 2023, year_manuf: 2022, color: 'BRANCO', fuel: 'FLEX', chassis: '9BGJF19BX0B789012' },
     created_by_user_id: 2, assigned_buyer_id: 3,
@@ -1915,7 +1901,7 @@ const SEED_QUOTATIONS = [
     ],
   },
   {
-    oficina_id: 1, id: 10, quote_number: 'COT-2026-0010', status: 'em_cotacao',
+    id: 10, quote_number: 'COT-2026-0010', status: 'em_cotacao',
     customer_name: 'Roberto Nascimento', customer_phone: '11976543210',
     vehicle: { plate: 'EBA7923', make: 'FORD', model: 'Fiesta Sedan 1.6 Flex', year_model: 2008, year_manuf: 2007, color: 'PRATA', fuel: 'FLEX', chassis: '9BFZF26P288196922' },
     created_by_user_id: 2, assigned_buyer_id: 3,
@@ -1930,28 +1916,14 @@ const SEED_QUOTATIONS = [
       { id: 1002, part_name: 'Regulador de Vidro Elétrico Dianteiro Esquerdo', part_code: 'RV-2241', quantity: 1, unit_price: null, total_price: null, labor_cost_compras: null, delivery_days: null, supplier_name: null, item_status: 'em_cotacao', notes: null },
     ],
   },
-];  {
-    id: 11, oficina_id: 2, quote_number: 'COT-2026-0011', status: 'em_cotacao',
-    customer_name: 'Lucas Ferreira', customer_phone: '11922224444',
-    vehicle: { plate: 'OGA1A11', make: 'CHEVROLET', model: 'Tracker 1.0 Turbo', year_model: 2024, year_manuf: 2023, color: 'AZUL', fuel: 'FLEX', chassis: '9BGJF59BX0B001122' },
-    created_by_user_id: 7, assigned_buyer_id: 8,
-    creator_name: 'Pedro Vendas', buyer_name: 'Silvia Compras',
-    notes_vendas: 'Barulho no motor em frio. Verificar correia dentada.',
-    notes_compras: null, photo_path: null, customer_approved: null, whatsapp_sent_at: null,
-    created_at: '2026-05-30T09:00:00Z',
-    messages: [],
-    items: [
-      { id: 1101, part_name: 'Correia Dentada', part_code: 'CO-2233', quantity: 1, unit_price: null, total_price: null, item_status: 'em_cotacao', supplier_name: null, delivery_days: null, labor_cost_compras: null, notes: null },
-    ],
-  },
 ];
 
 const SEED_NOTIFICATIONS = [
-  { id: 1, oficina_id: 1, user_id: 2, type: 'cotacao_respondida', title: 'Cotação #COT-2026-0003 respondida', message: 'Maria Compras preencheu os valores. Verifique e envie ao cliente.', read_at: null, quotation_id: 3, created_at: '2026-05-25T09:00:00Z', time_label: 'agora' },
-  { id: 2, oficina_id: 1, user_id: 2, type: 'peca_chegou',        title: 'Peça chegou — Cotação #COT-2026-0005', message: 'Maria confirmou a chegada. Avise o cliente!', read_at: null, quotation_id: 5, created_at: '2026-05-24T16:00:00Z', time_label: 'ontem' },
-  { id: 3, oficina_id: 1, user_id: 3, type: 'nova_cotacao',       title: 'Nova cotação #COT-2026-0007', message: 'Ricardo abriu cotação — Renault Kwid PQR8J90', read_at: null, quotation_id: 7, created_at: '2026-05-25T07:05:00Z', time_label: '20min atrás' },
-  { id: 4, oficina_id: 1, user_id: 2, type: 'status_atualizado',  title: 'Cotação #COT-2026-0002 em cotação', message: 'Status alterado por Maria Compras.', read_at: '2026-05-22T15:00:00Z', quotation_id: 2, created_at: '2026-05-22T15:00:00Z', time_label: '3 dias' },
-  { id: 5, oficina_id: 1, user_id: 2, type: 'cotacao_atualizada', title: 'Cliente APROVOU — Cotação #COT-2026-0004', message: 'Ricardo informou que o cliente aprovou. Pode encomendar!', read_at: '2026-05-21T12:00:00Z', quotation_id: 4, created_at: '2026-05-21T11:30:00Z', time_label: '4 dias' },
+  { id: 1, user_id: 2, type: 'cotacao_respondida', title: 'Cotação #COT-2026-0003 respondida', message: 'Maria Compras preencheu os valores. Verifique e envie ao cliente.', read_at: null, quotation_id: 3, created_at: '2026-05-25T09:00:00Z', time_label: 'agora' },
+  { id: 2, user_id: 2, type: 'peca_chegou',        title: 'Peça chegou — Cotação #COT-2026-0005', message: 'Maria confirmou a chegada. Avise o cliente!', read_at: null, quotation_id: 5, created_at: '2026-05-24T16:00:00Z', time_label: 'ontem' },
+  { id: 3, user_id: 3, type: 'nova_cotacao',       title: 'Nova cotação #COT-2026-0007', message: 'Ricardo abriu cotação — Renault Kwid PQR8J90', read_at: null, quotation_id: 7, created_at: '2026-05-25T07:05:00Z', time_label: '20min atrás' },
+  { id: 4, user_id: 2, type: 'status_atualizado',  title: 'Cotação #COT-2026-0002 em cotação', message: 'Status alterado por Maria Compras.', read_at: '2026-05-22T15:00:00Z', quotation_id: 2, created_at: '2026-05-22T15:00:00Z', time_label: '3 dias' },
+  { id: 5, user_id: 2, type: 'cotacao_atualizada', title: 'Cliente APROVOU — Cotação #COT-2026-0004', message: 'Ricardo informou que o cliente aprovou. Pode encomendar!', read_at: '2026-05-21T12:00:00Z', quotation_id: 4, created_at: '2026-05-21T11:30:00Z', time_label: '4 dias' },
 ];
 
 // Proxy Vercel para consulta de placas (token seguro server-side)
@@ -2004,7 +1976,7 @@ function renderTemplate(settings, quotation, items) {
     .replace(/\[PRAZO DE ENTREGA\]/g, deadline);
 }
 
-const STATE_VERSION = 2;
+const STATE_VERSION = 1;
 
 const initialState = {
   currentUserId: 2, // start as Vendas
@@ -2019,8 +1991,6 @@ const initialState = {
   loggedIn: false,
   waConnectOpen: false,
   route: { name: 'login', params: {} },
-  oficinas: SEED_OFICINAS,
-  currentOficinaId: null,
 };
 
 function nextId(arr) { return arr.length ? Math.max(...arr.map(x => x.id)) + 1 : 1; }
@@ -2034,15 +2004,10 @@ function nextQuoteNumber(arr) {
 
 function reducer(state, action) {
   switch (action.type) {
-    case 'login': {
-      const u = state.users.find(us => us.id === action.userId);
-      if (u?.role === 'super_admin') {
-        return { ...state, currentUserId: action.userId, loggedIn: true, currentOficinaId: null, route: { name: 'super-admin', params: {} } };
-      }
-      return { ...state, currentUserId: action.userId, loggedIn: true, currentOficinaId: u?.oficina_id ?? 1, route: { name: 'dashboard', params: {} } };
-    }
+    case 'login':
+      return { ...state, currentUserId: action.userId, loggedIn: true, route: { name: 'dashboard', params: {} } };
     case 'logout':
-      return { ...state, loggedIn: false, currentOficinaId: null, route: { name: 'login', params: {} } };
+      return { ...state, loggedIn: false, route: { name: 'login', params: {} } };
     case 'navigate':
       return { ...state, route: { name: action.name, params: action.params || {} } };
     case 'switch_role': {
@@ -2066,7 +2031,6 @@ function reducer(state, action) {
       }));
       const q = {
         id, quote_number, status: 'pendente',
-        oficina_id: state.currentOficinaId,
         customer_name: action.payload.customer_name,
         customer_phone: action.payload.customer_phone,
         vehicle: action.payload.vehicle,
@@ -2082,8 +2046,8 @@ function reducer(state, action) {
         messages: [],
         items,
       };
-      // Add a notification for compras users of this oficina
-      const buyers = state.users.filter(u => u.role === 'compras' && u.active && u.oficina_id === state.currentOficinaId);
+      // Add a notification for compras users
+      const buyers = state.users.filter(u => u.role === 'compras' && u.active);
       const notifs = buyers.map((b, i) => ({
         id: nextId(state.notifications) + i,
         user_id: b.id,
@@ -2095,12 +2059,11 @@ function reducer(state, action) {
         created_at: q.created_at,
         time_label: 'agora',
       }));
-      const existingCustomer = state.customers.find(c => c.phone === action.payload.customer_phone && c.oficina_id === state.currentOficinaId);
+      const existingCustomer = state.customers.find(c => c.phone === action.payload.customer_phone);
       const newCustomers = existingCustomer
         ? state.customers
         : [...state.customers, {
             id: nextId(state.customers),
-            oficina_id: state.currentOficinaId,
             name: action.payload.customer_name,
             phone: action.payload.customer_phone,
             created_at: q.created_at,
@@ -2241,7 +2204,7 @@ function reducer(state, action) {
         notifications: state.notifications.map(n => n.user_id === state.currentUserId ? { ...n, read_at: n.read_at || new Date().toISOString() } : n),
       };
     case 'add_part':
-      return { ...state, parts: [{ id: nextId(state.parts), oficina_id: state.currentOficinaId, ...action.payload }, ...state.parts],
+      return { ...state, parts: [{ id: nextId(state.parts), ...action.payload }, ...state.parts],
         toasts: [...state.toasts, { id: Date.now(), type: 'success', message: 'Peça adicionada ao catálogo' }] };
     case 'update_part':
       return { ...state, parts: state.parts.map(p => p.id === action.id ? { ...p, ...action.payload } : p),
@@ -2250,7 +2213,7 @@ function reducer(state, action) {
       return { ...state, parts: state.parts.filter(p => p.id !== action.id),
         toasts: [...state.toasts, { id: Date.now(), type: 'error', message: 'Peça removida' }] };
     case 'add_user':
-      return { ...state, users: [{ id: nextId(state.users), oficina_id: state.currentOficinaId, active: true, created_at: new Date().toISOString(), ...action.payload }, ...state.users],
+      return { ...state, users: [{ id: nextId(state.users), active: true, created_at: new Date().toISOString(), ...action.payload }, ...state.users],
         toasts: [...state.toasts, { id: Date.now(), type: 'success', message: 'Usuário criado' }] };
     case 'update_user':
       return { ...state, users: state.users.map(u => u.id === action.id ? { ...u, ...action.payload } : u),
@@ -2263,7 +2226,7 @@ function reducer(state, action) {
       return { ...state, customers: state.customers.map(c => c.id === action.id ? { ...c, ...action.payload } : c),
         toasts: [...state.toasts, { id: Date.now(), type: 'success', message: 'Cliente atualizado' }] };
     case 'add_supplier':
-      return { ...state, suppliers: [...state.suppliers, { id: nextId(state.suppliers), oficina_id: state.currentOficinaId, active: 1, created_at: new Date().toISOString(), ...action.payload }],
+      return { ...state, suppliers: [...state.suppliers, { id: nextId(state.suppliers), active: 1, created_at: new Date().toISOString(), ...action.payload }],
         toasts: [...state.toasts, { id: Date.now(), type: 'success', message: 'Fornecedor adicionado' }] };
     case 'update_supplier':
       return { ...state, suppliers: state.suppliers.map(s => s.id === action.id ? { ...s, ...action.payload } : s),
@@ -2298,26 +2261,6 @@ function reducer(state, action) {
         notifications: notif ? [notif, ...state.notifications] : state.notifications,
       };
     }
-    case 'create_oficina': {
-      const newId = Math.max(...state.oficinas.map(o => o.id)) + 1;
-      const adminId = Math.max(...state.users.map(u => u.id)) + 1;
-      const newOficina = { id: newId, name: action.name, active: true, created_at: new Date().toISOString() };
-      const newAdmin = {
-        id: adminId, oficina_id: newId, name: `Admin ${action.name}`,
-        email: `admin@oficina${newId}.cotou.com.br`, role: 'admin',
-        active: true, phone_whatsapp: '',
-        whatsapp_instance: `cotou-of${newId}-1`, whatsapp_connected: false,
-        created_at: new Date().toISOString(),
-      };
-      return { ...state, oficinas: [...state.oficinas, newOficina], users: [...state.users, newAdmin],
-        toasts: [...state.toasts, { id: Date.now(), type: 'success', message: `Oficina "${action.name}" criada` }] };
-    }
-    case 'select_oficina':
-      return { ...state, currentOficinaId: action.id, route: { name: 'dashboard', params: {} } };
-    case 'exit_oficina':
-      return { ...state, currentOficinaId: null, route: { name: 'super-admin', params: {} } };
-    case 'toggle_oficina_active':
-      return { ...state, oficinas: state.oficinas.map(o => o.id === action.id ? { ...o, active: !o.active } : o) };
     default:
       return state;
   }
@@ -2346,14 +2289,7 @@ function StoreProvider({ children }) {
     const currentUser = state.users.find(u => u.id === state.currentUserId);
     const myNotifs = state.notifications.filter(n => n.user_id === state.currentUserId);
     const unreadCount = myNotifs.filter(n => !n.read_at).length;
-    const currentOficina = (state.oficinas || []).find(o => o.id === state.currentOficinaId) ?? null;
-    const oficina_quotations = state.quotations.filter(q => q.oficina_id === state.currentOficinaId);
-    const oficina_customers  = state.customers.filter(c => c.oficina_id === state.currentOficinaId);
-    const oficina_suppliers  = state.suppliers.filter(s => s.oficina_id === state.currentOficinaId);
-    const oficina_users      = state.users.filter(u => u.oficina_id === state.currentOficinaId);
-    const oficina_parts      = state.parts.filter(p => p.oficina_id === state.currentOficinaId);
-    return { state, dispatch, currentUser, currentOficina, myNotifs, unreadCount, calcTotals,
-             oficina_quotations, oficina_customers, oficina_suppliers, oficina_users, oficina_parts };
+    return { state, dispatch, currentUser, myNotifs, unreadCount, calcTotals };
   }, [state]);
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>;
 }
@@ -2415,10 +2351,9 @@ const STATUS_META = {
   cancelado:   { label: 'Cancelado',    icon: 'bi-x-circle', order: -1 },
 };
 const ROLE_META = {
-  vendas:      { label: 'Vendas',       icon: 'bi-person-vcard' },
-  compras:     { label: 'Compras',      icon: 'bi-bag-check' },
-  admin:       { label: 'Admin',        icon: 'bi-shield-lock' },
-  super_admin: { label: 'Super Admin',  icon: 'bi-buildings' },
+  vendas:  { label: 'Vendas',  icon: 'bi-person-vcard' },
+  compras: { label: 'Compras', icon: 'bi-bag-check' },
+  admin:   { label: 'Admin',   icon: 'bi-shield-lock' },
 };
 
 Object.assign(window, {
@@ -2767,7 +2702,7 @@ function StatusTimeline({ quotation }) {
    Autocomplete
    ========================================================= */
 function PartAutocomplete({ value, onChange, onPick, placeholder = 'Buscar peça por nome ou código…' }) {
-  const { oficina_parts } = useStore();
+  const { state } = useStore();
   const [open, setOpen] = useState(false);
   const [hl, setHl] = useState(0);
   const ref = useRef(null);
@@ -2778,7 +2713,7 @@ function PartAutocomplete({ value, onChange, onPick, placeholder = 'Buscar peça
   }, []);
   const q = (value || '').toLowerCase().trim();
   const matches = q.length >= 1
-    ? oficina_parts.filter(p => p.name.toLowerCase().includes(q) || p.code.toLowerCase().includes(q)).slice(0, 8)
+    ? state.parts.filter(p => p.name.toLowerCase().includes(q) || p.code.toLowerCase().includes(q)).slice(0, 8)
     : [];
   return (
     <div ref={ref} style={{ position: 'relative' }}>
@@ -2857,10 +2792,9 @@ Object.assign(window, {
 const { useState, useEffect, useRef } = React;
 
 const NAV_ITEMS_BY_ROLE = {
-  vendas:       ['dashboard', 'quotations', 'new-quotation', 'customers', 'catalog', 'notifications'],
-  compras:      ['dashboard', 'quotations', 'customers', 'suppliers', 'catalog', 'notifications'],
-  admin:        ['dashboard', 'quotations', 'customers', 'suppliers', 'catalog', 'admin-users', 'admin-settings', 'notifications'],
-  super_admin:  ['super-admin'],
+  vendas:  ['dashboard', 'quotations', 'new-quotation', 'customers', 'catalog', 'notifications'],
+  compras: ['dashboard', 'quotations', 'customers', 'suppliers', 'catalog', 'notifications'],
+  admin:   ['dashboard', 'quotations', 'customers', 'suppliers', 'catalog', 'admin-users', 'admin-settings', 'notifications'],
 };
 const NAV_META = {
   'dashboard':       { label: 'Dashboard',         icon: 'bi-grid-1x2' },
@@ -2872,20 +2806,12 @@ const NAV_META = {
   'admin-users':     { label: 'Usuários',          icon: 'bi-people' },
   'admin-settings':  { label: 'Configurações',     icon: 'bi-gear' },
   'notifications':   { label: 'Notificações',      icon: 'bi-bell' },
-  'super-admin':     { label: 'Painel Geral',      icon: 'bi-building' },
 };
 
 function Sidebar() {
-  const { state, dispatch, currentUser, unreadCount, currentOficina } = useStore();
-  const isSuperAdmin = currentUser?.role === 'super_admin';
-  // Super admin inside an oficina sees that oficina's nav; in the panel sees only 'super-admin'
-  const effectiveRole = (isSuperAdmin && state.currentOficinaId)
-    ? (state.users.find(u => u.id === state.currentUserId)?.role || 'admin')
-    : currentUser?.role;
-  const visible = isSuperAdmin && state.currentOficinaId
-    ? NAV_ITEMS_BY_ROLE['admin']
-    : (NAV_ITEMS_BY_ROLE[currentUser?.role] || []);
-  const connected = currentUser?.whatsapp_connected;
+  const { state, dispatch, currentUser, unreadCount } = useStore();
+  const visible = NAV_ITEMS_BY_ROLE[currentUser.role] || [];
+  const connected = currentUser.whatsapp_connected;
   const [showGuide, setShowGuide] = useState(false);
   return (
     <aside className="sidebar">
@@ -2896,21 +2822,6 @@ function Sidebar() {
           <div className="sidebar-brand-sub">ERP autopeças</div>
         </div>
       </div>
-      {isSuperAdmin && state.currentOficinaId && (
-        <div style={{ padding: '8px 12px', borderBottom: '1px solid var(--border)' }}>
-          <button
-            style={{ width: '100%', background: 'none', border: '1px solid var(--border)', borderRadius: 6,
-                     padding: '5px 10px', cursor: 'pointer', fontSize: 12, display: 'flex', alignItems: 'center', gap: 6 }}
-            onClick={() => dispatch({ type: 'exit_oficina' })}
-          >
-            <i className="bi bi-arrow-left" style={{ fontSize: 12 }}></i>
-            Sair da oficina
-          </button>
-          <div style={{ fontSize: 11, color: 'var(--text-faint)', textAlign: 'center', marginTop: 4, fontWeight: 600 }}>
-            {currentOficina?.name}
-          </div>
-        </div>
-      )}
       <nav className="sidebar-nav scrollbar-thin">
         <div className="sidebar-section">Operações</div>
         {visible.map(key => {
@@ -2933,21 +2844,19 @@ function Sidebar() {
           );
         })}
 
-        {(!isSuperAdmin || state.currentOficinaId) && (<>
-          <div className="sidebar-section" style={{ marginTop: 4 }}>Atalhos</div>
-          <button className="nav-item" onClick={() => dispatch({ type: 'navigate', name: 'quotations', params: { filter: 'pendente' } })}>
-            <i className="bi bi-hourglass-split nav-icon" style={{ color: 'var(--st-pendente)' }}></i>
-            <span>Pendentes</span>
-          </button>
-          <button className="nav-item" onClick={() => dispatch({ type: 'navigate', name: 'quotations', params: { filter: 'em_cotacao' } })}>
-            <i className="bi bi-currency-exchange nav-icon" style={{ color: 'var(--st-em-cotacao)' }}></i>
-            <span>Em cotação</span>
-          </button>
-          <button className="nav-item" onClick={() => dispatch({ type: 'navigate', name: 'quotations', params: { filter: 'cotado' } })}>
-            <i className="bi bi-check2-square nav-icon" style={{ color: 'var(--st-cotado)' }}></i>
-            <span>Cotadas</span>
-          </button>
-        </>)}
+        <div className="sidebar-section" style={{ marginTop: 4 }}>Atalhos</div>
+        <button className="nav-item" onClick={() => dispatch({ type: 'navigate', name: 'quotations', params: { filter: 'pendente' } })}>
+          <i className="bi bi-hourglass-split nav-icon" style={{ color: 'var(--st-pendente)' }}></i>
+          <span>Pendentes</span>
+        </button>
+        <button className="nav-item" onClick={() => dispatch({ type: 'navigate', name: 'quotations', params: { filter: 'em_cotacao' } })}>
+          <i className="bi bi-currency-exchange nav-icon" style={{ color: 'var(--st-em-cotacao)' }}></i>
+          <span>Em cotação</span>
+        </button>
+        <button className="nav-item" onClick={() => dispatch({ type: 'navigate', name: 'quotations', params: { filter: 'cotado' } })}>
+          <i className="bi bi-check2-square nav-icon" style={{ color: 'var(--st-cotado)' }}></i>
+          <span>Cotadas</span>
+        </button>
       </nav>
 
       {/* WhatsApp connection strip */}
@@ -3254,10 +3163,7 @@ function LoginScreen() {
               Perfis de demonstração
             </div>
             <div className="role-pick">
-              {[
-                ...state.users.filter(u => u.active && u.oficina_id === 1).slice(0, 3),
-                state.users.find(u => u.role === 'super_admin'),
-              ].filter(Boolean).map(u => (
+              {state.users.filter(u => u.active).slice(0, 3).map(u => (
                 <button
                   key={u.id}
                   type="button"
@@ -3291,7 +3197,7 @@ const { useState, useEffect, useMemo, useRef } = React;
    Quotations list
    ========================================================= */
 function QuotationsList() {
-  const { state, dispatch, currentUser, oficina_quotations } = useStore();
+  const { state, dispatch, currentUser } = useStore();
   const [filter, setFilter] = useState(state.route.params.filter || 'todos');
   const [q, setQ] = useState('');
   const [sortKey, setSortKey] = useState('created_at');
@@ -3308,8 +3214,8 @@ function QuotationsList() {
 
   // Vendas only sees own quotations
   let list = currentUser.role === 'vendas'
-    ? oficina_quotations.filter(x => x.created_by_user_id === currentUser.id)
-    : oficina_quotations;
+    ? state.quotations.filter(x => x.created_by_user_id === currentUser.id)
+    : state.quotations;
 
   if (filter !== 'todos') list = list.filter(x => x.status === filter);
   if (q.trim()) {
@@ -3332,14 +3238,14 @@ function QuotationsList() {
 
   const counts = useMemo(() => {
     const base = currentUser.role === 'vendas'
-      ? oficina_quotations.filter(x => x.created_by_user_id === currentUser.id)
-      : oficina_quotations;
+      ? state.quotations.filter(x => x.created_by_user_id === currentUser.id)
+      : state.quotations;
     const map = { todos: base.length };
     ['pendente', 'em_cotacao', 'cotado', 'peca_chegou', 'cancelado'].forEach(s => {
       map[s] = base.filter(x => x.status === s).length;
     });
     return map;
-  }, [oficina_quotations, currentUser]);
+  }, [state.quotations, currentUser]);
 
   return (
     <div className="page">
@@ -3865,7 +3771,7 @@ function ChatPanel({ quotation }) {
    Respond modal
    ========================================================= */
 function RespondModal({ quotation, onClose }) {
-  const { dispatch, state, currentUser, oficina_suppliers } = useStore();
+  const { dispatch, state, currentUser } = useStore();
   const [items, setItems] = useState(quotation.items.map(it => ({
     id: it.id,
     unit_price: '',
@@ -3899,7 +3805,7 @@ function RespondModal({ quotation, onClose }) {
     return s + (u * q) + l;
   }, 0);
 
-  const activeSuppliers = (oficina_suppliers || []).filter(s => s.active);
+  const activeSuppliers = (state.suppliers || []).filter(s => s.active);
 
   return (
     <>
@@ -4428,7 +4334,7 @@ function WhatsAppConnectModal({ userId, onClose }) {
    New quotation
    ========================================================= */
 function NewQuotation() {
-  const { state, dispatch, oficina_quotations } = useStore();
+  const { state, dispatch } = useStore();
   const [step, setStep] = useState(1);
   // customer
   const [customerName, setCustomerName] = useState('');
@@ -4476,7 +4382,7 @@ function NewQuotation() {
       setPlateFound(false);
       dispatch({ type: 'toast', tone: 'error', message: 'Erro ao consultar placa. Preencha manualmente.' });
     } finally {
-      const existing = oficina_quotations.find(
+      const existing = state.quotations.find(
         q => q.vehicle.plate.toUpperCase() === key && ['pendente', 'em_cotacao'].includes(q.status)
       );
       if (existing) {
@@ -4777,12 +4683,12 @@ const { useState, useMemo } = React;
    Dashboard
    ========================================================= */
 function Dashboard() {
-  const { state, dispatch, currentUser, unreadCount, oficina_quotations } = useStore();
+  const { state, dispatch, currentUser, unreadCount } = useStore();
 
   // Filter cotações by role
   const visible = currentUser.role === 'vendas'
-    ? oficina_quotations.filter(q => q.created_by_user_id === currentUser.id)
-    : oficina_quotations;
+    ? state.quotations.filter(q => q.created_by_user_id === currentUser.id)
+    : state.quotations;
 
   const counts = {
     pendente: visible.filter(q => q.status === 'pendente').length,
@@ -5088,23 +4994,23 @@ function QuickAction({ icon, label, onClick }) {
    Catalog
    ========================================================= */
 function CatalogScreen() {
-  const { state, dispatch, currentUser, oficina_parts } = useStore();
+  const { state, dispatch, currentUser } = useStore();
   const [q, setQ] = useState('');
   const [editing, setEditing] = useState(null); // part or 'new' or null
   const [deleting, setDeleting] = useState(null);
 
   const canEdit = currentUser.role === 'compras' || currentUser.role === 'admin';
   const list = q.trim()
-    ? oficina_parts.filter(p => p.name.toLowerCase().includes(q.toLowerCase()) || p.code.toLowerCase().includes(q.toLowerCase()))
-    : oficina_parts;
-  const categories = [...new Set(oficina_parts.map(p => p.category))];
+    ? state.parts.filter(p => p.name.toLowerCase().includes(q.toLowerCase()) || p.code.toLowerCase().includes(q.toLowerCase()))
+    : state.parts;
+  const categories = [...new Set(state.parts.map(p => p.category))];
 
   return (
     <div className="page">
       <div className="page-head">
         <div>
           <h2 className="page-title">Catálogo de peças</h2>
-          <p className="page-sub">{oficina_parts.length} peças cadastradas em {categories.length} categorias.</p>
+          <p className="page-sub">{state.parts.length} peças cadastradas em {categories.length} categorias.</p>
         </div>
         <div className="row" style={{ gap: 8 }}>
           <div style={{ position: 'relative' }}>
@@ -5174,9 +5080,9 @@ function CatalogScreen() {
 }
 
 function PartModal({ part, onClose }) {
-  const { dispatch, oficina_parts } = useStore();
+  const { dispatch, state } = useStore();
   const [form, setForm] = useState(part || { code: '', name: '', description: '', category: '', default_price: 0 });
-  const categories = [...new Set(oficina_parts.map(p => p.category))];
+  const categories = [...new Set(state.parts.map(p => p.category))];
   function save() {
     const data = { ...form, default_price: Number(form.default_price) || 0 };
     if (part) dispatch({ type: 'update_part', id: part.id, payload: data });
@@ -5306,20 +5212,20 @@ function NotifRow({ n, last }) {
    Admin users
    ========================================================= */
 function AdminUsersScreen() {
-  const { state, dispatch, oficina_users } = useStore();
+  const { state, dispatch } = useStore();
   const [editing, setEditing] = useState(null);
   const [connectUserId, setConnectUserId] = useState(null);
   const [q, setQ] = useState('');
   const list = q.trim()
-    ? oficina_users.filter(u => u.name.toLowerCase().includes(q.toLowerCase()) || u.email.toLowerCase().includes(q.toLowerCase()))
-    : oficina_users;
+    ? state.users.filter(u => u.name.toLowerCase().includes(q.toLowerCase()) || u.email.toLowerCase().includes(q.toLowerCase()))
+    : state.users;
 
   return (
     <div className="page">
       <div className="page-head">
         <div>
           <h2 className="page-title">Usuários</h2>
-          <p className="page-sub">{oficina_users.filter(u => u.active).length} ativos de {oficina_users.length} cadastrados</p>
+          <p className="page-sub">{state.users.filter(u => u.active).length} ativos de {state.users.length} cadastrados</p>
         </div>
         <div className="row" style={{ gap: 8 }}>
           <input className="input" placeholder="Buscar…" value={q} onChange={e => setQ(e.target.value)} style={{ width: 240 }} />
@@ -5657,19 +5563,19 @@ function AdminSettingsScreen() {
    Customers Screen
    ========================================================= */
 function CustomersScreen() {
-  const { state, dispatch, oficina_customers, oficina_quotations } = useStore();
+  const { state, dispatch } = useStore();
   const [search, setSearch] = useState('');
   const [editCustomer, setEditCustomer] = useState(null);
   const [detailCustomer, setDetailCustomer] = useState(null);
 
-  const customers = (oficina_customers || []).filter(c =>
+  const customers = (state.customers || []).filter(c =>
     !search ||
     c.name.toLowerCase().includes(search.toLowerCase()) ||
     c.phone.includes(search)
   );
 
   function statsFor(phone) {
-    const qs = (oficina_quotations || []).filter(q => q.customer_phone === phone);
+    const qs = (state.quotations || []).filter(q => q.customer_phone === phone);
     const last = qs.reduce((m, q) => (!m || q.created_at > m) ? q.created_at : m, null);
     const total = qs.reduce((s, q) => s + calcTotals(q.items).grandTotal, 0);
     return { count: qs.length, last, total };
@@ -5769,8 +5675,8 @@ function CustomersScreen() {
 }
 
 function CustomerDetailModal({ customer, onClose }) {
-  const { state, dispatch, oficina_quotations } = useStore();
-  const quotations = (oficina_quotations || [])
+  const { state, dispatch } = useStore();
+  const quotations = (state.quotations || [])
     .filter(q => q.customer_phone === customer.phone)
     .sort((a, b) => b.created_at.localeCompare(a.created_at));
 
@@ -5893,12 +5799,12 @@ function CustomerModal({ customer, onClose }) {
 }
 
 function SuppliersScreen() {
-  const { state, dispatch, oficina_suppliers } = useStore();
+  const { state, dispatch } = useStore();
   const [modalOpen, setModalOpen] = useState(false);
   const [editSupplier, setEditSupplier] = useState(null);
   const [search, setSearch] = useState('');
 
-  const suppliers = (oficina_suppliers || []).filter(s => s.active &&
+  const suppliers = (state.suppliers || []).filter(s => s.active &&
     (!search || s.name.toLowerCase().includes(search.toLowerCase())));
 
   return (
@@ -6042,110 +5948,6 @@ const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
   "theme": "light"
 }/*EDITMODE-END*/;
 
-function SuperAdminScreen() {
-  const { state, dispatch } = useStore();
-  const [showModal, setShowModal] = React.useState(false);
-  const [newName, setNewName] = React.useState('');
-
-  const stats = React.useMemo(() =>
-    state.oficinas.map(o => ({
-      ...o,
-      userCount: state.users.filter(u => u.oficina_id === o.id).length,
-      qtCount:   state.quotations.filter(q => q.oficina_id === o.id).length,
-    })), [state.oficinas, state.users, state.quotations]);
-
-  return (
-    <div style={{ padding: 24 }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
-        <div>
-          <h2 style={{ margin: 0, fontWeight: 700, fontSize: 22 }}>
-            <i className="bi bi-buildings" style={{ marginRight: 10, color: 'var(--brand)' }}></i>
-            Painel de Oficinas
-          </h2>
-          <p style={{ margin: '4px 0 0', color: 'var(--text-faint)', fontSize: 13 }}>{stats.length} oficina(s) cadastrada(s)</p>
-        </div>
-        <button className="btn btn-primary btn-sm" onClick={() => setShowModal(true)}
-          style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: 8,
-                   background: 'var(--brand)', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 600, fontSize: 13 }}>
-          <i className="bi bi-plus-circle"></i>
-          Nova oficina
-        </button>
-      </div>
-
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16 }}>
-        {stats.map(o => (
-          <div key={o.id} className="card" style={{ padding: 20 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
-              <div style={{ fontWeight: 700, fontSize: 16, flex: 1, marginRight: 8 }}>{o.name}</div>
-              <span style={{
-                padding: '2px 8px', borderRadius: 20, fontSize: 11, fontWeight: 600,
-                background: o.active ? '#d1fae5' : '#f3f4f6',
-                color: o.active ? '#047857' : '#6b7280',
-              }}>{o.active ? 'Ativa' : 'Inativa'}</span>
-            </div>
-            <div style={{ fontSize: 12, color: 'var(--text-faint)', marginBottom: 16 }}>
-              {o.userCount} usuário(s) · {o.qtCount} cotação(ões)
-            </div>
-            <div style={{ display: 'flex', gap: 8 }}>
-              <button
-                onClick={() => dispatch({ type: 'select_oficina', id: o.id })}
-                style={{ flex: 1, padding: '7px 0', borderRadius: 7, border: '1px solid var(--brand)',
-                         background: 'none', color: 'var(--brand)', cursor: 'pointer', fontSize: 13, fontWeight: 600 }}>
-                <i className="bi bi-box-arrow-in-right" style={{ marginRight: 5 }}></i>
-                Entrar
-              </button>
-              <button
-                onClick={() => dispatch({ type: 'toggle_oficina_active', id: o.id })}
-                style={{ padding: '7px 12px', borderRadius: 7, border: '1px solid var(--border)',
-                         background: 'none', color: 'var(--text-faint)', cursor: 'pointer', fontSize: 13 }}
-                title={o.active ? 'Desativar' : 'Ativar'}>
-                <i className={`bi ${o.active ? 'bi-pause-circle' : 'bi-play-circle'}`}></i>
-              </button>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {showModal && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 1000,
-                      display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div className="card" style={{ width: 360, padding: 24 }}>
-            <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 16 }}>Nova oficina</div>
-            <input
-              className="input"
-              placeholder="Nome da oficina"
-              value={newName}
-              onChange={e => setNewName(e.target.value)}
-              style={{ width: '100%', marginBottom: 16 }}
-              autoFocus
-            />
-            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-              <button
-                onClick={() => { setShowModal(false); setNewName(''); }}
-                style={{ padding: '8px 16px', borderRadius: 7, border: '1px solid var(--border)',
-                         background: 'none', cursor: 'pointer', fontSize: 13 }}>
-                Cancelar
-              </button>
-              <button
-                disabled={!newName.trim()}
-                onClick={() => {
-                  dispatch({ type: 'create_oficina', name: newName.trim() });
-                  setNewName(''); setShowModal(false);
-                }}
-                style={{ padding: '8px 16px', borderRadius: 7, border: 'none',
-                         background: newName.trim() ? 'var(--brand)' : 'var(--border)',
-                         color: newName.trim() ? '#fff' : 'var(--text-faint)',
-                         cursor: newName.trim() ? 'pointer' : 'default', fontSize: 13, fontWeight: 600 }}>
-                Criar
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
 function Router() {
   const { state, dispatch, currentUser } = useStore();
   const [showGuide, setShowGuide] = useState(false);
@@ -6164,7 +5966,6 @@ function Router() {
 
   let screen = null;
   switch (state.route.name) {
-    case 'super-admin':       screen = <SuperAdminScreen />; break;
     case 'dashboard':         screen = <Dashboard />; break;
     case 'quotations':        screen = <QuotationsList />; break;
     case 'quotation-detail':  screen = <QuotationDetail />; break;
@@ -6179,17 +5980,16 @@ function Router() {
   }
 
   const titles = {
-    'super-admin':    { title: 'Super Admin', subtitle: 'Gestão de oficinas' },
-    'dashboard':      { title: 'Dashboard', subtitle: 'Visão geral do dia' },
-    'quotations':     { title: 'Cotações', subtitle: 'Todas as cotações em fluxo' },
+    'dashboard': { title: 'Dashboard', subtitle: 'Visão geral do dia' },
+    'quotations': { title: 'Cotações', subtitle: 'Todas as cotações em fluxo' },
     'quotation-detail': { title: 'Detalhe da cotação', subtitle: null },
-    'new-quotation':  { title: 'Nova cotação', subtitle: 'Abertura' },
-    'catalog':        { title: 'Catálogo', subtitle: 'Peças cadastradas' },
-    'notifications':  { title: 'Notificações', subtitle: 'Eventos do sistema' },
-    'admin-users':    { title: 'Usuários', subtitle: 'Gestão de acesso' },
+    'new-quotation': { title: 'Nova cotação', subtitle: 'Abertura' },
+    'catalog': { title: 'Catálogo', subtitle: 'Peças cadastradas' },
+    'notifications': { title: 'Notificações', subtitle: 'Eventos do sistema' },
+    'admin-users': { title: 'Usuários', subtitle: 'Gestão de acesso' },
     'admin-settings': { title: 'Configurações', subtitle: 'Personalização do sistema' },
-    'customers':      { title: 'Clientes', subtitle: 'Histórico e gestão de clientes' },
-    'suppliers':      { title: 'Fornecedores', subtitle: 'Cadastro de fornecedores' },
+    'customers': { title: 'Clientes', subtitle: 'Histórico e gestão de clientes' },
+    'suppliers': { title: 'Fornecedores', subtitle: 'Cadastro de fornecedores' },
   };
   const t = titles[state.route.name] || titles.dashboard;
 

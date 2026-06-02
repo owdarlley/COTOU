@@ -3,14 +3,13 @@ const router = express.Router();
 const { requireAuth, requireRole } = require('../middleware/auth');
 const User = require('../models/User');
 const Settings = require('../models/Settings');
-const db = require('../config/database');
 const { createInstance } = require('../services/whatsappService');
 
-router.use(requireAuth, requireRole('admin', 'super_admin'));
+router.use(requireAuth, requireRole('admin'));
 
-// GET /admin/usuarios — lista usuários do tenant atual
+// GET /admin/usuarios — lista usuários
 router.get('/usuarios', (req, res) => {
-  const users = User.findAll(req.session.tenantId ?? null);
+  const users = User.findAll();
   res.json({ ok: true, users });
 });
 
@@ -24,8 +23,7 @@ router.post('/usuarios', async (req, res) => {
     return res.status(400).json({ ok: false, error: 'Role inválida. Use: vendas, compras ou admin.' });
   }
   try {
-    const tenantId = req.session.tenantId ?? null;
-    const user = await User.create({ name: name.trim(), email: email.trim().toLowerCase(), password, role, phone_whatsapp, tenant_id: tenantId });
+    const user = await User.create({ name: name.trim(), email: email.trim().toLowerCase(), password, role, phone_whatsapp });
     const instanceName = `cotou-user-${user.id}`;
     try {
       await createInstance(instanceName);
@@ -80,30 +78,6 @@ router.post('/usuarios/:id/senha', async (req, res) => {
     return res.status(400).json({ ok: false, error: 'Senha deve ter pelo menos 6 caracteres.' });
   }
   await User.updatePassword(parseInt(req.params.id), new_password);
-  res.json({ ok: true });
-});
-
-// GET /admin/tenants — lista todas as oficinas (super_admin only)
-router.get('/tenants', requireRole('super_admin'), (req, res) => {
-  const tenants = db.prepare('SELECT * FROM tenants ORDER BY id').all();
-  res.json({ ok: true, tenants });
-});
-
-// POST /admin/tenants — cria nova oficina (super_admin only)
-router.post('/tenants', requireRole('super_admin'), (req, res) => {
-  const { name, slug } = req.body;
-  if (!name || !slug) return res.status(400).json({ ok: false, error: 'name e slug são obrigatórios.' });
-  try {
-    const result = db.prepare('INSERT INTO tenants (name, slug) VALUES (?, ?)').run(name.trim(), slug.trim().toLowerCase());
-    res.status(201).json({ ok: true, id: result.lastInsertRowid });
-  } catch (e) {
-    res.status(409).json({ ok: false, error: 'Slug já existe.' });
-  }
-});
-
-// PUT /admin/tenants/:id/toggle — ativa/desativa oficina (super_admin only)
-router.put('/tenants/:id/toggle', requireRole('super_admin'), (req, res) => {
-  db.prepare('UPDATE tenants SET active = CASE WHEN active = 1 THEN 0 ELSE 1 END WHERE id = ?').run(parseInt(req.params.id));
   res.json({ ok: true });
 });
 
