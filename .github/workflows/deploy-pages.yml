@@ -27,9 +27,25 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Inject API base URL
+      - name: Patch prototype — injetar URL da API
+        env:
+          VPS_API_URL: ${{ secrets.VPS_API_URL }}
         run: |
-          sed -i "s|window.__API_BASE_URL__ || ''|'${{ secrets.VPS_API_URL }}'|g" public/prototype/index.html
+          FILE=public/prototype/index.html
+
+          # 1. Substitui PLATE_PROXY_URL pela URL da VPS
+          sed -i "s|const PLATE_PROXY_URL = 'https://cotou.vercel.app';|const PLATE_PROXY_URL = '${VPS_API_URL}';|g" "$FILE"
+
+          # 2. Converte fetch com caminhos relativos para absolutos
+          sed -i "s|fetch('/auth/login'|fetch(PLATE_PROXY_URL + '/auth/login'|g" "$FILE"
+          sed -i "s|fetch('/api/whatsapp/consultar-fornecedor'|fetch(PLATE_PROXY_URL + '/api/whatsapp/consultar-fornecedor'|g" "$FILE"
+          sed -i "s|fetch('/api/whatsapp/instancia/criar'|fetch(PLATE_PROXY_URL + '/api/whatsapp/instancia/criar'|g" "$FILE"
+          sed -i "s|fetch('/api/whatsapp/instancia/qrcode')|fetch(PLATE_PROXY_URL + '/api/whatsapp/instancia/qrcode')|g" "$FILE"
+          sed -i "s|fetch('/api/whatsapp/instancia/status')|fetch(PLATE_PROXY_URL + '/api/whatsapp/instancia/status')|g" "$FILE"
+          sed -i 's|fetch(`/api/whatsapp/enviar/|fetch(`${PLATE_PROXY_URL}/api/whatsapp/enviar/|g' "$FILE"
+
+          echo "Patch aplicado. Verificando:"
+          grep -n 'PLATE_PROXY_URL\|fetch(PLATE' "$FILE" | head -15
 
       - name: Setup Pages
         uses: actions/configure-pages@v4
