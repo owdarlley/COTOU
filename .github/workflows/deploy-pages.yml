@@ -40,8 +40,8 @@ jobs:
           sed -i "s|fetch('/auth/login'|fetch(PLATE_PROXY_URL + '/auth/login'|g" "$FILE"
           sed -i "s|fetch('/api/whatsapp/consultar-fornecedor'|fetch(PLATE_PROXY_URL + '/api/whatsapp/consultar-fornecedor'|g" "$FILE"
           sed -i "s|fetch('/api/whatsapp/instancia/criar'|fetch(PLATE_PROXY_URL + '/api/whatsapp/instancia/criar'|g" "$FILE"
-          sed -i "s|fetch('/api/whatsapp/instancia/qrcode')|fetch(PLATE_PROXY_URL + '/api/whatsapp/instancia/qrcode')|g" "$FILE"
-          sed -i "s|fetch('/api/whatsapp/instancia/status')|fetch(PLATE_PROXY_URL + '/api/whatsapp/instancia/status')|g" "$FILE"
+          sed -i "s|fetch('/api/whatsapp/instancia/qrcode'|fetch(PLATE_PROXY_URL + '/api/whatsapp/instancia/qrcode'|g" "$FILE"
+          sed -i "s|fetch('/api/whatsapp/instancia/status'|fetch(PLATE_PROXY_URL + '/api/whatsapp/instancia/status'|g" "$FILE"
           sed -i 's|fetch(`/api/whatsapp/enviar/|fetch(`${PLATE_PROXY_URL}/api/whatsapp/enviar/|g' "$FILE"
 
           echo "Patch aplicado. Verificando:"

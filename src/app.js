@@ -29,9 +29,11 @@ const app = express();
 app.use(helmet());
 app.use(compression());
 const allowedOrigins = [
-  process.env.FRONTEND_URL || 'http://localhost:5173',
+  'https://owdarlley.github.io',
+  process.env.FRONTEND_URL,
+  'http://localhost:5173',
   'http://localhost:3000',
-];
+].filter(Boolean);
 app.use(cors({
   origin: (origin, cb) => {
     if (!origin || allowedOrigins.includes(origin)) return cb(null, true);
@@ -39,6 +41,7 @@ app.use(cors({
   },
   credentials: true
 }));
+app.use(require('morgan')('[:date[iso]] :method :url :status :res[content-length] - :response-time ms'));
 app.use(express.json({ limit: '2mb' }));
 app.use(express.urlencoded({ extended: true, limit: '2mb' }));
 
