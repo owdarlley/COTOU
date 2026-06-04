@@ -1,7 +1,7 @@
 #!/bin/bash
 # Setup script para VPS — COTOU + Evolution API
+# Compatível com CentOS / AlmaLinux / Rocky Linux (dnf)
 # Uso: bash setup-vps.sh
-# Testado em Ubuntu 22.04/24.04
 
 set -e
 REPO="https://github.com/owdarlley/COTOU.git"
@@ -13,14 +13,14 @@ echo "========================================"
 echo "  COTOU — Setup VPS"
 echo "========================================"
 
-# ── 1. Dependências do sistema ────────────────────────────────────────────────
-apt-get update -qq
-apt-get install -y -qq curl git nginx
+# ── 1. Dependências do sistema ───────────────────────────────────────────────
+dnf update -y -q
+dnf install -y -q curl git nginx
 
 # ── 2. Node.js LTS ───────────────────────────────────────────────────────────
-if ! command -v node &>/dev/null || [[ $(node -e "process.version.split('.')[0].slice(1)") -lt $NODE_VERSION ]]; then
-  curl -fsSL https://deb.nodesource.com/setup_${NODE_VERSION}.x | bash -
-  apt-get install -y nodejs
+if ! command -v node &>/dev/null; then
+  curl -fsSL https://rpm.nodesource.com/setup_${NODE_VERSION}.x | bash -
+  dnf install -y nodejs
 fi
 echo "Node: $(node --version) | NPM: $(npm --version)"
 
@@ -40,7 +40,7 @@ fi
 
 cd $APP_DIR
 
-# ── 5. Instalar dependências ──────────────────────────────────────────────────
+# ── 5. Instalar dependências ─────────────────────────────────────────────────
 npm install --omit=dev --quiet
 
 # ── 6. Configurar .env de produção ───────────────────────────────────────────
@@ -58,7 +58,6 @@ DB_PATH=./data/cotou.db
 PLATE_API_BASE_URL=https://wdapi2.com.br
 PLATE_API_TOKEN=seu_token_aqui
 
-# Ajuste a porta se a Evolution API estiver em outra porta
 WHATSAPP_API_URL=http://localhost:8080
 WHATSAPP_API_KEY=COLOQUE_SUA_CHAVE_EVOLUTION_API_AQUI
 WHATSAPP_INSTANCE_NAME=cotou-default
@@ -68,12 +67,12 @@ APP_URL=http://$VPS_IP
 ADMIN_EMAIL=admin@suaempresa.com.br
 ADMIN_PASSWORD=admin123
 EOF
-  echo ".env criado em $APP_DIR/.env — revise antes de usar em produção!"
+  echo ".env criado — edite com suas chaves reais: nano $APP_DIR/.env"
 else
   echo ".env já existe, mantendo configuração atual."
 fi
 
-# ── 7. Criar pasta de dados e rodar migrations ────────────────────────────────
+# ── 7. Criar pasta de dados e rodar migrations ───────────────────────────────
 mkdir -p $APP_DIR/data
 npm run migrate
 
@@ -81,17 +80,16 @@ npm run migrate
 pm2 delete cotou 2>/dev/null || true
 pm2 start server.js --name cotou --cwd $APP_DIR
 pm2 save
-pm2 startup | tail -1 | bash 2>/dev/null || true
+pm2 startup systemd -u root --hp /root | tail -1 | bash 2>/dev/null || true
 
-# ── 9. Nginx — proxy reverso ──────────────────────────────────────────────────
+# ── 9. Nginx — proxy reverso ─────────────────────────────────────────────────
 VPS_IP=$(curl -s ifconfig.me)
 
-cat > /etc/nginx/sites-available/cotou <<EOF
+cat > /etc/nginx/conf.d/cotou.conf <<EOF
 server {
     listen 80;
     server_name $VPS_IP _;
 
-    # CORS para GitHub Pages
     add_header 'Access-Control-Allow-Origin' '*' always;
     add_header 'Access-Control-Allow-Methods' 'GET, POST, PUT, DELETE, OPTIONS' always;
     add_header 'Access-Control-Allow-Headers' 'Content-Type, Authorization' always;
@@ -114,22 +112,30 @@ server {
 }
 EOF
 
-ln -sf /etc/nginx/sites-available/cotou /etc/nginx/sites-enabled/cotou
-rm -f /etc/nginx/sites-enabled/default
-nginx -t && systemctl reload nginx
+# Remove config padrão se existir
+rm -f /etc/nginx/conf.d/default.conf
 
-# ── 10. Cloudflare Tunnel (HTTPS gratuito, sem domínio) ───────────────────────
+systemctl enable nginx
+systemctl restart nginx
+
+# ── 10. Firewall — liberar portas 80 e 3000 ──────────────────────────────────
+if command -v firewall-cmd &>/dev/null; then
+  firewall-cmd --permanent --add-service=http 2>/dev/null || true
+  firewall-cmd --permanent --add-port=3000/tcp 2>/dev/null || true
+  firewall-cmd --reload 2>/dev/null || true
+fi
+
+# ── 11. Cloudflare Tunnel (HTTPS gratuito, sem domínio) ──────────────────────
 echo ""
 echo "========================================"
 echo "  HTTPS via Cloudflare Tunnel"
 echo "========================================"
 
 if ! command -v cloudflared &>/dev/null; then
-  curl -fsSL https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb -o /tmp/cloudflared.deb
-  dpkg -i /tmp/cloudflared.deb
+  curl -fsSL https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.rpm -o /tmp/cloudflared.rpm
+  rpm -ivh /tmp/cloudflared.rpm
 fi
 
-# Cria serviço systemd para tunnel persistente
 cat > /etc/systemd/system/cotou-tunnel.service <<EOF
 [Unit]
 Description=Cloudflare Tunnel — COTOU
@@ -148,16 +154,17 @@ systemctl daemon-reload
 systemctl enable cotou-tunnel
 systemctl restart cotou-tunnel
 
-sleep 3
+sleep 5
 echo ""
 echo "URL HTTPS do tunnel (copie para o secret VPS_API_URL no GitHub):"
-journalctl -u cotou-tunnel --no-pager -n 30 | grep -o 'https://[a-z0-9-]*\.trycloudflare\.com' | tail -1
+journalctl -u cotou-tunnel --no-pager -n 50 | grep -o 'https://[a-z0-9-]*\.trycloudflare\.com' | tail -1
 
 echo ""
 echo "========================================"
 echo "  Setup concluído!"
 echo "========================================"
-echo "  API local:  http://$VPS_IP"
-echo "  PM2 status: pm2 list"
-echo "  Logs:       pm2 logs cotou"
+echo "  Edite o .env:  nano $APP_DIR/.env"
+echo "  API local:     http://$VPS_IP"
+echo "  PM2 status:    pm2 list"
+echo "  Logs:          pm2 logs cotou"
 echo "========================================"
