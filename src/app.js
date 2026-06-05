@@ -26,6 +26,9 @@ runMigrations();
 
 const app = express();
 
+// Trust nginx proxy so req.secure works correctly behind HTTPS termination
+app.set('trust proxy', 1);
+
 app.use(helmet());
 app.use(compression());
 const allowedOrigins = [
@@ -70,8 +73,9 @@ app.use(session({
   cookie: {
     maxAge: 1000 * 60 * 60 * 8,
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax'
+    // secure/sameSite:none only when actually behind HTTPS (set COOKIE_SECURE=true in .env after SSL is configured)
+    secure: process.env.COOKIE_SECURE === 'true',
+    sameSite: process.env.COOKIE_SECURE === 'true' ? 'none' : 'lax'
   }
 }));
 
