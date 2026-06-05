@@ -1974,7 +1974,7 @@ function renderTemplate(settings, quotation, items) {
     .replace(/\[PRAZO DE ENTREGA\]/g, deadline);
 }
 
-const STATE_VERSION = 2;
+const STATE_VERSION = 3;
 
 const initialState = {
   currentUserId: 2, // start as Vendas
@@ -3074,7 +3074,15 @@ function LoginScreen() {
               phone_whatsapp: '', whatsapp_instance: null, whatsapp_connected: false };
         dispatch({ type: 'upsert_user', user: u });
       }
-      dispatch({ type: 'login', userId: u.id });
+      dispatch({ type: 'login', userId: data.user.id });
+      // Sync real WA connection status from backend right after login
+      try {
+        const stRes = await fetch(PLATE_PROXY_URL + '/api/whatsapp/instancia/status', { credentials: 'include' });
+        const stData = await stRes.json().catch(() => ({}));
+        if (stData.connected) {
+          dispatch({ type: 'whatsapp_connect', userId: data.user.id });
+        }
+      } catch (_) {}
     } catch {
       dispatch({ type: 'toast', tone: 'error', message: 'Não foi possível conectar ao servidor.' });
     } finally {
