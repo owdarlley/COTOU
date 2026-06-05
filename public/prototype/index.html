@@ -2006,6 +2006,11 @@ function reducer(state, action) {
   switch (action.type) {
     case 'login':
       return { ...state, currentUserId: action.userId, loggedIn: true, route: { name: 'dashboard', params: {} } };
+    case 'upsert_user': {
+      const exists = state.users.some(u => u.id === action.user.id);
+      if (exists) return state;
+      return { ...state, users: [...state.users, action.user] };
+    }
     case 'logout':
       return { ...state, loggedIn: false, route: { name: 'login', params: {} } };
     case 'navigate':
@@ -3048,18 +3053,35 @@ function LoginScreen() {
   const [showPwd, setShowPwd] = useState(false);
   const [picked, setPicked] = useState(2);
 
-  const onSubmit = (e) => {
+  const [loggingIn, setLoggingIn] = React.useState(false);
+
+  const onSubmit = async (e) => {
     e.preventDefault();
-    const u = state.users.find(u => u.email === email && u.active);
-    if (!u) { dispatch({ type: 'toast', tone: 'error', message: 'Usuário não encontrado' }); return; }
-    dispatch({ type: 'login', userId: u.id });
-    // Establish real backend session so WhatsApp API calls work
-    fetch('/auth/login', {
-      method: 'POST',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password }),
-    }).catch(() => {});
+    setLoggingIn(true);
+    try {
+      const res = await fetch(PLATE_PROXY_URL + '/auth/login', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+      const data = await res.json();
+      if (!data.ok) {
+        dispatch({ type: 'toast', tone: 'error', message: data.error || 'Credenciais inválidas' });
+        return;
+      }
+      let u = state.users.find(u => u.email === email);
+      if (!u) {
+        u = { id: data.user.id, name: data.user.name, email, role: data.user.role, active: true,
+              phone_whatsapp: '', whatsapp_instance: null, whatsapp_connected: false };
+        dispatch({ type: 'upsert_user', user: u });
+      }
+      dispatch({ type: 'login', userId: u.id });
+    } catch {
+      dispatch({ type: 'toast', tone: 'error', message: 'Não foi possível conectar ao servidor.' });
+    } finally {
+      setLoggingIn(false);
+    }
   };
 
   return (
@@ -3159,8 +3181,8 @@ function LoginScreen() {
               <a href="#" className="tiny semibold" style={{ color: 'var(--brand)', textDecoration: 'none' }}>Esqueceu a senha?</a>
             </div>
 
-            <Button variant="primary" size="lg" type="submit" iconRight="bi-arrow-right" style={{ width: '100%', marginTop: 4 }}>
-              Entrar
+            <Button variant="primary" size="lg" type="submit" iconRight={loggingIn ? 'bi-arrow-clockwise' : 'bi-arrow-right'} style={{ width: '100%', marginTop: 4 }} disabled={loggingIn}>
+              {loggingIn ? 'Entrando…' : 'Entrar'}
             </Button>
           </div>
 
