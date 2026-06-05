@@ -1728,26 +1728,9 @@ const SEED_PARTS = [
   { id: 22, code: 'MO-1198', name: 'Mola Helicoidal Dianteira',    description: 'Par',                                  default_price: 220.00, category: 'Suspensão' },
 ];
 
-const SEED_CUSTOMERS = [
-  { id: 1,  name: 'Carlos Eduardo Mendes',   phone: '11987654321', created_at: '2026-05-20T08:00:00Z' },
-  { id: 2,  name: 'Ana Paula Ferreira',       phone: '21992345678', created_at: '2026-05-21T09:00:00Z' },
-  { id: 3,  name: 'Roberto Souza Lima',       phone: '31976543210', created_at: '2026-05-22T10:00:00Z' },
-  { id: 4,  name: 'Fernanda Oliveira Costa',  phone: '11912345678', created_at: '2026-05-23T11:00:00Z' },
-  { id: 5,  name: 'Marcelo Andrade',          phone: '41988881234', created_at: '2026-05-23T14:00:00Z' },
-  { id: 6,  name: 'Juliana Nascimento',       phone: '85977779999', created_at: '2026-05-24T08:30:00Z' },
-  { id: 7,  name: 'Diego Carvalho',           phone: '11965432109', created_at: '2026-05-24T15:00:00Z' },
-  { id: 8,  name: 'Patrícia Rocha Santos',    phone: '51955558765', created_at: '2026-05-25T09:00:00Z' },
-  { id: 9,  name: 'Dárlley Alves de Almeida', phone: '15998569990', created_at: '2026-05-27T10:00:00Z' },
-  { id: 10, name: 'Roberto Nascimento',       phone: '11976543210', created_at: '2026-05-29T08:30:00Z' },
-];
+const SEED_CUSTOMERS = [];
 
-const SEED_SUPPLIERS = [
-  { id: 1, name: 'AutoPeças Belo Horizonte', phone: '31999990001', notes: 'Mecânica pesada', active: 1, created_at: '2026-01-01T10:00:00Z' },
-  { id: 2, name: 'GlassWay Vidros',          phone: '31999990002', notes: 'Vidros e acessórios', active: 1, created_at: '2026-01-01T10:00:00Z' },
-  { id: 3, name: 'EletroParts',              phone: '31999990003', notes: 'Elétrica e eletrônica', active: 1, created_at: '2026-01-01T10:00:00Z' },
-  { id: 4, name: 'FreioParts',               phone: '31999990004', notes: 'Freios e suspensão', active: 1, created_at: '2026-01-01T10:00:00Z' },
-  { id: 5, name: 'Darlley',                  phone: '15998569990', notes: '', active: 1, created_at: '2026-05-30T10:00:00Z' },
-];
+const SEED_SUPPLIERS = [];
 
 // Helper to compute total from items
 function calcTotals(items) {
@@ -1756,7 +1739,7 @@ function calcTotals(items) {
   return { partsTotal, laborTotal, grandTotal: partsTotal + laborTotal };
 }
 
-const SEED_QUOTATIONS = [
+const SEED_QUOTATIONS_UNUSED = [
   {
     id: 1, quote_number: 'COT-2026-0001', status: 'pendente',
     customer_name: 'Carlos Eduardo Mendes', customer_phone: '11987654321',
@@ -1916,13 +1899,8 @@ const SEED_QUOTATIONS = [
   },
 ];
 
-const SEED_NOTIFICATIONS = [
-  { id: 1, user_id: 2, type: 'cotacao_respondida', title: 'Cotação #COT-2026-0003 respondida', message: 'Maria Compras preencheu os valores. Verifique e envie ao cliente.', read_at: null, quotation_id: 3, created_at: '2026-05-25T09:00:00Z', time_label: 'agora' },
-  { id: 2, user_id: 2, type: 'peca_chegou',        title: 'Peça chegou — Cotação #COT-2026-0005', message: 'Maria confirmou a chegada. Avise o cliente!', read_at: null, quotation_id: 5, created_at: '2026-05-24T16:00:00Z', time_label: 'ontem' },
-  { id: 3, user_id: 3, type: 'nova_cotacao',       title: 'Nova cotação #COT-2026-0007', message: 'Ricardo abriu cotação — Renault Kwid PQR8J90', read_at: null, quotation_id: 7, created_at: '2026-05-25T07:05:00Z', time_label: '20min atrás' },
-  { id: 4, user_id: 2, type: 'status_atualizado',  title: 'Cotação #COT-2026-0002 em cotação', message: 'Status alterado por Maria Compras.', read_at: '2026-05-22T15:00:00Z', quotation_id: 2, created_at: '2026-05-22T15:00:00Z', time_label: '3 dias' },
-  { id: 5, user_id: 2, type: 'cotacao_atualizada', title: 'Cliente APROVOU — Cotação #COT-2026-0004', message: 'Ricardo informou que o cliente aprovou. Pode encomendar!', read_at: '2026-05-21T12:00:00Z', quotation_id: 4, created_at: '2026-05-21T11:30:00Z', time_label: '4 dias' },
-];
+const SEED_QUOTATIONS = [];
+const SEED_NOTIFICATIONS = [];
 
 // Proxy Vercel para consulta de placas (token seguro server-side)
 const PLATE_PROXY_URL = 'https://research-father-recreational-endorsed.trycloudflare.com';
@@ -1974,7 +1952,7 @@ function renderTemplate(settings, quotation, items) {
     .replace(/\[PRAZO DE ENTREGA\]/g, deadline);
 }
 
-const STATE_VERSION = 4;
+const STATE_VERSION = 5;
 
 const initialState = {
   currentUserId: 2, // start as Vendas
