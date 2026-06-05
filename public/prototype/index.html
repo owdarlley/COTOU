@@ -4275,13 +4275,16 @@ function WhatsAppConnectModal({ userId, onClose }) {
     async function start() {
       try {
         // 1. Garante que a instância existe
-        await fetch('/api/whatsapp/instancia/criar', { method: 'POST', credentials: 'include' });
+        // Passa targetUserId para que admin possa conectar WhatsApp de outro usuário
+        const targetParam = userId ? `?targetUserId=${userId}` : '';
+        const targetBody = JSON.stringify(userId ? { targetUserId: userId } : {});
+        await fetch('/api/whatsapp/instancia/criar', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: targetBody });
 
         // 2. Busca QR Code — retry até 5x com 2s de intervalo (Evolution pode demorar um instante para gerar)
         let base64 = null;
         for (let attempt = 0; attempt < 5 && !base64 && !cancelled; attempt++) {
           if (attempt > 0) await new Promise(r => setTimeout(r, 2000));
-          const qrRes = await fetch('/api/whatsapp/instancia/qrcode', { credentials: 'include' });
+          const qrRes = await fetch('/api/whatsapp/instancia/qrcode' + targetParam, { credentials: 'include' });
           const qrJson = await qrRes.json();
           if (cancelled) return;
           if (!qrJson.ok) {
@@ -4308,7 +4311,7 @@ function WhatsAppConnectModal({ userId, onClose }) {
           attempts++;
           if (attempts > 36) { clearInterval(pollRef.current); return; } // 3min
           try {
-            const st = await fetch('/api/whatsapp/instancia/status', { credentials: 'include' });
+            const st = await fetch('/api/whatsapp/instancia/status' + targetParam, { credentials: 'include' });
             const s = await st.json();
             if (s.connected) {
               clearInterval(pollRef.current);
@@ -4319,7 +4322,7 @@ function WhatsAppConnectModal({ userId, onClose }) {
             } else {
               // Atualiza QR se disponível (pode expirar e gerar novo)
               try {
-                const nq = await fetch('/api/whatsapp/instancia/qrcode', { credentials: 'include' });
+                const nq = await fetch('/api/whatsapp/instancia/qrcode' + targetParam, { credentials: 'include' });
                 const nqj = await nq.json();
                 if (nqj.ok && !cancelled) {
                   const b = nqj.data?.base64 || nqj.data?.qrcode || null;
