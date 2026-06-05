@@ -4279,22 +4279,27 @@ function WhatsAppConnectModal({ userId, onClose }) {
         // 1. Garante que a instância existe
         await fetch('/api/whatsapp/instancia/criar', { method: 'POST', credentials: 'include' });
 
-        // 2. Busca QR Code
-        const qrRes = await fetch('/api/whatsapp/instancia/qrcode', { credentials: 'include' });
-        const qrJson = await qrRes.json();
+        // 2. Busca QR Code — retry até 5x com 2s de intervalo (Evolution pode demorar um instante para gerar)
+        let base64 = null;
+        for (let attempt = 0; attempt < 5 && !base64 && !cancelled; attempt++) {
+          if (attempt > 0) await new Promise(r => setTimeout(r, 2000));
+          const qrRes = await fetch('/api/whatsapp/instancia/qrcode', { credentials: 'include' });
+          const qrJson = await qrRes.json();
+          if (cancelled) return;
+          if (!qrJson.ok) {
+            setPhase('error');
+            setErrorMsg(qrJson.message || 'Não foi possível gerar o QR Code.');
+            return;
+          }
+          base64 = qrJson.data?.base64 || qrJson.data?.qrcode || null;
+        }
         if (cancelled) return;
-
-        if (!qrJson.ok) {
+        if (!base64) {
           setPhase('error');
-          setErrorMsg(qrJson.message || 'Não foi possível gerar o QR Code.');
+          setErrorMsg('QR Code não ficou disponível. Clique em Tentar novamente.');
           return;
         }
-
-        // Extrai base64 do QR (Evolution API retorna em data.base64 ou data.qrcode)
-        const base64 = qrJson.data?.base64 || qrJson.data?.qrcode || null;
-        if (base64) {
-          setQrSrc(base64.startsWith('data:') ? base64 : `data:image/png;base64,${base64}`);
-        }
+        setQrSrc(base64.startsWith('data:') ? base64 : `data:image/png;base64,${base64}`);
         setPhase('qr');
 
         // 3. Polling de status até conectar (máx 3 min)

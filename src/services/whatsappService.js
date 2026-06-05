@@ -105,12 +105,18 @@ async function sendTextMessage(phone, text, instanceName) {
 
 async function createInstance(instanceName) {
   const { apiUrl, headers, agent } = getClient();
-  const { data } = await axios.post(
-    `${apiUrl}/instance/create`,
-    { instanceName, qrcode: true, integration: 'WHATSAPP-BAILEYS' },
-    { headers, httpsAgent: agent, timeout: 15000 }
-  );
-  return data;
+  try {
+    const { data } = await axios.post(
+      `${apiUrl}/instance/create`,
+      { instanceName, qrcode: true, integration: 'WHATSAPP-BAILEYS' },
+      { headers, httpsAgent: agent, timeout: 15000 }
+    );
+    return data;
+  } catch (err) {
+    // 403 = instance already exists — not an error, just reuse it
+    if (err.response?.status === 403) return { instanceName };
+    throw err;
+  }
 }
 
 async function getQRCode(instanceName) {
