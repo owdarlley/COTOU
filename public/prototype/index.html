@@ -2058,8 +2058,23 @@ const SEED_NOTIFICATIONS = [
   { id:5, user_id:2, type:'peca_chegou',        title:'Peca chegou — COT-2026-0009',      message:'Correia e regulador chegaram. Avise o cliente!', read_at:null, quotation_id:9, created_at:'2026-06-04T16:00:00Z' },
 ];
 
-// Proxy Vercel para consulta de placas (token seguro server-side)
-const PLATE_PROXY_URL = window.location.origin;
+// URL do backend — configurável via localStorage ou parâmetro ?backend=
+// Necessário quando o frontend é servido pelo GitHub Pages (domínio diferente do servidor)
+function resolveBackendUrl() {
+  const params = new URLSearchParams(window.location.search);
+  const fromParam = params.get('backend');
+  if (fromParam) {
+    const clean = fromParam.replace(/\/$/, '');
+    try { localStorage.setItem('cotou_backend_url', clean); } catch (_) {}
+    return clean;
+  }
+  try {
+    const stored = localStorage.getItem('cotou_backend_url');
+    if (stored) return stored;
+  } catch (_) {}
+  return window.location.origin;
+}
+let PLATE_PROXY_URL = resolveBackendUrl();
 
 /* =========================================================
    Store (reducer)
@@ -3188,8 +3203,25 @@ function LoginScreen() {
   const [password, setPassword] = useState('demo1234');
   const [showPwd, setShowPwd] = useState(false);
   const [picked, setPicked] = useState(2);
-
   const [loggingIn, setLoggingIn] = React.useState(false);
+
+  // Backend URL configurator — necessário quando o frontend está no GitHub Pages
+  const onGitHubPages = window.location.hostname === 'owdarlley.github.io';
+  const [backendUrl, setBackendUrl] = React.useState(PLATE_PROXY_URL);
+  const [editingBackend, setEditingBackend] = React.useState(false);
+  const [backendDraft, setBackendDraft] = React.useState(PLATE_PROXY_URL);
+  const backendSameOrigin = backendUrl === window.location.origin;
+  const needsConfig = onGitHubPages && backendSameOrigin;
+
+  function applyBackend(url) {
+    const clean = (url || '').trim().replace(/\/$/, '');
+    if (!clean) return;
+    try { localStorage.setItem('cotou_backend_url', clean); } catch (_) {}
+    PLATE_PROXY_URL = clean;
+    setBackendUrl(clean);
+    setBackendDraft(clean);
+    setEditingBackend(false);
+  }
 
   const onSubmit = async (e) => {
     e.preventDefault();
@@ -3355,7 +3387,47 @@ function LoginScreen() {
             </div>
           </div>
 
-          <p className="tiny faint" style={{ textAlign: 'center', marginTop: 24 }}>© 2026 COTOU · ERP Autopeças v1.0</p>
+          {/* Backend URL configurator */}
+          <div style={{ marginTop: 20, paddingTop: 16, borderTop: '1px solid var(--border)' }}>
+            {needsConfig && (
+              <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start', padding: '8px 10px', background: 'rgba(220,38,38,.07)', border: '1px solid rgba(220,38,38,.2)', borderRadius: 8, marginBottom: 10 }}>
+                <i className="bi bi-exclamation-triangle" style={{ color: '#dc2626', flexShrink: 0, marginTop: 1 }}></i>
+                <span className="tiny" style={{ color: '#7f1d1d' }}>
+                  Servidor não configurado. O frontend está no GitHub Pages mas precisa da URL do COTOU Server para funcionar. Edite abaixo.
+                </span>
+              </div>
+            )}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <i className="bi bi-hdd-network" style={{ color: 'var(--text-faint)', fontSize: 12, flexShrink: 0 }}></i>
+              <span className="tiny" style={{ color: 'var(--text-faint)', flexShrink: 0 }}>Servidor:</span>
+              {editingBackend ? (
+                <>
+                  <input
+                    className="input"
+                    style={{ flex: 1, height: 28, fontSize: 12, padding: '0 8px', fontFamily: 'var(--mono)' }}
+                    value={backendDraft}
+                    onChange={e => setBackendDraft(e.target.value)}
+                    onKeyDown={e => { if (e.key === 'Enter') applyBackend(backendDraft); if (e.key === 'Escape') setEditingBackend(false); }}
+                    placeholder="https://seu-servidor.trycloudflare.com"
+                    autoFocus
+                  />
+                  <button type="button" className="btn btn-primary" style={{ height: 28, padding: '0 10px', fontSize: 12 }} onClick={() => applyBackend(backendDraft)}>OK</button>
+                  <button type="button" className="btn btn-ghost" style={{ height: 28, padding: '0 8px', fontSize: 12 }} onClick={() => setEditingBackend(false)}>✕</button>
+                </>
+              ) : (
+                <>
+                  <span className="tiny mono" style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: needsConfig ? '#dc2626' : 'var(--text-muted)' }}>
+                    {backendUrl}
+                  </span>
+                  <button type="button" className="btn btn-ghost" style={{ height: 24, padding: '0 8px', fontSize: 11, flexShrink: 0 }} onClick={() => { setBackendDraft(backendUrl); setEditingBackend(true); }}>
+                    <i className="bi bi-pencil" style={{ fontSize: 10 }}></i> Editar
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
+
+          <p className="tiny faint" style={{ textAlign: 'center', marginTop: 16 }}>© 2026 COTOU · ERP Autopeças v1.0</p>
         </form>
       </div>
     </div>
