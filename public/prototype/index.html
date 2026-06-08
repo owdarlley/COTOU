@@ -2969,6 +2969,7 @@ function Sidebar() {
   const visible = NAV_ITEMS_BY_ROLE[currentUser.role] || [];
   const connected = currentUser.whatsapp_connected;
   const [showGuide, setShowGuide] = useState(false);
+  const [disconnecting, setDisconnecting] = useState(false);
   return (
     <aside className="sidebar">
       <div className="sidebar-brand">
@@ -3018,10 +3019,18 @@ function Sidebar() {
       {/* WhatsApp connection strip */}
       <div style={{ padding: '6px 10px', borderTop: '1px solid var(--border)', flexShrink: 0 }}>
         <button
+          disabled={disconnecting}
           onClick={async () => {
             if (connected) {
-              await fetch(`${PLATE_PROXY_URL}/api/whatsapp/instancia/desconectar`, { method: 'DELETE', credentials: 'include' });
-              dispatch({ type: 'whatsapp_disconnect', userId: currentUser.id });
+              setDisconnecting(true);
+              try {
+                await fetch(`${PLATE_PROXY_URL}/api/whatsapp/instancia/desconectar`, { method: 'DELETE', credentials: 'include' });
+                dispatch({ type: 'whatsapp_disconnect', userId: currentUser.id });
+              } catch (_) {
+                dispatch({ type: 'toast', tone: 'error', message: 'Erro ao desconectar WhatsApp. Tente novamente.' });
+              } finally {
+                setDisconnecting(false);
+              }
             } else {
               dispatch({ type: 'open_wa_connect' });
             }
@@ -3029,21 +3038,26 @@ function Sidebar() {
           style={{
             width: '100%', display: 'flex', alignItems: 'center', gap: 9,
             background: 'none', border: '1px solid var(--border)', borderRadius: 8,
-            padding: '7px 10px', cursor: 'pointer', transition: 'background 0.15s',
+            padding: '7px 10px', cursor: disconnecting ? 'wait' : 'pointer', transition: 'background 0.15s',
+            opacity: disconnecting ? 0.6 : 1,
           }}
           title={connected ? 'Desconectar WhatsApp' : 'Conectar meu WhatsApp'}
           data-tour="wa-strip"
         >
-          <i className="bi bi-whatsapp" style={{ fontSize: 15, color: connected ? '#16a34a' : 'var(--text-faint)', flexShrink: 0 }}></i>
+          <i className={`bi ${disconnecting ? 'bi-arrow-clockwise' : 'bi-whatsapp'}`}
+             style={{ fontSize: 15, color: connected ? '#16a34a' : 'var(--text-faint)', flexShrink: 0,
+                      animation: disconnecting ? 'spin 1s linear infinite' : 'none' }}></i>
           <div style={{ flex: 1, minWidth: 0, textAlign: 'left' }}>
             <div style={{ fontSize: 11.5, fontWeight: 600, color: 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
               Meu WhatsApp
             </div>
             <div style={{ fontSize: 10.5, color: connected ? '#16a34a' : 'var(--text-faint)', fontFamily: 'var(--mono)' }}>
-              {connected ? '● Conectado' : '○ Desconectado'}
+              {disconnecting ? '○ Desconectando…' : connected ? '● Conectado' : '○ Desconectado'}
             </div>
           </div>
-          <i className={`bi ${connected ? 'bi-x-circle' : 'bi-qr-code-scan'}`} style={{ fontSize: 13, color: 'var(--text-faint)', flexShrink: 0 }}></i>
+          {!disconnecting && (
+            <i className={`bi ${connected ? 'bi-x-circle' : 'bi-qr-code-scan'}`} style={{ fontSize: 13, color: 'var(--text-faint)', flexShrink: 0 }}></i>
+          )}
         </button>
       </div>
 
@@ -4522,7 +4536,7 @@ function WhatsAppConnectModal({ userId, onClose }) {
   const targetQuery = (userId && userId !== currentUserId) ? `?targetUserId=${userId}` : '';
   const targetBody  = (userId && userId !== currentUserId) ? JSON.stringify({ targetUserId: userId }) : undefined;
 
-  const [phase, setPhase] = useState('loading'); // loading | qr | connected | error
+  const [phase, setPhase] = useState('loading'); // loading | qr | connected | timeout | error
   const [qrSrc, setQrSrc] = useState(null);
   const [errorMsg, setErrorMsg] = useState('');
   const [retryCount, setRetryCount] = useState(0);
@@ -4599,7 +4613,7 @@ function WhatsAppConnectModal({ userId, onClose }) {
         pollRef.current = setInterval(async () => {
           if (cancelled) return;
           attempts++;
-          if (attempts > 36) { clearInterval(pollRef.current); return; } // 3min
+          if (attempts > 36) { clearInterval(pollRef.current); if (!cancelled) setPhase('timeout'); return; } // 3min
           try {
             const st = await fetch(`${PLATE_PROXY_URL}/api/whatsapp/instancia/status${targetQuery}`, { credentials: 'include' });
             const s = await st.json();
@@ -4644,16 +4658,38 @@ function WhatsAppConnectModal({ userId, onClose }) {
     }
   }, [phase]);
 
+  async function forceReconnect() {
+    setPhase('loading');
+    setQrSrc(null);
+    setErrorMsg('');
+    await fetch(`${PLATE_PROXY_URL}/api/whatsapp/instancia/desconectar${targetQuery}`, { method: 'DELETE', credentials: 'include' }).catch(() => {});
+    dispatch({ type: 'whatsapp_disconnect', userId });
+    setRetryCount(c => c + 1);
+  }
+
   return (
     <Modal open={true} onClose={onClose} title="Conectar WhatsApp" icon="bi-whatsapp"
-      footer={<Button variant="ghost" onClick={onClose}>Fechar</Button>}
+      footer={
+        <div style={{ display: 'flex', gap: 8, width: '100%', justifyContent: 'space-between', alignItems: 'center' }}>
+          {phase === 'qr' && (
+            <button type="button" className="btn btn-ghost btn-sm" style={{ fontSize: 11, color: 'var(--text-faint)' }}
+              onClick={forceReconnect}>
+              <i className="bi bi-arrow-clockwise" style={{ fontSize: 11 }}></i> Gerar novo QR
+            </button>
+          )}
+          <div style={{ flex: 1 }} />
+          <Button variant="ghost" onClick={onClose}>Fechar</Button>
+        </div>
+      }
     >
       <div className="col" style={{ alignItems: 'center', gap: 20, padding: '8px 0' }}>
         {phase === 'loading' && (
           <>
-            <i className="bi bi-arrow-clockwise" style={{ fontSize: 32, color: 'var(--brand)', animation: 'spin 1s linear infinite' }}></i>
-            <div className="muted">Gerando QR Code…</div>
-            <div className="tiny faint" style={{ textAlign: 'center' }}>Na primeira conexão pode levar até 30s</div>
+            <i className="bi bi-arrow-clockwise" style={{ fontSize: 36, color: 'var(--brand)', animation: 'spin 1s linear infinite' }}></i>
+            <div className="muted">Preparando QR Code…</div>
+            <div className="tiny faint" style={{ textAlign: 'center', maxWidth: 260 }}>
+              Na primeira conexão pode levar até 30 segundos
+            </div>
           </>
         )}
         {phase === 'qr' && (
@@ -4664,36 +4700,51 @@ function WhatsAppConnectModal({ userId, onClose }) {
                   <i className="bi bi-arrow-clockwise" style={{ fontSize: 32, color: 'var(--brand)', animation: 'spin 1s linear infinite' }}></i>
                 </div>
             }
-            <div className="muted tiny">Abra o WhatsApp → Dispositivos conectados → Conectar dispositivo</div>
-            <div className="tiny faint">O QR Code expira em 60s e é atualizado automaticamente</div>
+            <div style={{ textAlign: 'center' }}>
+              <div className="muted tiny" style={{ fontWeight: 600, marginBottom: 4 }}>
+                Abra o WhatsApp no celular
+              </div>
+              <div className="tiny faint">
+                Menu (⋮) → Dispositivos conectados → Conectar dispositivo
+              </div>
+            </div>
+            <div className="tiny faint" style={{ background: 'var(--surface-2)', padding: '4px 10px', borderRadius: 6 }}>
+              QR atualizado automaticamente a cada 60s
+            </div>
           </>
         )}
         {phase === 'connected' && (
           <>
-            <div style={{ width: 64, height: 64, borderRadius: 99, background: '#dcfce7', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <i className="bi bi-check-lg" style={{ fontSize: 32, color: '#16a34a' }}></i>
+            <div style={{ width: 72, height: 72, borderRadius: 99, background: '#dcfce7', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <i className="bi bi-check-lg" style={{ fontSize: 36, color: '#16a34a' }}></i>
             </div>
-            <div style={{ fontWeight: 600, color: '#16a34a' }}>WhatsApp conectado!</div>
-            <button className="btn btn-ghost btn-sm" style={{ fontSize: 11, color: 'var(--text-faint)', marginTop: -8 }}
-              onClick={async () => {
-                await fetch(`${PLATE_PROXY_URL}/api/whatsapp/instancia/desconectar${targetQuery}`, { method: 'DELETE', credentials: 'include' });
-                dispatch({ type: 'whatsapp_disconnect', userId });
-                setPhase('loading');
-                setRetryCount(c => c + 1);
-              }}>
-              Forçar reconexão (novo QR)
-            </button>
+            <div style={{ fontWeight: 700, color: '#16a34a', fontSize: 15 }}>WhatsApp conectado!</div>
+            <div className="tiny faint">Fechando automaticamente…</div>
+          </>
+        )}
+        {phase === 'timeout' && (
+          <>
+            <div style={{ width: 72, height: 72, borderRadius: 99, background: 'rgba(245,158,11,.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <i className="bi bi-clock-history" style={{ fontSize: 32, color: '#d97706' }}></i>
+            </div>
+            <div style={{ fontWeight: 600, color: '#92400e', fontSize: 13 }}>QR Code expirou</div>
+            <div className="muted tiny" style={{ textAlign: 'center', maxWidth: 270 }}>
+              O aparelho não foi conectado em 3 minutos. Gere um novo QR Code para tentar novamente.
+            </div>
+            <Button variant="primary" size="sm" onClick={forceReconnect}>
+              <i className="bi bi-arrow-clockwise"></i> Gerar novo QR
+            </Button>
           </>
         )}
         {phase === 'error' && (
           <>
-            <div style={{ width: 64, height: 64, borderRadius: 99, background: '#fee2e2', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <i className="bi bi-exclamation-triangle" style={{ fontSize: 28, color: '#dc2626' }}></i>
+            <div style={{ width: 72, height: 72, borderRadius: 99, background: '#fee2e2', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <i className="bi bi-exclamation-triangle" style={{ fontSize: 30, color: '#dc2626' }}></i>
             </div>
             <div style={{ fontWeight: 600, color: '#dc2626', fontSize: 13 }}>Erro ao conectar</div>
             <div className="muted tiny" style={{ textAlign: 'center', maxWidth: 280 }}>{errorMsg}</div>
-            <Button variant="primary" size="sm" onClick={() => { setPhase('loading'); setErrorMsg(''); setRetryCount(c => c + 1); }}>
-              Tentar novamente
+            <Button variant="primary" size="sm" onClick={() => { setPhase('loading'); setQrSrc(null); setErrorMsg(''); setRetryCount(c => c + 1); }}>
+              <i className="bi bi-arrow-clockwise"></i> Tentar novamente
             </Button>
           </>
         )}
@@ -5587,6 +5638,7 @@ function AdminUsersScreen() {
   const { state, dispatch } = useStore();
   const [editing, setEditing] = useState(null);
   const [connectUserId, setConnectUserId] = useState(null);
+  const [disconnectingId, setDisconnectingId] = useState(null);
   const [q, setQ] = useState('');
   const list = q.trim()
     ? state.users.filter(u => u.name.toLowerCase().includes(q.toLowerCase()) || u.email.toLowerCase().includes(q.toLowerCase()))
@@ -5637,12 +5689,20 @@ function AdminUsersScreen() {
                         <Badge className="badge-cotado" style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
                           <span className="dot-sm" style={{ background: '#16a34a' }}></span> Conectado
                         </Badge>
-                        <button className="icon-btn" title="Desconectar"
+                        <button className="icon-btn" title="Desconectar" disabled={disconnectingId === u.id}
                           onClick={async () => {
-                            await fetch(`${PLATE_PROXY_URL}/api/whatsapp/instancia/desconectar?targetUserId=${u.id}`, { method: 'DELETE', credentials: 'include' });
-                            dispatch({ type: 'whatsapp_disconnect', userId: u.id });
+                            setDisconnectingId(u.id);
+                            try {
+                              await fetch(`${PLATE_PROXY_URL}/api/whatsapp/instancia/desconectar?targetUserId=${u.id}`, { method: 'DELETE', credentials: 'include' });
+                              dispatch({ type: 'whatsapp_disconnect', userId: u.id });
+                            } catch (_) {
+                              dispatch({ type: 'toast', tone: 'error', message: 'Erro ao desconectar. Tente novamente.' });
+                            } finally {
+                              setDisconnectingId(null);
+                            }
                           }}>
-                          <i className="bi bi-x-circle" style={{ fontSize: 14, color: 'var(--text-faint)' }}></i>
+                          <i className={`bi ${disconnectingId === u.id ? 'bi-arrow-clockwise' : 'bi-x-circle'}`}
+                             style={{ fontSize: 14, color: 'var(--text-faint)', animation: disconnectingId === u.id ? 'spin 1s linear infinite' : 'none' }}></i>
                         </button>
                       </div>
                     : <Button variant="ghost" size="sm" icon="bi-whatsapp"
