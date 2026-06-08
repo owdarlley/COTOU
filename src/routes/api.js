@@ -76,7 +76,8 @@ router.post('/whatsapp/instancia/criar', async (req, res) => {
   const instanceName = `cotou-user-${targetId}`;
   try {
     await createInstance(instanceName);
-    User.setWhatsappInstance(targetId, instanceName);
+    // Vincula o nome mas NÃO marca como conectado — só o /status confirma conexão real
+    User.setWhatsappInstanceName(targetId, instanceName);
     res.json({ ok: true, instanceName });
   } catch (err) {
     res.status(502).json({ ok: false, message: err.message });
@@ -109,7 +110,13 @@ router.get('/whatsapp/instancia/status', async (req, res) => {
   if (!user?.whatsapp_instance_name) return res.json({ ok: true, connected: false });
   try {
     const status = await getStatus(user.whatsapp_instance_name);
-    res.json({ ok: true, ...status });
+    // Sincroniza DB com estado real da Evolution API
+    if (status.connected && !user.whatsapp_connected_at) {
+      User.markWhatsappConnected(targetId);
+    } else if (!status.connected && user.whatsapp_connected_at) {
+      User.clearWhatsappConnectedAt(targetId);
+    }
+    res.json({ ok: true, ...status, instanceName: user.whatsapp_instance_name });
   } catch (err) {
     res.json({ ok: true, connected: false });
   }
@@ -119,18 +126,42 @@ router.delete('/whatsapp/instancia/desconectar', async (req, res) => {
   const targetId = resolveTargetUserId(req);
   const user = User.findById(targetId);
   if (user?.whatsapp_instance_name) {
-    try { await logoutInstance(user.whatsapp_instance_name); } catch (_) {}
-    try { await deleteInstance(user.whatsapp_instance_name); } catch (_) {}
+    const instName = user.whatsapp_instance_name;
 
-    // Evolution API v2.3.7 processa logout/delete internamente de forma assíncrona.
-    // Aguarda até confirmar que a instância não está mais 'open' antes de responder
-    // ao frontend — evita race condition em reconexão imediata.
-    for (let i = 0; i < 5; i++) {
+    // 1. Verifica estado atual — só envia logout se estiver open (enviado ao servidor WA)
+    let isOpen = false;
+    try {
+      const st = await getStatus(instName);
+      isOpen = st.connected;
+    } catch (_) {}
+
+    if (isOpen) {
+      // Tenta logout até 3x — confirma desconexão no celular
+      for (let i = 0; i < 3; i++) {
+        try {
+          await logoutInstance(instName);
+          break;
+        } catch (err) {
+          console.warn(`[WA] logout tentativa ${i + 1} falhou para ${instName}:`, err.message);
+          if (i < 2) await new Promise(r => setTimeout(r, 1000));
+        }
+      }
+      // Aguarda Evolution API processar o logout
+      await new Promise(r => setTimeout(r, 1500));
+    }
+
+    // 2. Deleta a instância da Evolution API
+    try { await deleteInstance(instName); } catch (err) {
+      console.warn(`[WA] delete falhou para ${instName}:`, err.message);
+    }
+
+    // 3. Confirma que não está mais open (máx 3s)
+    for (let i = 0; i < 3; i++) {
       await new Promise(r => setTimeout(r, 800));
       try {
-        const { connected } = await getStatus(user.whatsapp_instance_name);
+        const { connected } = await getStatus(instName);
         if (!connected) break;
-      } catch (_) { break; } // instância removida = desconectado
+      } catch (_) { break; }
     }
 
     User.clearWhatsappInstance(targetId);

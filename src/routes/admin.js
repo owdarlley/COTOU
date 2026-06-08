@@ -27,7 +27,7 @@ router.post('/usuarios', async (req, res) => {
     const instanceName = `cotou-user-${user.id}`;
     try {
       await createInstance(instanceName);
-      User.setWhatsappInstance(user.id, instanceName);
+      User.setWhatsappInstanceName(user.id, instanceName);
     } catch (waErr) {
       console.warn(`[WhatsApp] Falha ao criar instância para usuário ${user.id}:`, waErr.message);
     }

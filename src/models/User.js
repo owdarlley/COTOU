@@ -41,6 +41,7 @@ class User {
     `).run(toNull(name), toNull(email), toNull(role), toNull(phone_whatsapp), toBool(active), id);
   }
 
+  // Registra instância + marca como conectado (só chamar quando realmente open)
   static setWhatsappInstance(id, instanceName) {
     db.prepare(`UPDATE users SET
       whatsapp_instance_name = ?,
@@ -50,9 +51,37 @@ class User {
     `).run(instanceName, id);
   }
 
+  // Só vincula o nome da instância — NÃO marca como conectado
+  static setWhatsappInstanceName(id, instanceName) {
+    db.prepare(`UPDATE users SET
+      whatsapp_instance_name = ?,
+      whatsapp_connected_at = NULL,
+      updated_at = datetime('now')
+      WHERE id = ?
+    `).run(instanceName, id);
+  }
+
+  // Marca conexão confirmada sem alterar o nome da instância
+  static markWhatsappConnected(id) {
+    db.prepare(`UPDATE users SET
+      whatsapp_connected_at = datetime('now'),
+      updated_at = datetime('now')
+      WHERE id = ?
+    `).run(id);
+  }
+
   static clearWhatsappInstance(id) {
     db.prepare(`UPDATE users SET
       whatsapp_instance_name = NULL,
+      whatsapp_connected_at = NULL,
+      updated_at = datetime('now')
+      WHERE id = ?
+    `).run(id);
+  }
+
+  // Limpa só o timestamp de conexão, mantém o nome da instância
+  static clearWhatsappConnectedAt(id) {
+    db.prepare(`UPDATE users SET
       whatsapp_connected_at = NULL,
       updated_at = datetime('now')
       WHERE id = ?
