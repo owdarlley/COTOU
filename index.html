@@ -2158,10 +2158,12 @@ function reducer(state, action) {
     case 'login':
       return { ...state, currentUserId: action.userId, loggedIn: true, route: { name: 'dashboard', params: {} } };
     case 'upsert_user': {
-      const exists = state.users.some(u => u.id === action.user.id);
-      if (exists) return state;
+      const idx = state.users.findIndex(u => u.id === action.user.id);
+      if (idx >= 0) return { ...state, users: state.users.map(u => u.id === action.user.id ? { ...u, ...action.user } : u) };
       return { ...state, users: [...state.users, action.user] };
     }
+    case 'set_users':
+      return { ...state, users: action.users };
     case 'logout':
       return { ...state, loggedIn: false, route: { name: 'login', params: {} } };
     case 'navigate':
@@ -5650,10 +5652,43 @@ function AdminUsersScreen() {
   const [editing, setEditing] = useState(null);
   const [connectUserId, setConnectUserId] = useState(null);
   const [disconnectingId, setDisconnectingId] = useState(null);
+  const [loadingUsers, setLoadingUsers] = useState(true);
   const [q, setQ] = useState('');
   const list = q.trim()
     ? state.users.filter(u => u.name.toLowerCase().includes(q.toLowerCase()) || u.email.toLowerCase().includes(q.toLowerCase()))
     : state.users;
+
+  async function reloadUsers() {
+    setLoadingUsers(true);
+    try {
+      const res = await fetch(`${PLATE_PROXY_URL}/admin/usuarios`, { credentials: 'include' });
+      if (!res.ok) return;
+      const data = await res.json();
+      if (!data.ok || !data.users) return;
+      const users = await Promise.all(data.users.map(async u => {
+        let whatsapp_connected = false;
+        if (u.whatsapp_instance_name) {
+          try {
+            const st = await fetch(`${PLATE_PROXY_URL}/api/whatsapp/instancia/status?targetUserId=${u.id}`, { credentials: 'include' });
+            const stJson = await st.json().catch(() => ({}));
+            whatsapp_connected = stJson.connected === true;
+          } catch (_) {}
+        }
+        return {
+          id: u.id, name: u.name, email: u.email, role: u.role,
+          active: !!u.active, phone_whatsapp: u.phone_whatsapp || '',
+          whatsapp_instance: u.whatsapp_instance_name || null,
+          whatsapp_connected,
+          created_at: u.created_at,
+        };
+      }));
+      dispatch({ type: 'set_users', users });
+    } catch (_) {} finally {
+      setLoadingUsers(false);
+    }
+  }
+
+  React.useEffect(() => { reloadUsers(); }, []);
 
   return (
     <div className="page">
@@ -5669,13 +5704,13 @@ function AdminUsersScreen() {
       </div>
 
       <div className="card">
-        <div className="tbl-wrap"><table className="tbl">
+        <div className="tbl-wrap"><table className="tbl" style={{ opacity: loadingUsers ? 0.5 : 1, transition: 'opacity 0.2s' }}>
           <thead>
             <tr>
               <th>Usuário</th>
               <th>E-mail</th>
               <th>Função</th>
-              <th>WhatsApp pessoal</th>
+              <th>WhatsApp</th>
               <th>Status</th>
               <th>Criado</th>
               <th style={{ width: 90 }}></th>
@@ -5706,6 +5741,7 @@ function AdminUsersScreen() {
                             try {
                               await fetch(`${PLATE_PROXY_URL}/api/whatsapp/instancia/desconectar?targetUserId=${u.id}`, { method: 'DELETE', credentials: 'include' });
                               dispatch({ type: 'whatsapp_disconnect', userId: u.id });
+                              await reloadUsers();
                             } catch (_) {
                               dispatch({ type: 'toast', tone: 'error', message: 'Erro ao desconectar. Tente novamente.' });
                             } finally {
@@ -5731,7 +5767,11 @@ function AdminUsersScreen() {
                     <button className="icon-btn" onClick={() => setEditing(u)} title="Editar">
                       <i className="bi bi-pencil" style={{ fontSize: 13 }}></i>
                     </button>
-                    <button className="icon-btn" onClick={() => dispatch({ type: 'toggle_user_active', id: u.id })} title={u.active ? 'Desativar' : 'Ativar'}>
+                    <button className="icon-btn" onClick={async () => {
+                      const endpoint = u.active ? 'desativar' : 'ativar';
+                      await fetch(`${PLATE_PROXY_URL}/admin/usuarios/${u.id}/${endpoint}`, { method: 'POST', credentials: 'include' }).catch(() => {});
+                      dispatch({ type: 'toggle_user_active', id: u.id });
+                    }} title={u.active ? 'Desativar' : 'Ativar'}>
                       <i className={`bi ${u.active ? 'bi-pause-circle' : 'bi-play-circle'}`} style={{ fontSize: 13 }}></i>
                     </button>
                   </div>
@@ -5742,8 +5782,8 @@ function AdminUsersScreen() {
         </table></div>
       </div>
 
-      {editing && <UserModal key={editing === 'new' ? 'new' : editing.id} user={editing === 'new' ? null : editing} onClose={() => setEditing(null)} />}
-      {connectUserId && <WhatsAppConnectModal userId={connectUserId} onClose={() => setConnectUserId(null)} />}
+      {editing && <UserModal key={editing === 'new' ? 'new' : editing.id} user={editing === 'new' ? null : editing} onClose={() => { setEditing(null); reloadUsers(); }} />}
+      {connectUserId && <WhatsAppConnectModal userId={connectUserId} onClose={() => { setConnectUserId(null); reloadUsers(); }} />}
     </div>
   );
 }
@@ -5751,17 +5791,38 @@ function AdminUsersScreen() {
 function UserModal({ user, onClose }) {
   const { dispatch } = useStore();
   const [form, setForm] = useState(user || { name: '', email: '', role: 'vendas', phone_whatsapp: '', new_password: '' });
-  function save() {
-    if (user) dispatch({ type: 'update_user', id: user.id, payload: form });
-    else dispatch({ type: 'add_user', payload: form });
-    onClose();
+  const [saving, setSaving] = useState(false);
+  async function save() {
+    setSaving(true);
+    try {
+      if (user) {
+        const res = await fetch(`${PLATE_PROXY_URL}/admin/usuarios/${user.id}`, {
+          method: 'PUT', credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: form.name, email: form.email, role: form.role, phone_whatsapp: form.phone_whatsapp, new_password: form.new_password || undefined }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) { dispatch({ type: 'toast', tone: 'error', message: data.error || 'Erro ao salvar.' }); return; }
+      } else {
+        const res = await fetch(`${PLATE_PROXY_URL}/admin/usuarios`, {
+          method: 'POST', credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: form.name, email: form.email, password: form.new_password, role: form.role, phone_whatsapp: form.phone_whatsapp }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) { dispatch({ type: 'toast', tone: 'error', message: data.error || 'Erro ao criar usuário.' }); return; }
+      }
+      onClose();
+    } finally {
+      setSaving(false);
+    }
   }
   const valid = form.name && form.email && form.role && (user || form.new_password);
   return (
     <Modal open onClose={onClose} title={user ? 'Editar usuário' : 'Novo usuário'} icon="bi-person"
       footer={<>
         <Button variant="ghost" onClick={onClose}>Cancelar</Button>
-        <Button variant="primary" icon="bi-check2" disabled={!valid} onClick={save}>Salvar</Button>
+        <Button variant="primary" icon="bi-check2" disabled={!valid || saving} onClick={save}>{saving ? 'Salvando…' : 'Salvar'}</Button>
       </>}>
       <div className="col" style={{ gap: 14 }}>
         <Field label="Nome *">
