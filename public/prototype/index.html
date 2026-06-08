@@ -2072,6 +2072,10 @@ function resolveBackendUrl() {
     const stored = localStorage.getItem('cotou_backend_url');
     if (stored) return stored;
   } catch (_) {}
+  // Quando acessado pelo GitHub Pages, aponta para o servidor Cloudflare
+  if (window.location.hostname === 'owdarlley.github.io') {
+    return 'https://research-father-recreational-endorsed.trycloudflare.com';
+  }
   return window.location.origin;
 }
 let PLATE_PROXY_URL = resolveBackendUrl();
