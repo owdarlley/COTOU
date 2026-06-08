@@ -59,14 +59,6 @@ class User {
     `).run(id);
   }
 
-  static disconnectWhatsapp(id) {
-    db.prepare(`UPDATE users SET
-      whatsapp_connected_at = NULL,
-      updated_at = datetime('now')
-      WHERE id = ?
-    `).run(id);
-  }
-
   static async updatePassword(id, newPassword) {
     const hash = await bcrypt.hash(newPassword, 10);
     db.prepare("UPDATE users SET password_hash = ?, updated_at = datetime('now') WHERE id = ?").run(hash, id);
