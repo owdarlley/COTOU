@@ -148,18 +148,20 @@ router.post('/whatsapp/enviar/:id', async (req, res) => {
   }
 
   const user = User.findById(req.session.userId);
-  const instanceName = user?.whatsapp_instance_name || process.env.WHATSAPP_INSTANCE_NAME || null;
+  const instanceName = user?.whatsapp_instance_name || null;
+
+  if (!instanceName) {
+    return res.status(400).json({ ok: false, message: 'WhatsApp não configurado. Conecte seu WhatsApp nas configurações antes de enviar.' });
+  }
 
   // Verifica conexão antes de tentar enviar
-  if (instanceName) {
-    try {
-      const status = await getStatus(instanceName);
-      if (!status.connected) {
-        return res.status(400).json({ ok: false, message: 'WhatsApp desconectado. Reconecte sua instância nas configurações antes de enviar.' });
-      }
-    } catch (_) {
-      return res.status(400).json({ ok: false, message: 'Não foi possível verificar a conexão do WhatsApp. Verifique sua instância nas configurações.' });
+  try {
+    const status = await getStatus(instanceName);
+    if (!status.connected) {
+      return res.status(400).json({ ok: false, message: 'WhatsApp desconectado. Reconecte sua instância nas configurações antes de enviar.' });
     }
+  } catch (_) {
+    return res.status(400).json({ ok: false, message: 'Não foi possível verificar a conexão do WhatsApp. Verifique sua instância nas configurações.' });
   }
 
   const items = QuotationItem.findByQuotationId(quotation.id);

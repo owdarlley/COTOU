@@ -4217,7 +4217,7 @@ function WhatsAppModal({ quotation, onClose }) {
     try {
       const res = await fetch(`${PLATE_PROXY_URL}/api/whatsapp/enviar/${quotation.id}`, { method: 'POST', credentials: 'include' });
       const json = await res.json().catch(() => ({}));
-      if (json.ok === false) {
+      if (!json.ok) {
         if (json.code === 'CONNECTION_CLOSED') {
           dispatch({ type: 'whatsapp_disconnect', userId: me?.id });
           dispatch({ type: 'toast', tone: 'error', message: 'Sessão WhatsApp encerrada. Reconecte nas configurações e tente novamente.' });
@@ -4227,7 +4227,11 @@ function WhatsAppModal({ quotation, onClose }) {
         setSending(false);
         return;
       }
-    } catch (_) {}
+    } catch (err) {
+      dispatch({ type: 'toast', tone: 'error', message: 'Não foi possível conectar ao servidor.' });
+      setSending(false);
+      return;
+    }
     dispatch({ type: 'send_whatsapp', id: quotation.id });
     dispatch({ type: 'toast', tone: 'success', message: 'WhatsApp enviado!' });
     setSending(false);
