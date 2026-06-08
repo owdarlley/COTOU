@@ -119,11 +119,20 @@ router.delete('/whatsapp/instancia/desconectar', async (req, res) => {
   const targetId = resolveTargetUserId(req);
   const user = User.findById(targetId);
   if (user?.whatsapp_instance_name) {
-    // Logout encerra a sessão no celular (Evolution API v2.3.7 retorna 500 por bug interno,
-    // mas o logout pode ser executado no lado do WhatsApp antes da falha)
     try { await logoutInstance(user.whatsapp_instance_name); } catch (_) {}
-    // Delete marca como 'close' na API (bug v2.3.7: não remove completamente)
     try { await deleteInstance(user.whatsapp_instance_name); } catch (_) {}
+
+    // Evolution API v2.3.7 processa logout/delete internamente de forma assíncrona.
+    // Aguarda até confirmar que a instância não está mais 'open' antes de responder
+    // ao frontend — evita race condition em reconexão imediata.
+    for (let i = 0; i < 5; i++) {
+      await new Promise(r => setTimeout(r, 800));
+      try {
+        const { connected } = await getStatus(user.whatsapp_instance_name);
+        if (!connected) break;
+      } catch (_) { break; } // instância removida = desconectado
+    }
+
     User.clearWhatsappInstance(targetId);
   }
   res.json({ ok: true });
