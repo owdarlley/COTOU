@@ -2127,7 +2127,7 @@ function renderTemplate(settings, quotation, items) {
     .replace(/\[PRAZO DE ENTREGA\]/g, deadline);
 }
 
-const STATE_VERSION = 6;
+const STATE_VERSION = 7;
 
 const initialState = {
   currentUserId: 2, // start as Vendas
@@ -5661,17 +5661,24 @@ function AdminUsersScreen() {
   async function reloadUsers() {
     setLoadingUsers(true);
     try {
-      const res = await fetch(`${PLATE_PROXY_URL}/admin/usuarios`, { credentials: 'include' });
-      if (!res.ok) return;
+      const baseUrl = PLATE_PROXY_URL;
+      const res = await fetch(`${baseUrl}/admin/usuarios`, { credentials: 'include' });
+      if (!res.ok) {
+        if (res.status === 401) dispatch({ type: 'logout' });
+        return;
+      }
       const data = await res.json();
       if (!data.ok || !data.users) return;
       const users = await Promise.all(data.users.map(async u => {
         let whatsapp_connected = false;
         if (u.whatsapp_instance_name) {
           try {
-            const st = await fetch(`${PLATE_PROXY_URL}/api/whatsapp/instancia/status?targetUserId=${u.id}`, { credentials: 'include' });
-            const stJson = await st.json().catch(() => ({}));
-            whatsapp_connected = stJson.connected === true;
+            const st = await fetch(`${baseUrl}/api/whatsapp/instancia/status?targetUserId=${u.id}`, { credentials: 'include' });
+            if (st.ok) {
+              const stJson = await st.json().catch(() => ({}));
+              // Backend agora retorna connected baseado no estado REAL da Evolution API
+              whatsapp_connected = stJson.connected === true;
+            }
           } catch (_) {}
         }
         return {
