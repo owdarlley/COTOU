@@ -4547,7 +4547,8 @@ function WhatsAppConnectModal({ userId, onClose }) {
 
     async function start() {
       try {
-        // 0. Verifica se já está conectado — evita mostrar QR desnecessariamente
+        // 0. Verifica se já está conectado — dupla checagem com 1.5s de intervalo
+        // para tolerar latência de propagação da Evolution API após um disconnect recente
         const stCheck = await fetch(`${PLATE_PROXY_URL}/api/whatsapp/instancia/status${targetQuery}`, { credentials: 'include' });
         if (!stCheck.ok && stCheck.status === 401) {
           if (!cancelled) dispatch({ type: 'logout' });
@@ -4555,9 +4556,19 @@ function WhatsAppConnectModal({ userId, onClose }) {
         }
         const stJson = await stCheck.json();
         if (stJson.connected) {
-          dispatch({ type: 'whatsapp_connect', userId });
-          setPhase('connected');
-          return;
+          // Confirma com segunda checagem: evita fechar o modal por status ainda
+          // 'open' enquanto a Evolution API ainda processa um disconnect recente
+          await new Promise(r => setTimeout(r, 1500));
+          if (cancelled) return;
+          const st2 = await fetch(`${PLATE_PROXY_URL}/api/whatsapp/instancia/status${targetQuery}`, { credentials: 'include' });
+          const st2Json = await st2.json().catch(() => ({}));
+          if (st2Json.connected) {
+            dispatch({ type: 'whatsapp_connect', userId });
+            setPhase('connected');
+            return;
+          }
+          // Status mudou entre as duas checagens — Evolution processou o disconnect
+          // durante o intervalo: continua para o fluxo de QR normalmente
         }
 
         // 1. Garante que a instância existe
