@@ -1698,11 +1698,9 @@ const { createContext, useContext, useReducer, useEffect, useMemo, useState, use
    ========================================================= */
 
 const SEED_USERS = [
-  { id: 1, name: 'Admin Sistema',     email: 'admin@cotou.com.br',   role: 'admin',   active: true,  phone_whatsapp: '11999990001', whatsapp_instance: 'cotou-user-1', whatsapp_connected: true,  zapi_instance_id: '3F3C259A242D519EE38E32FB845BEA5C', zapi_token: '5E919A9D9695FE48AFAA3D4E', zapi_client_token: 'F97feb2c3b05f4e1dafdbaa743fda1b17S', created_at: '2025-11-04T10:00:00Z' },
-  { id: 2, name: 'João Vendas',       email: 'vendas@cotou.com.br',  role: 'vendas',  active: true,  phone_whatsapp: '11988887777', whatsapp_instance: 'cotou-user-2', whatsapp_connected: true,  zapi_instance_id: '3F3C259A242D519EE38E32FB845BEA5C', zapi_token: '5E919A9D9695FE48AFAA3D4E', zapi_client_token: 'F97feb2c3b05f4e1dafdbaa743fda1b17S', created_at: '2025-11-12T10:00:00Z' },
-  { id: 3, name: 'Maria Compras',     email: 'compras@cotou.com.br', role: 'compras', active: true,  phone_whatsapp: '11977776666', whatsapp_instance: 'cotou-user-3', whatsapp_connected: true,  zapi_instance_id: '3F3C259A242D519EE38E32FB845BEA5C', zapi_token: '5E919A9D9695FE48AFAA3D4E', zapi_client_token: 'F97feb2c3b05f4e1dafdbaa743fda1b17S', created_at: '2025-11-12T10:00:00Z' },
-  { id: 4, name: 'Ricardo Atende',    email: 'ricardo@cotou.com.br', role: 'vendas',  active: true,  phone_whatsapp: '11966665555', whatsapp_instance: 'cotou-user-4', whatsapp_connected: true,  zapi_instance_id: '3F3C259A242D519EE38E32FB845BEA5C', zapi_token: '5E919A9D9695FE48AFAA3D4E', zapi_client_token: 'F97feb2c3b05f4e1dafdbaa743fda1b17S', created_at: '2026-01-15T10:00:00Z' },
-  { id: 5, name: 'Lucia Suprimentos', email: 'lucia@cotou.com.br',   role: 'compras', active: false, phone_whatsapp: '11955554444', whatsapp_instance: 'cotou-user-5', whatsapp_connected: true,  zapi_instance_id: '3F3C259A242D519EE38E32FB845BEA5C', zapi_token: '5E919A9D9695FE48AFAA3D4E', zapi_client_token: 'F97feb2c3b05f4e1dafdbaa743fda1b17S', created_at: '2026-02-04T10:00:00Z' },
+  { id: 1, name: 'Admin',   email: 'admin@cotou.com.br',   role: 'admin',   active: true, phone_whatsapp: '', whatsapp_instance: 'cotou-user-1', whatsapp_connected: false, created_at: '2026-06-05T00:00:00Z' },
+  { id: 2, name: 'Vendas',  email: 'vendas@cotou.com.br',  role: 'vendas',  active: true, phone_whatsapp: '', whatsapp_instance: 'cotou-user-2', whatsapp_connected: false, created_at: '2026-06-05T00:00:00Z' },
+  { id: 3, name: 'Compras', email: 'compras@cotou.com.br', role: 'compras', active: true, phone_whatsapp: '', whatsapp_instance: 'cotou-user-3', whatsapp_connected: false, created_at: '2026-06-05T00:00:00Z' },
 ];
 
 const SEED_PARTS = [
@@ -1730,25 +1728,27 @@ const SEED_PARTS = [
   { id: 22, code: 'MO-1198', name: 'Mola Helicoidal Dianteira',    description: 'Par',                                  default_price: 220.00, category: 'Suspensão' },
 ];
 
+const PHONE = '15998569990';
 const SEED_CUSTOMERS = [
-  { id: 1,  name: 'Carlos Eduardo Mendes',   phone: '11987654321', created_at: '2026-05-20T08:00:00Z' },
-  { id: 2,  name: 'Ana Paula Ferreira',       phone: '21992345678', created_at: '2026-05-21T09:00:00Z' },
-  { id: 3,  name: 'Roberto Souza Lima',       phone: '31976543210', created_at: '2026-05-22T10:00:00Z' },
-  { id: 4,  name: 'Fernanda Oliveira Costa',  phone: '11912345678', created_at: '2026-05-23T11:00:00Z' },
-  { id: 5,  name: 'Marcelo Andrade',          phone: '41988881234', created_at: '2026-05-23T14:00:00Z' },
-  { id: 6,  name: 'Juliana Nascimento',       phone: '85977779999', created_at: '2026-05-24T08:30:00Z' },
-  { id: 7,  name: 'Diego Carvalho',           phone: '11965432109', created_at: '2026-05-24T15:00:00Z' },
-  { id: 8,  name: 'Patrícia Rocha Santos',    phone: '51955558765', created_at: '2026-05-25T09:00:00Z' },
-  { id: 9,  name: 'Dárlley Alves de Almeida', phone: '15998569990', created_at: '2026-05-27T10:00:00Z' },
-  { id: 10, name: 'Roberto Nascimento',       phone: '11976543210', created_at: '2026-05-29T08:30:00Z' },
+  { id: 1,  name: 'Darlley Alves de Almeida',  phone: PHONE, created_at: '2026-05-27T10:00:00Z' },
+  { id: 2,  name: 'Carlos Eduardo Mendes',      phone: PHONE, created_at: '2026-05-28T08:00:00Z' },
+  { id: 3,  name: 'Ana Paula Ferreira',         phone: PHONE, created_at: '2026-05-29T09:00:00Z' },
+  { id: 4,  name: 'Roberto Souza Lima',         phone: PHONE, created_at: '2026-05-30T10:00:00Z' },
+  { id: 5,  name: 'Fernanda Oliveira Costa',    phone: PHONE, created_at: '2026-05-31T11:00:00Z' },
+  { id: 6,  name: 'Marcelo Andrade',            phone: PHONE, created_at: '2026-06-01T14:00:00Z' },
+  { id: 7,  name: 'Juliana Nascimento',         phone: PHONE, created_at: '2026-06-02T08:30:00Z' },
+  { id: 8,  name: 'Diego Carvalho',             phone: PHONE, created_at: '2026-06-03T15:00:00Z' },
+  { id: 9,  name: 'Patricia Rocha Santos',      phone: PHONE, created_at: '2026-06-04T09:00:00Z' },
+  { id: 10, name: 'Ricardo Henrique Martins',   phone: PHONE, created_at: '2026-06-05T08:00:00Z' },
 ];
 
 const SEED_SUPPLIERS = [
-  { id: 1, name: 'AutoPeças Belo Horizonte', phone: '31999990001', notes: 'Mecânica pesada', active: 1, created_at: '2026-01-01T10:00:00Z' },
-  { id: 2, name: 'GlassWay Vidros',          phone: '31999990002', notes: 'Vidros e acessórios', active: 1, created_at: '2026-01-01T10:00:00Z' },
-  { id: 3, name: 'EletroParts',              phone: '31999990003', notes: 'Elétrica e eletrônica', active: 1, created_at: '2026-01-01T10:00:00Z' },
-  { id: 4, name: 'FreioParts',               phone: '31999990004', notes: 'Freios e suspensão', active: 1, created_at: '2026-01-01T10:00:00Z' },
-  { id: 5, name: 'Darlley',                  phone: '15998569990', notes: '', active: 1, created_at: '2026-05-30T10:00:00Z' },
+  { id: 1, name: 'AutoPecas Central',        phone: PHONE, notes: 'Freios, suspensao e motor',  active: 1, created_at: '2026-05-06T10:00:00Z' },
+  { id: 2, name: 'GlassWay Vidros',          phone: PHONE, notes: 'Vidros e acessorios',         active: 1, created_at: '2026-05-06T10:00:00Z' },
+  { id: 3, name: 'EletroParts',              phone: PHONE, notes: 'Eletrica e eletronica',       active: 1, created_at: '2026-05-06T10:00:00Z' },
+  { id: 4, name: 'FreioParts Distribuidora', phone: PHONE, notes: 'Freios e suspensao',          active: 1, created_at: '2026-05-06T10:00:00Z' },
+  { id: 5, name: 'MotoFlex Pecas',           phone: PHONE, notes: 'Motor e transmissao',         active: 1, created_at: '2026-05-06T10:00:00Z' },
+  { id: 6, name: 'CarroceriaBR',             phone: PHONE, notes: 'Funilaria e carroceria',      active: 1, created_at: '2026-05-06T10:00:00Z' },
 ];
 
 // Helper to compute total from items
@@ -1758,7 +1758,7 @@ function calcTotals(items) {
   return { partsTotal, laborTotal, grandTotal: partsTotal + laborTotal };
 }
 
-const SEED_QUOTATIONS = [
+const SEED_QUOTATIONS_UNUSED = [
   {
     id: 1, quote_number: 'COT-2026-0001', status: 'pendente',
     customer_name: 'Carlos Eduardo Mendes', customer_phone: '11987654321',
@@ -1918,12 +1918,144 @@ const SEED_QUOTATIONS = [
   },
 ];
 
+const SEED_QUOTATIONS = [
+  {
+    id:1, quote_number:'COT-2026-0001', status:'pendente',
+    customer_name:'Darlley Alves de Almeida', customer_phone:PHONE,
+    customer_id:1, vehicle_id:1,
+    vehicle:{ plate:'ABC1D23', make:'VOLKSWAGEN', model:'Gol 1.0', year_model:2019, year_manuf:2018, color:'PRATA', fuel:'FLEX', chassis:'9BWZZZ377VT004251' },
+    created_by_user_id:2, assigned_buyer_id:null, creator_name:'Vendas', buyer_name:null,
+    notes_vendas:'Cliente relata barulho ao frear. Verificar pastilhas e discos dianteiros.', notes_compras:null,
+    photo_path:null, customer_approved:null, whatsapp_sent_at:null, created_at:'2026-05-27T10:00:00Z',
+    items:[
+      { id:1, part_name:'Pastilha de Freio Dianteira', part_code:'PF-1023', quantity:1, unit_price:null, total_price:null, labor_cost_compras:null, delivery_days:null, supplier_name:null, item_status:'aguardando', notes:null },
+      { id:2, part_name:'Disco de Freio Dianteiro',    part_code:'DF-4401', quantity:2, unit_price:null, total_price:null, labor_cost_compras:null, delivery_days:null, supplier_name:null, item_status:'aguardando', notes:null },
+    ],
+  },
+  {
+    id:2, quote_number:'COT-2026-0002', status:'em_cotacao',
+    customer_name:'Carlos Eduardo Mendes', customer_phone:PHONE,
+    customer_id:2, vehicle_id:2,
+    vehicle:{ plate:'XYZ5E67', make:'TOYOTA', model:'Corolla 2.0 XEi', year_model:2022, year_manuf:2021, color:'PRETO', fuel:'FLEX', chassis:'9BFZF26P288196922' },
+    created_by_user_id:2, assigned_buyer_id:3, creator_name:'Vendas', buyer_name:'Compras',
+    notes_vendas:'Folga na suspensao traseira lado direito. Cliente prefere peca original.', notes_compras:'Verificando com fornecedores.',
+    photo_path:null, customer_approved:null, whatsapp_sent_at:null, created_at:'2026-05-28T08:00:00Z',
+    items:[
+      { id:3, part_name:'Amortecedor Traseiro', part_code:'AT-2210', quantity:2, unit_price:null, total_price:null, labor_cost_compras:null, delivery_days:null, supplier_name:'FreioParts', item_status:'em_cotacao', notes:null },
+      { id:4, part_name:'Mola Helicoidal',      part_code:'MO-1198', quantity:2, unit_price:null, total_price:null, labor_cost_compras:null, delivery_days:null, supplier_name:'FreioParts', item_status:'em_cotacao', notes:null },
+    ],
+  },
+  {
+    id:3, quote_number:'COT-2026-0003', status:'cotado',
+    customer_name:'Ana Paula Ferreira', customer_phone:PHONE,
+    customer_id:3, vehicle_id:3,
+    vehicle:{ plate:'MNO3F89', make:'CHEVROLET', model:'Onix Plus 1.0T', year_model:2023, year_manuf:2023, color:'BRANCO', fuel:'FLEX', chassis:'9BGJF19BX0B123456' },
+    created_by_user_id:2, assigned_buyer_id:3, creator_name:'Vendas', buyer_name:'Compras',
+    notes_vendas:'Embreagem patinando em subida. Disco aparentemente gasto.', notes_compras:'FreioParts — prazo 2 dias uteis.',
+    photo_path:null, customer_approved:null, whatsapp_sent_at:null, created_at:'2026-05-29T09:00:00Z',
+    items:[
+      { id:5, part_name:'Kit Embreagem Completo', part_code:'KE-7731', quantity:1, unit_price:480.00, total_price:480.00, labor_cost_compras:120.00, delivery_days:2, supplier_name:'FreioParts Distribuidora', item_status:'cotado', notes:'Kit disco + plato + rolamento' },
+      { id:6, part_name:'Cabo de Embreagem',      part_code:'CE-1104', quantity:1, unit_price:45.00,  total_price:45.00,  labor_cost_compras:0,      delivery_days:2, supplier_name:'FreioParts Distribuidora', item_status:'cotado', notes:null },
+    ],
+  },
+  {
+    id:4, quote_number:'COT-2026-0004', status:'cotado',
+    customer_name:'Roberto Souza Lima', customer_phone:PHONE,
+    customer_id:4, vehicle_id:4,
+    vehicle:{ plate:'DEF2G45', make:'FORD', model:'Ka 1.5 SE', year_model:2020, year_manuf:2019, color:'VERMELHO', fuel:'FLEX', chassis:'9BFZF26P0J8234567' },
+    created_by_user_id:2, assigned_buyer_id:3, creator_name:'Vendas', buyer_name:'Compras',
+    notes_vendas:'Vidro traseiro estilhacado. Cliente quer peca original.', notes_compras:'GlassWay — em estoque.',
+    photo_path:null, customer_approved:1, whatsapp_sent_at:null, created_at:'2026-05-30T10:00:00Z',
+    items:[
+      { id:7, part_name:'Vidro Traseiro Liso', part_code:'VT-3302', quantity:1, unit_price:320.00, total_price:320.00, labor_cost_compras:60.00, delivery_days:2, supplier_name:'GlassWay Vidros', item_status:'cotado', notes:null },
+    ],
+  },
+  {
+    id:5, quote_number:'COT-2026-0005', status:'peca_chegou',
+    customer_name:'Fernanda Oliveira Costa', customer_phone:PHONE,
+    customer_id:5, vehicle_id:5,
+    vehicle:{ plate:'GHI7H01', make:'HYUNDAI', model:'HB20 1.0 Sense', year_model:2021, year_manuf:2021, color:'PRATA', fuel:'FLEX', chassis:'MALAM51ASLM345678' },
+    created_by_user_id:2, assigned_buyer_id:3, creator_name:'Vendas', buyer_name:'Compras',
+    notes_vendas:'Sensor de estacionamento com defeito intermitente.', notes_compras:'EletroParts — chegou em 24h.',
+    photo_path:null, customer_approved:1, whatsapp_sent_at:null, created_at:'2026-05-31T11:00:00Z',
+    items:[
+      { id:8, part_name:'Sensor de Estacionamento', part_code:'SE-6612', quantity:1, unit_price:280.00, total_price:280.00, labor_cost_compras:90.00, delivery_days:1, supplier_name:'EletroParts', item_status:'peca_chegou', notes:null },
+    ],
+  },
+  {
+    id:6, quote_number:'COT-2026-0006', status:'pendente',
+    customer_name:'Marcelo Andrade', customer_phone:PHONE,
+    customer_id:6, vehicle_id:6,
+    vehicle:{ plate:'JKL4I56', make:'FIAT', model:'Strada Endurance', year_model:2022, year_manuf:2022, color:'PRETO', fuel:'FLEX', chassis:'9BD158A38N0456789' },
+    created_by_user_id:2, assigned_buyer_id:null, creator_name:'Vendas', buyer_name:null,
+    notes_vendas:'Troca de bateria preventiva. Bateria com 5 anos de uso.', notes_compras:null,
+    photo_path:null, customer_approved:null, whatsapp_sent_at:null, created_at:'2026-06-01T14:00:00Z',
+    items:[
+      { id:9, part_name:'Bateria 60Ah', part_code:'BAT-60', quantity:1, unit_price:null, total_price:null, labor_cost_compras:null, delivery_days:null, supplier_name:null, item_status:'aguardando', notes:null },
+    ],
+  },
+  {
+    id:7, quote_number:'COT-2026-0007', status:'em_cotacao',
+    customer_name:'Juliana Nascimento', customer_phone:PHONE,
+    customer_id:7, vehicle_id:7,
+    vehicle:{ plate:'PQR8J90', make:'RENAULT', model:'Kwid Zen 1.0', year_model:2020, year_manuf:2020, color:'BRANCO', fuel:'FLEX', chassis:'93YAAZHC2KJ567890' },
+    created_by_user_id:2, assigned_buyer_id:3, creator_name:'Vendas', buyer_name:'Compras',
+    notes_vendas:'Motor superaquecendo no transito. Suspeita bomba dagua e radiador.', notes_compras:'Buscando com MotoFlex.',
+    photo_path:null, customer_approved:null, whatsapp_sent_at:null, created_at:'2026-06-02T08:30:00Z',
+    items:[
+      { id:10, part_name:'Bomba D Agua', part_code:'BD-5510', quantity:1, unit_price:null, total_price:null, labor_cost_compras:null, delivery_days:null, supplier_name:'MotoFlex Pecas', item_status:'em_cotacao', notes:null },
+      { id:11, part_name:'Radiador',     part_code:'RAD-9911',quantity:1, unit_price:null, total_price:null, labor_cost_compras:null, delivery_days:null, supplier_name:'MotoFlex Pecas', item_status:'em_cotacao', notes:null },
+    ],
+  },
+  {
+    id:8, quote_number:'COT-2026-0008', status:'cotado',
+    customer_name:'Diego Carvalho', customer_phone:PHONE,
+    customer_id:8, vehicle_id:8,
+    vehicle:{ plate:'STU6K34', make:'HONDA', model:'Civic 1.5T Tour', year_model:2023, year_manuf:2023, color:'CINZA', fuel:'GASOLINA', chassis:'2HGFE2F59PH678901' },
+    created_by_user_id:2, assigned_buyer_id:3, creator_name:'Vendas', buyer_name:'Compras',
+    notes_vendas:'Revisao 40.000 km: oleo, filtros e velas.', notes_compras:'AutoPecas Central — kit completo disponivel.',
+    photo_path:null, customer_approved:null, whatsapp_sent_at:null, created_at:'2026-06-03T15:00:00Z',
+    items:[
+      { id:12, part_name:'Filtro de Oleo',       part_code:'FO-1122', quantity:1, unit_price:28.00, total_price:28.00,  labor_cost_compras:0,    delivery_days:1, supplier_name:'AutoPecas Central', item_status:'cotado', notes:null },
+      { id:13, part_name:'Filtro de Ar Motor',   part_code:'FA-3344', quantity:1, unit_price:42.00, total_price:42.00,  labor_cost_compras:0,    delivery_days:1, supplier_name:'AutoPecas Central', item_status:'cotado', notes:null },
+      { id:14, part_name:'Filtro de Combustivel',part_code:'FC-5511', quantity:1, unit_price:55.00, total_price:55.00,  labor_cost_compras:0,    delivery_days:1, supplier_name:'AutoPecas Central', item_status:'cotado', notes:null },
+      { id:15, part_name:'Vela de Ignicao',      part_code:'VE-7788', quantity:4, unit_price:17.00, total_price:68.00,  labor_cost_compras:80.00,delivery_days:1, supplier_name:'AutoPecas Central', item_status:'cotado', notes:'Jogo com 4 velas NGK' },
+    ],
+  },
+  {
+    id:9, quote_number:'COT-2026-0009', status:'peca_chegou',
+    customer_name:'Patricia Rocha Santos', customer_phone:PHONE,
+    customer_id:9, vehicle_id:9,
+    vehicle:{ plate:'EBA7923', make:'FORD', model:'Fiesta 1.6 Flex', year_model:2008, year_manuf:2007, color:'PRATA', fuel:'FLEX', chassis:'9BFZF26P288191234' },
+    created_by_user_id:2, assigned_buyer_id:3, creator_name:'Vendas', buyer_name:'Compras',
+    notes_vendas:'Correia dentada vencida + regulador vidro com defeito.', notes_compras:'Pecas chegaram. Aguardando retirada.',
+    photo_path:null, customer_approved:1, whatsapp_sent_at:null, created_at:'2026-06-04T09:00:00Z',
+    items:[
+      { id:16, part_name:'Correia Dentada',                    part_code:'CO-2233', quantity:1, unit_price:195.00, total_price:195.00, labor_cost_compras:150.00, delivery_days:1, supplier_name:'MotoFlex Pecas', item_status:'peca_chegou', notes:'Kit com tensor' },
+      { id:17, part_name:'Regulador Vidro Eletrico Diant Esq', part_code:'RV-2241', quantity:1, unit_price:145.00, total_price:145.00, labor_cost_compras:60.00,  delivery_days:1, supplier_name:'EletroParts',    item_status:'peca_chegou', notes:null },
+    ],
+  },
+  {
+    id:10, quote_number:'COT-2026-0010', status:'em_cotacao',
+    customer_name:'Ricardo Henrique Martins', customer_phone:PHONE,
+    customer_id:10, vehicle_id:10,
+    vehicle:{ plate:'VWX9L12', make:'JEEP', model:'Renegade 1.8', year_model:2021, year_manuf:2020, color:'AZUL', fuel:'FLEX', chassis:'JF2SHADC9DG012345' },
+    created_by_user_id:2, assigned_buyer_id:3, creator_name:'Vendas', buyer_name:'Compras',
+    notes_vendas:'Revisao geral apos batida leve: para-choque, farol e lataria.', notes_compras:'Buscando com CarroceriaBR.',
+    photo_path:null, customer_approved:null, whatsapp_sent_at:null, created_at:'2026-06-05T08:00:00Z',
+    items:[
+      { id:18, part_name:'Para-choque Dianteiro', part_code:'PC-0110', quantity:1, unit_price:null, total_price:null, labor_cost_compras:null, delivery_days:null, supplier_name:'CarroceriaBR', item_status:'em_cotacao', notes:null },
+      { id:19, part_name:'Farol Dianteiro Esq',   part_code:'FD-2211', quantity:1, unit_price:null, total_price:null, labor_cost_compras:null, delivery_days:null, supplier_name:'CarroceriaBR', item_status:'em_cotacao', notes:null },
+      { id:20, part_name:'Aplique Lateral',        part_code:'AL-3312', quantity:2, unit_price:null, total_price:null, labor_cost_compras:null, delivery_days:null, supplier_name:'CarroceriaBR', item_status:'em_cotacao', notes:null },
+    ],
+  },
+];
 const SEED_NOTIFICATIONS = [
-  { id: 1, user_id: 2, type: 'cotacao_respondida', title: 'Cotação #COT-2026-0003 respondida', message: 'Maria Compras preencheu os valores. Verifique e envie ao cliente.', read_at: null, quotation_id: 3, created_at: '2026-05-25T09:00:00Z', time_label: 'agora' },
-  { id: 2, user_id: 2, type: 'peca_chegou',        title: 'Peça chegou — Cotação #COT-2026-0005', message: 'Maria confirmou a chegada. Avise o cliente!', read_at: null, quotation_id: 5, created_at: '2026-05-24T16:00:00Z', time_label: 'ontem' },
-  { id: 3, user_id: 3, type: 'nova_cotacao',       title: 'Nova cotação #COT-2026-0007', message: 'Ricardo abriu cotação — Renault Kwid PQR8J90', read_at: null, quotation_id: 7, created_at: '2026-05-25T07:05:00Z', time_label: '20min atrás' },
-  { id: 4, user_id: 2, type: 'status_atualizado',  title: 'Cotação #COT-2026-0002 em cotação', message: 'Status alterado por Maria Compras.', read_at: '2026-05-22T15:00:00Z', quotation_id: 2, created_at: '2026-05-22T15:00:00Z', time_label: '3 dias' },
-  { id: 5, user_id: 2, type: 'cotacao_atualizada', title: 'Cliente APROVOU — Cotação #COT-2026-0004', message: 'Ricardo informou que o cliente aprovou. Pode encomendar!', read_at: '2026-05-21T12:00:00Z', quotation_id: 4, created_at: '2026-05-21T11:30:00Z', time_label: '4 dias' },
+  { id:1, user_id:2, type:'cotacao_respondida', title:'Cotacao COT-2026-0003 respondida', message:'Compras preencheu os valores. Envie ao cliente!', read_at:null, quotation_id:3, created_at:'2026-05-29T16:00:00Z' },
+  { id:2, user_id:2, type:'peca_chegou',        title:'Peca chegou — COT-2026-0005',      message:'Compras confirmou chegada do sensor. Avise o cliente!', read_at:null, quotation_id:5, created_at:'2026-06-01T11:00:00Z' },
+  { id:3, user_id:3, type:'nova_cotacao',       title:'Nova cotacao COT-2026-0001',        message:'Vendas abriu cotacao — VW Gol ABC1D23.', read_at:null, quotation_id:1, created_at:'2026-05-27T10:05:00Z' },
+  { id:4, user_id:3, type:'nova_cotacao',       title:'Nova cotacao COT-2026-0006',        message:'Vendas abriu cotacao — FIAT Strada JKL4I56.', read_at:null, quotation_id:6, created_at:'2026-06-01T14:05:00Z' },
+  { id:5, user_id:2, type:'peca_chegou',        title:'Peca chegou — COT-2026-0009',      message:'Correia e regulador chegaram. Avise o cliente!', read_at:null, quotation_id:9, created_at:'2026-06-04T16:00:00Z' },
 ];
 
 // Proxy Vercel para consulta de placas (token seguro server-side)
@@ -1976,7 +2108,7 @@ function renderTemplate(settings, quotation, items) {
     .replace(/\[PRAZO DE ENTREGA\]/g, deadline);
 }
 
-const STATE_VERSION = 1;
+const STATE_VERSION = 6;
 
 const initialState = {
   currentUserId: 2, // start as Vendas
@@ -3080,7 +3212,15 @@ function LoginScreen() {
               phone_whatsapp: '', whatsapp_instance: null, whatsapp_connected: false };
         dispatch({ type: 'upsert_user', user: u });
       }
-      dispatch({ type: 'login', userId: u.id });
+      dispatch({ type: 'login', userId: data.user.id });
+      // Sync real WA connection status from backend right after login
+      try {
+        const stRes = await fetch(PLATE_PROXY_URL + '/api/whatsapp/instancia/status', { credentials: 'include' });
+        const stData = await stRes.json().catch(() => ({}));
+        if (stData.connected) {
+          dispatch({ type: 'whatsapp_connect', userId: data.user.id });
+        }
+      } catch (_) {}
     } catch {
       dispatch({ type: 'toast', tone: 'error', message: 'Não foi possível conectar ao servidor.' });
     } finally {
