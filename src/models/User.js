@@ -28,6 +28,8 @@ class User {
   }
 
   static update(id, { name, email, role, phone_whatsapp, active }) {
+    const toNull = v => (v === undefined ? null : v);
+    const toBool = v => (v === undefined ? null : (v ? 1 : 0));
     db.prepare(`UPDATE users SET
       name = COALESCE(?, name),
       email = COALESCE(?, email),
@@ -36,7 +38,7 @@ class User {
       active = COALESCE(?, active),
       updated_at = datetime('now')
       WHERE id = ?
-    `).run(name, email, role, phone_whatsapp, active, id);
+    `).run(toNull(name), toNull(email), toNull(role), toNull(phone_whatsapp), toBool(active), id);
   }
 
   static setWhatsappInstance(id, instanceName) {
@@ -51,6 +53,14 @@ class User {
   static clearWhatsappInstance(id) {
     db.prepare(`UPDATE users SET
       whatsapp_instance_name = NULL,
+      whatsapp_connected_at = NULL,
+      updated_at = datetime('now')
+      WHERE id = ?
+    `).run(id);
+  }
+
+  static disconnectWhatsapp(id) {
+    db.prepare(`UPDATE users SET
       whatsapp_connected_at = NULL,
       updated_at = datetime('now')
       WHERE id = ?

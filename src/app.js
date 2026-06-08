@@ -1,7 +1,7 @@
 require('dotenv').config();
 const express = require('express');
 const session = require('express-session');
-const MemoryStore = require('memorystore')(session);
+const FileStore = require('session-file-store')(session);
 const cors = require('cors');
 const helmet = require('helmet');
 const compression = require('compression');
@@ -21,6 +21,7 @@ const notificationsRoutes = require('./routes/notifications');
 const adminRoutes = require('./routes/admin');
 const apiRoutes = require('./routes/api');
 const aprovacaoRoutes = require('./routes/aprovacao');
+const publicApiRoutes = require('./routes/publicApi');
 
 runMigrations();
 
@@ -29,7 +30,18 @@ const app = express();
 // Trust nginx proxy so req.secure works correctly behind HTTPS termination
 app.set('trust proxy', 1);
 
-app.use(helmet());
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      ...helmet.contentSecurityPolicy.getDefaultDirectives(),
+      'script-src': ["'self'", 'https://unpkg.com', "'unsafe-inline'", "'unsafe-eval'"],
+      'style-src':  ["'self'", 'https:', "'unsafe-inline'"],
+      'font-src':   ["'self'", 'https:', 'data:'],
+      'img-src':    ["'self'", 'data:', 'https:'],
+      'connect-src':["'self'", 'https:'],
+    },
+  },
+}));
 app.use(compression());
 const allowedOrigins = [
   'https://owdarlley.github.io',
@@ -39,7 +51,9 @@ const allowedOrigins = [
 ].filter(Boolean);
 app.use(cors({
   origin: (origin, cb) => {
-    if (!origin || allowedOrigins.includes(origin)) return cb(null, true);
+    if (!origin || allowedOrigins.includes(origin) || (origin && origin.endsWith('.trycloudflare.com'))) {
+      return cb(null, true);
+    }
     cb(new Error('Not allowed by CORS'));
   },
   credentials: true
@@ -66,7 +80,7 @@ if (!sessionSecret) {
 }
 
 app.use(session({
-  store: new MemoryStore({ checkPeriod: 86400000 }),
+  store: new FileStore({ path: './data/sessions', ttl: 28800, retries: 0, logFn: () => {} }),
   secret: sessionSecret || 'cotou-dev-only',
   resave: false,
   saveUninitialized: false,
@@ -101,6 +115,7 @@ app.get('/', requireAuth, (req, res) => {
 
 // Rotas públicas (sem autenticação) — devem vir antes do requireAuth
 app.use(aprovacaoRoutes);
+app.use('/api', publicApiRoutes);
 
 app.use('/auth', authRoutes);
 app.use('/cotacoes', quotationsRoutes);

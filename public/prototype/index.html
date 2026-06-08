@@ -4044,7 +4044,7 @@ function ConsultarFornecedorModal({ items, supplier, quotationId, onClose }) {
           <Button variant="ghost" onClick={onClose}>Cancelar</Button>
           <Button variant="whatsapp"
             icon={sending ? 'bi-arrow-clockwise' : sent ? 'bi-check-lg' : 'bi-whatsapp'}
-            onClick={send} disabled={sending || sent}>
+            onClick={send} disabled={sending || sent || !canSendViaWA}>
             {sending ? 'Enviando…' : sent ? 'Enviado!' : 'Enviar via WhatsApp'}
           </Button>
         </>
@@ -4061,8 +4061,7 @@ function ConsultarFornecedorModal({ items, supplier, quotationId, onClose }) {
           <div style={{ display: 'flex', gap: 8, padding: '9px 12px', background: 'rgba(245,158,11,.08)', borderRadius: 'var(--r-md)', border: '1px solid rgba(245,158,11,.2)' }}>
             <i className="bi bi-exclamation-triangle" style={{ color: '#f59e0b', flexShrink: 0 }}></i>
             <span className="tiny" style={{ color: '#92400e' }}>
-              WhatsApp não conectado. Conecte seu WhatsApp na barra lateral antes de enviar.
-              No protótipo, o envio é simulado.
+              WhatsApp não conectado. Conecte seu WhatsApp nas configurações antes de enviar.
             </span>
           </div>
         )}
@@ -4163,7 +4162,7 @@ function QuickConsultarModal({ quotation, onClose }) {
           {supplier && (
             <Button variant="whatsapp"
               icon={sending ? 'bi-arrow-clockwise' : sent ? 'bi-check-lg' : 'bi-whatsapp'}
-              onClick={send} disabled={sending || sent}>
+              onClick={send} disabled={sending || sent || !canSendViaWA}>
               {sending ? 'Enviando…' : sent ? 'Enviado!' : 'Enviar via WhatsApp'}
             </Button>
           )}
@@ -4210,7 +4209,7 @@ function QuickConsultarModal({ quotation, onClose }) {
               border: '1px solid rgba(245,158,11,.2)' }}>
               <i className="bi bi-exclamation-triangle" style={{ color: '#f59e0b', flexShrink: 0 }}></i>
               <span className="tiny" style={{ color: '#92400e' }}>
-                WhatsApp não conectado. No protótipo, o envio é simulado.
+                WhatsApp não conectado. Conecte seu WhatsApp nas configurações antes de enviar.
               </span>
             </div>
           )}
@@ -4346,12 +4345,18 @@ function WhatsAppConnectModal({ userId, onClose }) {
           setErrorMsg('Sua sessão expirou. Faça login novamente.');
           return;
         }
+        if (!criarRes.ok) {
+          const criarJson = await criarRes.json().catch(() => ({}));
+          setPhase('error');
+          setErrorMsg(criarJson.message || 'Não foi possível inicializar a instância WhatsApp.');
+          return;
+        }
 
         // 2. Busca QR Code — retry até 5x com 2s de intervalo (Evolution pode demorar um instante para gerar)
         let base64 = null;
         for (let attempt = 0; attempt < 5 && !base64 && !cancelled; attempt++) {
           if (attempt > 0) await new Promise(r => setTimeout(r, 2000));
-          const qrRes = await fetch(`${PLATE_PROXY_URL}/api/whatsapp/instancia/qrcode${targetQuery}`, { credentials: 'include' });
+          const qrRes = await fetch(`${PLATE_PROXY_URL}/api/whatsapp/instancia/qrcode${targetQuery}`, { credentials: 'include', cache: 'no-store' });
           const qrJson = await qrRes.json();
           if (cancelled) return;
           if (!qrJson.ok) {
@@ -4396,7 +4401,7 @@ function WhatsAppConnectModal({ userId, onClose }) {
             } else {
               // Atualiza QR se disponível (pode expirar e gerar novo)
               try {
-                const nq = await fetch(`${PLATE_PROXY_URL}/api/whatsapp/instancia/qrcode${targetQuery}`, { credentials: 'include' });
+                const nq = await fetch(`${PLATE_PROXY_URL}/api/whatsapp/instancia/qrcode${targetQuery}`, { credentials: 'include', cache: 'no-store' });
                 const nqj = await nq.json();
                 if (nqj.ok && !nqj.already_connected && !cancelled) {
                   const b = nqj.data?.base64 || nqj.data?.qrcode || null;

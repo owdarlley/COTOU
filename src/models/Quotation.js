@@ -84,6 +84,7 @@ class Quotation {
       ${SELECT_FULL}
       WHERE q.approval_token = ?
         AND q.approval_token_expires_at > datetime('now')
+        AND q.customer_approved IS NULL
     `).get(token);
   }
 

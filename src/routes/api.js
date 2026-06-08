@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { requireAuth, requireRole } = require('../middleware/auth');
 const { lookupPlate, getBalance, isValidPlate } = require('../services/plateService');
-const { sendQuoteMessage, sendTextMessage, createInstance, getQRCode, getStatus, deleteInstance } = require('../services/whatsappService');
+const { sendQuoteMessage, sendTextMessage, createInstance, getQRCode, getStatus, deleteInstance, logoutInstance } = require('../services/whatsappService');
 const User = require('../models/User');
 const PartsCatalog = require('../models/PartsCatalog');
 const Notification = require('../models/Notification');
@@ -84,6 +84,8 @@ router.post('/whatsapp/instancia/criar', async (req, res) => {
 });
 
 router.get('/whatsapp/instancia/qrcode', async (req, res) => {
+  delete req.headers['if-none-match'];
+  res.set('Cache-Control', 'no-store');
   const targetId = resolveTargetUserId(req);
   const user = User.findById(targetId);
   if (!user?.whatsapp_instance_name) return res.status(400).json({ ok: false, message: 'Instância não criada. Chame /criar primeiro.' });
@@ -100,6 +102,8 @@ router.get('/whatsapp/instancia/qrcode', async (req, res) => {
 });
 
 router.get('/whatsapp/instancia/status', async (req, res) => {
+  delete req.headers['if-none-match'];
+  res.set('Cache-Control', 'no-store');
   const targetId = resolveTargetUserId(req);
   const user = User.findById(targetId);
   if (!user?.whatsapp_instance_name) return res.json({ ok: true, connected: false });
@@ -115,6 +119,10 @@ router.delete('/whatsapp/instancia/desconectar', async (req, res) => {
   const targetId = resolveTargetUserId(req);
   const user = User.findById(targetId);
   if (user?.whatsapp_instance_name) {
+    // Logout encerra a sessão no celular (Evolution API v2.3.7 retorna 500 por bug interno,
+    // mas o logout pode ser executado no lado do WhatsApp antes da falha)
+    try { await logoutInstance(user.whatsapp_instance_name); } catch (_) {}
+    // Delete marca como 'close' na API (bug v2.3.7: não remove completamente)
     try { await deleteInstance(user.whatsapp_instance_name); } catch (_) {}
     User.clearWhatsappInstance(targetId);
   }
@@ -130,6 +138,14 @@ router.post('/whatsapp/consultar-fornecedor', async (req, res) => {
   const user = User.findById(req.session.userId);
   if (!user?.whatsapp_instance_name) {
     return res.status(400).json({ ok: false, message: 'Instância WhatsApp não configurada. Conecte seu WhatsApp primeiro.' });
+  }
+  try {
+    const status = await getStatus(user.whatsapp_instance_name);
+    if (!status.connected) {
+      return res.status(400).json({ ok: false, message: 'WhatsApp desconectado. Reconecte sua instância nas configurações antes de enviar.' });
+    }
+  } catch (_) {
+    return res.status(400).json({ ok: false, message: 'Não foi possível verificar a conexão do WhatsApp. Verifique sua instância nas configurações.' });
   }
   try {
     await sendTextMessage(supplierPhone, message, user.whatsapp_instance_name);

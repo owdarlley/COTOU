@@ -167,4 +167,12 @@ async function deleteInstance(instanceName) {
   );
 }
 
-module.exports = { sendQuoteMessage, sendTextMessage, buildMessage, createInstance, getQRCode, getStatus, deleteInstance };
+async function logoutInstance(instanceName) {
+  const { apiUrl, headers, agent } = getClient();
+  await axios.delete(
+    `${apiUrl}/instance/logout/${instanceName}`,
+    { headers, httpsAgent: agent, timeout: 10000 }
+  );
+}
+
+module.exports = { sendQuoteMessage, sendTextMessage, buildMessage, createInstance, getQRCode, getStatus, deleteInstance, logoutInstance };
