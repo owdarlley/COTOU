@@ -3201,6 +3201,10 @@ function LoginScreen() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
       });
+      if (res.status === 429) {
+        dispatch({ type: 'toast', tone: 'error', message: 'Muitas tentativas de login. Aguarde alguns minutos antes de tentar novamente.' });
+        return;
+      }
       const data = await res.json();
       if (!data.ok) {
         dispatch({ type: 'toast', tone: 'error', message: data.error || 'Credenciais inválidas' });
@@ -3221,8 +3225,8 @@ function LoginScreen() {
           dispatch({ type: 'whatsapp_connect', userId: data.user.id });
         }
       } catch (_) {}
-    } catch {
-      dispatch({ type: 'toast', tone: 'error', message: 'Não foi possível conectar ao servidor.' });
+    } catch (err) {
+      dispatch({ type: 'toast', tone: 'error', message: `Erro de conexão: ${err?.message || String(err)} | URL: ${PLATE_PROXY_URL}` });
     } finally {
       setLoggingIn(false);
     }
@@ -4157,6 +4161,7 @@ function ConsultarFornecedorModal({ items, supplier, quotationId, onClose }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ supplierPhone: supplier.phone, message: msg }),
       });
+      if (res.status === 401) { dispatch({ type: 'logout' }); return; }
       const json = await res.json().catch(() => ({}));
       if (!json.ok) {
         dispatch({ type: 'toast', tone: 'error', message: json.message || 'Erro ao enviar consulta.' });
@@ -4164,7 +4169,7 @@ function ConsultarFornecedorModal({ items, supplier, quotationId, onClose }) {
         return;
       }
     } catch (err) {
-      dispatch({ type: 'toast', tone: 'error', message: 'Não foi possível conectar ao servidor.' });
+      dispatch({ type: 'toast', tone: 'error', message: `Erro de conexão: ${err?.message || String(err)}` });
       setSending(false);
       return;
     }
@@ -4273,6 +4278,7 @@ function QuickConsultarModal({ quotation, onClose }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ supplierPhone: supplier.phone, message: msg }),
       });
+      if (res.status === 401) { dispatch({ type: 'logout' }); return; }
       const json = await res.json().catch(() => ({}));
       if (!json.ok) {
         dispatch({ type: 'toast', tone: 'error', message: json.message || 'Erro ao enviar consulta.' });
@@ -4280,7 +4286,7 @@ function QuickConsultarModal({ quotation, onClose }) {
         return;
       }
     } catch (err) {
-      dispatch({ type: 'toast', tone: 'error', message: 'Não foi possível conectar ao servidor.' });
+      dispatch({ type: 'toast', tone: 'error', message: `Erro de conexão: ${err?.message || String(err)}` });
       setSending(false);
       return;
     }
@@ -4382,6 +4388,7 @@ function WhatsAppModal({ quotation, onClose }) {
     setSending(true);
     try {
       const res = await fetch(`${PLATE_PROXY_URL}/api/whatsapp/enviar/${quotation.id}`, { method: 'POST', credentials: 'include' });
+      if (res.status === 401) { dispatch({ type: 'logout' }); return; }
       const json = await res.json().catch(() => ({}));
       if (!json.ok) {
         if (json.code === 'CONNECTION_CLOSED') {
@@ -4394,7 +4401,7 @@ function WhatsAppModal({ quotation, onClose }) {
         return;
       }
     } catch (err) {
-      dispatch({ type: 'toast', tone: 'error', message: 'Não foi possível conectar ao servidor.' });
+      dispatch({ type: 'toast', tone: 'error', message: `Erro de conexão: ${err?.message || String(err)}` });
       setSending(false);
       return;
     }
@@ -4463,8 +4470,7 @@ function WhatsAppConnectModal({ userId, onClose }) {
         // 0. Verifica se já está conectado — evita mostrar QR desnecessariamente
         const stCheck = await fetch(`${PLATE_PROXY_URL}/api/whatsapp/instancia/status${targetQuery}`, { credentials: 'include' });
         if (!stCheck.ok && stCheck.status === 401) {
-          setPhase('error');
-          setErrorMsg('Sua sessão expirou. Faça login novamente.');
+          if (!cancelled) dispatch({ type: 'logout' });
           return;
         }
         const stJson = await stCheck.json();
@@ -4481,8 +4487,7 @@ function WhatsAppConnectModal({ userId, onClose }) {
           body: targetBody,
         });
         if (criarRes.status === 401) {
-          setPhase('error');
-          setErrorMsg('Sua sessão expirou. Faça login novamente.');
+          if (!cancelled) dispatch({ type: 'logout' });
           return;
         }
         if (!criarRes.ok) {
@@ -4551,10 +4556,10 @@ function WhatsAppConnectModal({ userId, onClose }) {
             }
           } catch (_) {}
         }, 5000);
-      } catch (_) {
+      } catch (err) {
         if (!cancelled) {
           setPhase('error');
-          setErrorMsg('Não foi possível conectar ao servidor. Verifique se o COTOU está rodando.');
+          setErrorMsg(`Erro: ${err?.message || err} — URL: ${PLATE_PROXY_URL}`);
         }
       }
     }

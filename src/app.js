@@ -65,7 +65,13 @@ app.use(express.urlencoded({ extended: true, limit: '2mb' }));
 // Serve uploaded photos
 app.use('/uploads', express.static(path.join(__dirname, '../public/uploads')));
 
-// Serve prototype at /prototype/index.html
+// Força entrega sem cache do index.html — redireciona com ?v=timestamp para quebrar cache do browser e CDN
+app.get(['/prototype', '/prototype/index.html'], (req, res) => {
+  if (!req.query.v) return res.redirect(302, `/prototype/index.html?v=${Date.now()}`);
+  res.set('Cache-Control', 'no-store, no-cache, must-revalidate');
+  res.set('Pragma', 'no-cache');
+  res.sendFile(require('path').join(__dirname, '../public/prototype/index.html'));
+});
 app.use('/prototype', express.static(path.join(__dirname, '../public/prototype')));
 
 const dataDir = path.resolve('./data');
