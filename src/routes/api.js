@@ -64,11 +64,19 @@ router.post('/notificacoes/todas-lidas', (req, res) => {
 });
 
 // WhatsApp — gerenciamento de instância por usuário
+// Admin pode passar targetUserId no body para gerenciar instância de outro usuário
+function resolveTargetUserId(req) {
+  const isAdmin = req.session.userRole === 'admin';
+  const targetId = req.body?.targetUserId || req.query?.targetUserId;
+  return (isAdmin && targetId) ? Number(targetId) : req.session.userId;
+}
+
 router.post('/whatsapp/instancia/criar', async (req, res) => {
-  const instanceName = `cotou-user-${req.session.userId}`;
+  const targetId = resolveTargetUserId(req);
+  const instanceName = `cotou-user-${targetId}`;
   try {
     await createInstance(instanceName);
-    User.setWhatsappInstance(req.session.userId, instanceName);
+    User.setWhatsappInstance(targetId, instanceName);
     res.json({ ok: true, instanceName });
   } catch (err) {
     res.status(502).json({ ok: false, message: err.message });
@@ -76,10 +84,15 @@ router.post('/whatsapp/instancia/criar', async (req, res) => {
 });
 
 router.get('/whatsapp/instancia/qrcode', async (req, res) => {
-  const user = User.findById(req.session.userId);
+  const targetId = resolveTargetUserId(req);
+  const user = User.findById(targetId);
   if (!user?.whatsapp_instance_name) return res.status(400).json({ ok: false, message: 'Instância não criada. Chame /criar primeiro.' });
   try {
     const data = await getQRCode(user.whatsapp_instance_name);
+    // Evolution API retorna state:open (sem QR) quando a instância já está conectada
+    if (data?.instance?.state === 'open') {
+      return res.json({ ok: true, already_connected: true, data });
+    }
     res.json({ ok: true, data });
   } catch (err) {
     res.status(502).json({ ok: false, message: err.message });
@@ -87,7 +100,8 @@ router.get('/whatsapp/instancia/qrcode', async (req, res) => {
 });
 
 router.get('/whatsapp/instancia/status', async (req, res) => {
-  const user = User.findById(req.session.userId);
+  const targetId = resolveTargetUserId(req);
+  const user = User.findById(targetId);
   if (!user?.whatsapp_instance_name) return res.json({ ok: true, connected: false });
   try {
     const status = await getStatus(user.whatsapp_instance_name);
@@ -98,10 +112,11 @@ router.get('/whatsapp/instancia/status', async (req, res) => {
 });
 
 router.delete('/whatsapp/instancia/desconectar', async (req, res) => {
-  const user = User.findById(req.session.userId);
+  const targetId = resolveTargetUserId(req);
+  const user = User.findById(targetId);
   if (user?.whatsapp_instance_name) {
     try { await deleteInstance(user.whatsapp_instance_name); } catch (_) {}
-    User.clearWhatsappInstance(req.session.userId);
+    User.clearWhatsappInstance(targetId);
   }
   res.json({ ok: true });
 });
@@ -133,13 +148,31 @@ router.post('/whatsapp/enviar/:id', async (req, res) => {
   }
 
   const user = User.findById(req.session.userId);
+  const instanceName = user?.whatsapp_instance_name || process.env.WHATSAPP_INSTANCE_NAME || null;
+
+  // Verifica conexão antes de tentar enviar
+  if (instanceName) {
+    try {
+      const status = await getStatus(instanceName);
+      if (!status.connected) {
+        return res.status(400).json({ ok: false, message: 'WhatsApp desconectado. Reconecte sua instância nas configurações antes de enviar.' });
+      }
+    } catch (_) {
+      return res.status(400).json({ ok: false, message: 'Não foi possível verificar a conexão do WhatsApp. Verifique sua instância nas configurações.' });
+    }
+  }
+
   const items = QuotationItem.findByQuotationId(quotation.id);
   try {
     const approvalToken = Quotation.generateApprovalToken(quotation.id);
-    await sendQuoteMessage(quotation.customer_phone, quotation, items, user?.whatsapp_instance_name || null, approvalToken);
+    await sendQuoteMessage(quotation.customer_phone, quotation, items, instanceName, approvalToken);
     Quotation.markWhatsappSent(quotation.id, req.session.userId);
     res.json({ ok: true, message: 'Mensagem enviada com sucesso!' });
   } catch (err) {
+    const isConnectionClosed = JSON.stringify(err.evolutionBody || '').includes('Connection Closed');
+    if (isConnectionClosed) {
+      return res.status(400).json({ ok: false, code: 'CONNECTION_CLOSED', message: 'Sessão WhatsApp encerrada. Desconecte e reconecte seu WhatsApp nas configurações.' });
+    }
     res.status(502).json({ ok: false, message: err.message });
   }
 });

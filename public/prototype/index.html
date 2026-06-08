@@ -1927,7 +1927,7 @@ const SEED_NOTIFICATIONS = [
 ];
 
 // Proxy Vercel para consulta de placas (token seguro server-side)
-const PLATE_PROXY_URL = 'https://complexity-atmosphere-prospects-reserve.trycloudflare.com';
+const PLATE_PROXY_URL = window.location.origin;
 
 /* =========================================================
    Store (reducer)
@@ -2867,10 +2867,14 @@ function Sidebar() {
       {/* WhatsApp connection strip */}
       <div style={{ padding: '6px 10px', borderTop: '1px solid var(--border)', flexShrink: 0 }}>
         <button
-          onClick={() => connected
-            ? dispatch({ type: 'whatsapp_disconnect', userId: currentUser.id })
-            : dispatch({ type: 'open_wa_connect' })
-          }
+          onClick={async () => {
+            if (connected) {
+              await fetch(`${PLATE_PROXY_URL}/api/whatsapp/instancia/desconectar`, { method: 'DELETE', credentials: 'include' });
+              dispatch({ type: 'whatsapp_disconnect', userId: currentUser.id });
+            } else {
+              dispatch({ type: 'open_wa_connect' });
+            }
+          }}
           style={{
             width: '100%', display: 'flex', alignItems: 'center', gap: 9,
             background: 'none', border: '1px solid var(--border)', borderRadius: 8,
@@ -4108,7 +4112,7 @@ function QuickConsultarModal({ quotation, onClose }) {
   async function send() {
     setSending(true);
     try {
-      await fetch('/api/whatsapp/consultar-fornecedor', {
+      await fetch(`${PLATE_PROXY_URL}/api/whatsapp/consultar-fornecedor`, {
         method: 'POST', credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ supplierPhone: supplier.phone, message: msg }),
@@ -4211,10 +4215,15 @@ function WhatsAppModal({ quotation, onClose }) {
   async function send() {
     setSending(true);
     try {
-      const res = await fetch(`/api/whatsapp/enviar/${quotation.id}`, { method: 'POST', credentials: 'include' });
+      const res = await fetch(`${PLATE_PROXY_URL}/api/whatsapp/enviar/${quotation.id}`, { method: 'POST', credentials: 'include' });
       const json = await res.json().catch(() => ({}));
       if (json.ok === false) {
-        dispatch({ type: 'toast', tone: 'error', message: json.message || 'Erro ao enviar WhatsApp.' });
+        if (json.code === 'CONNECTION_CLOSED') {
+          dispatch({ type: 'whatsapp_disconnect', userId: me?.id });
+          dispatch({ type: 'toast', tone: 'error', message: 'Sessão WhatsApp encerrada. Reconecte nas configurações e tente novamente.' });
+        } else {
+          dispatch({ type: 'toast', tone: 'error', message: json.message || 'Erro ao enviar WhatsApp.' });
+        }
         setSending(false);
         return;
       }
@@ -4264,7 +4273,12 @@ function WhatsAppModal({ quotation, onClose }) {
 }
 
 function WhatsAppConnectModal({ userId, onClose }) {
-  const { dispatch } = useStore();
+  const { state, dispatch } = useStore();
+  const currentUserId = state.currentUserId;
+  // Se o admin está conectando outro usuário, envia targetUserId para o backend
+  const targetQuery = (userId && userId !== currentUserId) ? `?targetUserId=${userId}` : '';
+  const targetBody  = (userId && userId !== currentUserId) ? JSON.stringify({ targetUserId: userId }) : undefined;
+
   const [phase, setPhase] = useState('loading'); // loading | qr | connected | error
   const [qrSrc, setQrSrc] = useState(null);
   const [errorMsg, setErrorMsg] = useState('');
@@ -4276,19 +4290,49 @@ function WhatsAppConnectModal({ userId, onClose }) {
 
     async function start() {
       try {
+        // 0. Verifica se já está conectado — evita mostrar QR desnecessariamente
+        const stCheck = await fetch(`${PLATE_PROXY_URL}/api/whatsapp/instancia/status${targetQuery}`, { credentials: 'include' });
+        if (!stCheck.ok && stCheck.status === 401) {
+          setPhase('error');
+          setErrorMsg('Sua sessão expirou. Faça login novamente.');
+          return;
+        }
+        const stJson = await stCheck.json();
+        if (stJson.connected) {
+          dispatch({ type: 'whatsapp_connect', userId });
+          setPhase('connected');
+          return;
+        }
+
         // 1. Garante que a instância existe
-        await fetch('/api/whatsapp/instancia/criar', { method: 'POST', credentials: 'include' });
+        const criarRes = await fetch(`${PLATE_PROXY_URL}/api/whatsapp/instancia/criar`, {
+          method: 'POST', credentials: 'include',
+          headers: targetBody ? { 'Content-Type': 'application/json' } : undefined,
+          body: targetBody,
+        });
+        if (criarRes.status === 401) {
+          setPhase('error');
+          setErrorMsg('Sua sessão expirou. Faça login novamente.');
+          return;
+        }
 
         // 2. Busca QR Code — retry até 5x com 2s de intervalo (Evolution pode demorar um instante para gerar)
         let base64 = null;
         for (let attempt = 0; attempt < 5 && !base64 && !cancelled; attempt++) {
           if (attempt > 0) await new Promise(r => setTimeout(r, 2000));
-          const qrRes = await fetch('/api/whatsapp/instancia/qrcode', { credentials: 'include' });
+          const qrRes = await fetch(`${PLATE_PROXY_URL}/api/whatsapp/instancia/qrcode${targetQuery}`, { credentials: 'include' });
           const qrJson = await qrRes.json();
           if (cancelled) return;
           if (!qrJson.ok) {
             setPhase('error');
-            setErrorMsg(qrJson.message || 'Não foi possível gerar o QR Code.');
+            const apiMsg = qrJson.message || qrJson.error || '';
+            setErrorMsg(apiMsg === 'Não autenticado' ? 'Sua sessão expirou. Faça login novamente.' : apiMsg || 'Não foi possível gerar o QR Code.');
+            return;
+          }
+          // Instância já conectada — tratar como sucesso
+          if (qrJson.already_connected) {
+            dispatch({ type: 'whatsapp_connect', userId });
+            setPhase('connected');
             return;
           }
           base64 = qrJson.data?.base64 || qrJson.data?.qrcode || null;
@@ -4310,7 +4354,7 @@ function WhatsAppConnectModal({ userId, onClose }) {
           attempts++;
           if (attempts > 36) { clearInterval(pollRef.current); return; } // 3min
           try {
-            const st = await fetch('/api/whatsapp/instancia/status', { credentials: 'include' });
+            const st = await fetch(`${PLATE_PROXY_URL}/api/whatsapp/instancia/status${targetQuery}`, { credentials: 'include' });
             const s = await st.json();
             if (s.connected) {
               clearInterval(pollRef.current);
@@ -4321,9 +4365,9 @@ function WhatsAppConnectModal({ userId, onClose }) {
             } else {
               // Atualiza QR se disponível (pode expirar e gerar novo)
               try {
-                const nq = await fetch('/api/whatsapp/instancia/qrcode', { credentials: 'include' });
+                const nq = await fetch(`${PLATE_PROXY_URL}/api/whatsapp/instancia/qrcode${targetQuery}`, { credentials: 'include' });
                 const nqj = await nq.json();
-                if (nqj.ok && !cancelled) {
+                if (nqj.ok && !nqj.already_connected && !cancelled) {
                   const b = nqj.data?.base64 || nqj.data?.qrcode || null;
                   if (b) setQrSrc(b.startsWith('data:') ? b : `data:image/png;base64,${b}`);
                 }
@@ -4383,6 +4427,15 @@ function WhatsAppConnectModal({ userId, onClose }) {
               <i className="bi bi-check-lg" style={{ fontSize: 32, color: '#16a34a' }}></i>
             </div>
             <div style={{ fontWeight: 600, color: '#16a34a' }}>WhatsApp conectado!</div>
+            <button className="btn btn-ghost btn-sm" style={{ fontSize: 11, color: 'var(--text-faint)', marginTop: -8 }}
+              onClick={async () => {
+                await fetch(`${PLATE_PROXY_URL}/api/whatsapp/instancia/desconectar${targetQuery}`, { method: 'DELETE', credentials: 'include' });
+                dispatch({ type: 'whatsapp_disconnect', userId });
+                setPhase('loading');
+                setRetryCount(c => c + 1);
+              }}>
+              Forçar reconexão (novo QR)
+            </button>
           </>
         )}
         {phase === 'error' && (
@@ -5338,7 +5391,10 @@ function AdminUsersScreen() {
                           <span className="dot-sm" style={{ background: '#16a34a' }}></span> Conectado
                         </Badge>
                         <button className="icon-btn" title="Desconectar"
-                          onClick={() => dispatch({ type: 'whatsapp_disconnect', userId: u.id })}>
+                          onClick={async () => {
+                            await fetch(`${PLATE_PROXY_URL}/api/whatsapp/instancia/desconectar?targetUserId=${u.id}`, { method: 'DELETE', credentials: 'include' });
+                            dispatch({ type: 'whatsapp_disconnect', userId: u.id });
+                          }}>
                           <i className="bi bi-x-circle" style={{ fontSize: 14, color: 'var(--text-faint)' }}></i>
                         </button>
                       </div>

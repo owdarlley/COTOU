@@ -74,6 +74,20 @@ function getClient() {
   return { apiUrl, apiKey, headers, agent };
 }
 
+function axiosError(err) {
+  if (err.response) {
+    const body = err.response.data;
+    const detail = typeof body === 'object'
+      ? (body.message || body.error || JSON.stringify(body))
+      : String(body);
+    const e = new Error(`Evolution API ${err.response.status}: ${detail}`);
+    e.evolutionStatus = err.response.status;
+    e.evolutionBody = body;
+    return e;
+  }
+  return err;
+}
+
 async function sendQuoteMessage(customerPhone, quotation, items, instanceName, approvalToken) {
   const { apiUrl, headers, agent } = getClient();
   const instance = instanceName || process.env.WHATSAPP_INSTANCE_NAME;
@@ -82,25 +96,32 @@ async function sendQuoteMessage(customerPhone, quotation, items, instanceName, a
   const number = formatPhone(customerPhone);
   const text = buildMessage(quotation, items, approvalToken);
 
-  const { data } = await axios.post(
-    `${apiUrl}/message/sendText/${instance}`,
-    { number, text },
-    { headers, httpsAgent: agent, timeout: 15000 }
-  );
-
-  return { ok: true, data };
+  try {
+    const { data } = await axios.post(
+      `${apiUrl}/message/sendText/${instance}`,
+      { number, text },
+      { headers, httpsAgent: agent, timeout: 15000 }
+    );
+    return { ok: true, data };
+  } catch (err) {
+    throw axiosError(err);
+  }
 }
 
 async function sendTextMessage(phone, text, instanceName) {
   const { apiUrl, headers, agent } = getClient();
   const instance = instanceName || process.env.WHATSAPP_INSTANCE_NAME;
   if (!instance) throw new Error('Instância WhatsApp não definida.');
-  const { data } = await axios.post(
-    `${apiUrl}/message/sendText/${instance}`,
-    { number: formatPhone(phone), text },
-    { headers, httpsAgent: agent, timeout: 15000 }
-  );
-  return data;
+  try {
+    const { data } = await axios.post(
+      `${apiUrl}/message/sendText/${instance}`,
+      { number: formatPhone(phone), text },
+      { headers, httpsAgent: agent, timeout: 15000 }
+    );
+    return data;
+  } catch (err) {
+    throw axiosError(err);
+  }
 }
 
 async function createInstance(instanceName) {
