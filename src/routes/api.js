@@ -128,43 +128,13 @@ router.delete('/whatsapp/instancia/desconectar', async (req, res) => {
   if (user?.whatsapp_instance_name) {
     const instName = user.whatsapp_instance_name;
 
-    // 1. Verifica estado atual — só envia logout se estiver open (enviado ao servidor WA)
-    let isOpen = false;
+    // Só faz logout — mantém a instância para que o QR fique disponível imediatamente
     try {
       const st = await getStatus(instName);
-      isOpen = st.connected;
+      if (st.connected) await logoutInstance(instName);
     } catch (_) {}
 
-    if (isOpen) {
-      // Tenta logout até 3x — confirma desconexão no celular
-      for (let i = 0; i < 3; i++) {
-        try {
-          await logoutInstance(instName);
-          break;
-        } catch (err) {
-          console.warn(`[WA] logout tentativa ${i + 1} falhou para ${instName}:`, err.message);
-          if (i < 2) await new Promise(r => setTimeout(r, 1000));
-        }
-      }
-      // Aguarda Evolution API processar o logout
-      await new Promise(r => setTimeout(r, 1500));
-    }
-
-    // 2. Deleta a instância da Evolution API
-    try { await deleteInstance(instName); } catch (err) {
-      console.warn(`[WA] delete falhou para ${instName}:`, err.message);
-    }
-
-    // 3. Confirma que não está mais open (máx 3s)
-    for (let i = 0; i < 3; i++) {
-      await new Promise(r => setTimeout(r, 800));
-      try {
-        const { connected } = await getStatus(instName);
-        if (!connected) break;
-      } catch (_) { break; }
-    }
-
-    User.clearWhatsappInstance(targetId);
+    User.clearWhatsappConnectedAt(targetId);
   }
   res.json({ ok: true });
 });
