@@ -2072,9 +2072,8 @@ function resolveBackendUrl() {
     const stored = localStorage.getItem('cotou_backend_url');
     if (stored) return stored;
   } catch (_) {}
-  // Quando acessado pelo GitHub Pages, aponta para o servidor Cloudflare
   if (window.location.hostname === 'owdarlley.github.io') {
-    return 'https://manor-documentation-brown-coming.trycloudflare.com';
+    return 'https://cotou.darlley.dev.br';
   }
   return window.location.origin;
 }
@@ -2169,10 +2168,14 @@ function reducer(state, action) {
     case 'navigate':
       return { ...state, route: { name: action.name, params: action.params || {} } };
     case 'switch_role': {
-      // Find first active user with that role
       const u = state.users.find(u => u.role === action.role && u.active);
       if (!u) return state;
-      return { ...state, currentUserId: u.id };
+      // Reset WA status on switch — avoids stale localStorage leaking across users
+      return {
+        ...state,
+        currentUserId: u.id,
+        users: state.users.map(x => x.id === u.id ? { ...x, whatsapp_connected: false } : x),
+      };
     }
     case 'create_quotation': {
       const id = nextId(state.quotations);
@@ -3153,27 +3156,6 @@ function NotificationsBell() {
 }
 
 /* =========================================================
-   Role switcher (demo)
-   ========================================================= */
-function RoleSwitcher() {
-  const { currentUser, dispatch } = useStore();
-  return (
-    <div className="segmented" title="Trocar de papel (demo)">
-      {['vendas', 'compras', 'admin'].map(r => (
-        <button
-          key={r}
-          className={currentUser.role === r ? 'active' : ''}
-          onClick={() => dispatch({ type: 'switch_role', role: r })}
-        >
-          <i className={`bi ${ROLE_META[r].icon}`} style={{ marginRight: 4 }}></i>
-          {ROLE_META[r].label}
-        </button>
-      ))}
-    </div>
-  );
-}
-
-/* =========================================================
    Topbar
    ========================================================= */
 function Topbar({ title, subtitle, actions }) {
@@ -3191,7 +3173,6 @@ function Topbar({ title, subtitle, actions }) {
       <h1>{title}</h1>
       <div className="topbar-actions">
         {actions}
-        <RoleSwitcher />
         <button
           className="icon-btn"
           onClick={() => {
@@ -3219,11 +3200,18 @@ const { useState } = React;
 
 function LoginScreen() {
   const { state, dispatch } = useStore();
-  const [email, setEmail] = useState('vendas@cotou.com.br');
-  const [password, setPassword] = useState('demo1234');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [showPwd, setShowPwd] = useState(false);
-  const [picked, setPicked] = useState(2);
   const [loggingIn, setLoggingIn] = React.useState(false);
+  const [loginUsers, setLoginUsers] = React.useState([]);
+  const [picked, setPicked] = React.useState(null);
+  const pwdRef = React.useRef(null);
+
+  React.useEffect(() => {
+    fetch(PLATE_PROXY_URL + '/auth/users')
+      .then(r => r.json()).then(d => { if (d.ok) setLoginUsers(d.users); }).catch(() => {});
+  }, []);
 
   // Backend URL configurator — necessário quando o frontend está no GitHub Pages
   const onGitHubPages = window.location.hostname === 'owdarlley.github.io';
@@ -3275,8 +3263,12 @@ function LoginScreen() {
         const stData = await stRes.json().catch(() => ({}));
         if (stData.connected) {
           dispatch({ type: 'whatsapp_connect', userId: data.user.id });
+        } else {
+          dispatch({ type: 'whatsapp_disconnect', userId: data.user.id });
         }
-      } catch (_) {}
+      } catch (_) {
+        dispatch({ type: 'whatsapp_disconnect', userId: data.user.id });
+      }
     } catch (err) {
       dispatch({ type: 'toast', tone: 'error', message: `Erro de conexão: ${err?.message || String(err)} | URL: ${PLATE_PROXY_URL}` });
     } finally {
@@ -3355,6 +3347,7 @@ function LoginScreen() {
               <div className="input-group">
                 <i className="bi bi-lock input-icon"></i>
                 <input
+                  ref={pwdRef}
                   className="input"
                   type={showPwd ? 'text' : 'password'}
                   value={password}
@@ -3386,26 +3379,28 @@ function LoginScreen() {
             </Button>
           </div>
 
-          {/* Demo profiles */}
-          <div style={{ marginTop: 24, paddingTop: 20, borderTop: '1px solid var(--border)' }}>
-            <div className="tiny" style={{ color: 'var(--text-faint)', textTransform: 'uppercase', letterSpacing: '0.12em', fontFamily: 'var(--mono)', textAlign: 'center', marginBottom: 10 }}>
-              Perfis de demonstração
+          {/* Acesso rápido — preenche só o e-mail; senha digitada pelo usuário */}
+          {loginUsers.length > 0 && (
+            <div style={{ marginTop: 24, paddingTop: 20, borderTop: '1px solid var(--border)' }}>
+              <div className="tiny" style={{ color: 'var(--text-faint)', textTransform: 'uppercase', letterSpacing: '0.12em', fontFamily: 'var(--mono)', textAlign: 'center', marginBottom: 10 }}>
+                Acesso rápido
+              </div>
+              <div className="role-pick">
+                {loginUsers.map(u => (
+                  <button
+                    key={u.id}
+                    type="button"
+                    className={`role-tile ${picked === u.id ? 'active' : ''}`}
+                    onClick={() => { setEmail(u.email); setPicked(u.id); setTimeout(() => pwdRef.current?.focus(), 50); }}
+                  >
+                    <RoleBadge role={u.role} />
+                    <div className="role-tile-name" style={{ marginTop: 6 }}>{u.name}</div>
+                    <div className="role-tile-mail">{u.email}</div>
+                  </button>
+                ))}
+              </div>
             </div>
-            <div className="role-pick">
-              {state.users.filter(u => u.active).slice(0, 3).map(u => (
-                <button
-                  key={u.id}
-                  type="button"
-                  className={`role-tile ${picked === u.id ? 'active' : ''}`}
-                  onClick={() => { setEmail(u.email); setPassword('demo1234'); setPicked(u.id); }}
-                >
-                  <RoleBadge role={u.role} />
-                  <div className="role-tile-name" style={{ marginTop: 6 }}>{u.name}</div>
-                  <div className="role-tile-mail">{u.email}</div>
-                </button>
-              ))}
-            </div>
-          </div>
+          )}
 
           {/* Backend URL configurator — URL nunca exposta na tela; botão discreto apenas quando editando */}
           {editingBackend ? (

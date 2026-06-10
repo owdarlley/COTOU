@@ -44,6 +44,7 @@ app.use(helmet({
 app.use(compression());
 const allowedOrigins = [
   'https://owdarlley.github.io',
+  'https://cotou.darlley.dev.br',
   process.env.FRONTEND_URL,
   'http://localhost:5173',
   'http://localhost:3000',
