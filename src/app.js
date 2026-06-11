@@ -21,6 +21,7 @@ const notificationsRoutes = require('./routes/notifications');
 const adminRoutes = require('./routes/admin');
 const apiRoutes = require('./routes/api');
 const aprovacaoRoutes = require('./routes/aprovacao');
+const webhookRoutes = require('./routes/webhook');
 
 runMigrations();
 
@@ -121,6 +122,7 @@ app.get('/', requireAuth, (req, res) => {
 
 // Rotas públicas (sem autenticação) — devem vir antes do requireAuth
 app.use(aprovacaoRoutes);
+app.use('/api', webhookRoutes);
 
 app.use('/auth', authRoutes);
 app.use('/cotacoes', quotationsRoutes);

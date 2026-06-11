@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { requireAuth, requireRole } = require('../middleware/auth');
 const { lookupPlate, getBalance, isValidPlate } = require('../services/plateService');
-const { sendQuoteMessage, sendTextMessage, createInstance, getQRCode, getStatus, deleteInstance, logoutInstance } = require('../services/whatsappService');
+const { sendQuoteMessage, sendTextMessage, createInstance, getQRCode, getStatus, logoutInstance, setWebhook } = require('../services/whatsappService');
 const User = require('../models/User');
 const PartsCatalog = require('../models/PartsCatalog');
 const Notification = require('../models/Notification');
@@ -113,6 +113,9 @@ router.get('/whatsapp/instancia/status', async (req, res) => {
     // Sincroniza DB com estado real da Evolution API
     if (status.connected && !user.whatsapp_connected_at) {
       User.markWhatsappConnected(targetId);
+      // Configura webhook automaticamente na primeira conexão
+      const webhookUrl = process.env.APP_URL ? `${process.env.APP_URL}/api/whatsapp/webhook` : null;
+      if (webhookUrl) setWebhook(user.whatsapp_instance_name, webhookUrl).catch(() => {});
     } else if (!status.connected && user.whatsapp_connected_at) {
       User.clearWhatsappConnectedAt(targetId);
     }
@@ -126,14 +129,8 @@ router.delete('/whatsapp/instancia/desconectar', async (req, res) => {
   const targetId = resolveTargetUserId(req);
   const user = User.findById(targetId);
   if (user?.whatsapp_instance_name) {
-    const instName = user.whatsapp_instance_name;
-
     // Só faz logout — mantém a instância para que o QR fique disponível imediatamente
-    try {
-      const st = await getStatus(instName);
-      if (st.connected) await logoutInstance(instName);
-    } catch (_) {}
-
+    try { await logoutInstance(user.whatsapp_instance_name); } catch (_) {}
     User.clearWhatsappConnectedAt(targetId);
   }
   res.json({ ok: true });

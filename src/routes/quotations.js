@@ -15,13 +15,13 @@ router.use(requireAuth);
 
 // GET /cotacoes — lista de cotações (query: status, page)
 router.get('/', (req, res) => {
-  const { status = 'todos', page = 1 } = req.query;
+  const { status = 'todos', page = 1, limit = 15 } = req.query;
   const result = Quotation.findAll({
     status,
     userId: req.session.userId,
     role: req.session.userRole,
     page: parseInt(page),
-    limit: 15
+    limit: Math.min(parseInt(limit) || 15, 500),
   });
   res.json({ ok: true, ...result, currentStatus: status });
 });
@@ -210,7 +210,7 @@ router.post('/:id/resposta-cliente', requireRole('vendas', 'admin'), async (req,
   if (!quotation) return res.status(404).json({ ok: false, error: 'Cotação não encontrada.' });
 
   const approved = req.body.approved === '1' || req.body.approved === true || req.body.approved === 1;
-  Quotation.setCustomerApproval(quotation.id, approved);
+  Quotation.setCustomerApproval(quotation.id, approved, 'manual');
 
   const verb = approved ? 'APROVOU' : 'RECUSOU';
   await notifyAllByRole('compras', {

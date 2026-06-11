@@ -63,12 +63,15 @@ class Quotation {
       .run(notesVendas !== undefined ? notesVendas : null, notesCompras !== undefined ? notesCompras : null, id);
   }
 
-  static setCustomerApproval(id, approved) {
+  static setCustomerApproval(id, approved, source = null) {
     db.prepare(`
       UPDATE quotations
-      SET customer_approved = ?, customer_approved_at = datetime('now'), updated_at = datetime('now')
+      SET customer_approved = ?,
+          customer_approved_at = datetime('now'),
+          customer_approval_source = ?,
+          updated_at = datetime('now')
       WHERE id = ?
-    `).run(approved ? 1 : 0, id);
+    `).run(approved ? 1 : 0, source, id);
   }
 
   static generateApprovalToken(id) {
@@ -94,10 +97,24 @@ class Quotation {
     db.prepare(`
       UPDATE quotations
       SET customer_approved=?, customer_approved_at=datetime('now'),
+          customer_approval_source='link',
           approval_ip=?, approval_token=NULL, updated_at=datetime('now')
       WHERE id=?
     `).run(approved ? 1 : 0, ip || null, q.id);
     return q;
+  }
+
+  static findPendingByPhone(phone) {
+    const last11 = String(phone).replace(/\D/g, '').slice(-11);
+    return db.prepare(`
+      ${SELECT_FULL}
+      WHERE REPLACE(REPLACE(REPLACE(REPLACE(c.phone,' ',''),'-',''),'(',''),')','') LIKE ?
+        AND q.status IN ('cotado','peca_chegou')
+        AND q.customer_approved IS NULL
+        AND q.whatsapp_sent_at IS NOT NULL
+      ORDER BY q.updated_at DESC
+      LIMIT 1
+    `).get(`%${last11}`);
   }
 
   static countByStatus(userId, role) {

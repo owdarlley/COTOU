@@ -6,11 +6,23 @@ const socketConfig = require('./src/config/socket');
 
 const PORT = process.env.PORT || 3000;
 const server = http.createServer(app);
+const allowedSocketOrigins = [
+  process.env.FRONTEND_URL,
+  process.env.APP_URL,
+  'http://localhost:5173',
+  'http://localhost:3000',
+].filter(Boolean);
+
 const io = new Server(server, {
   cors: {
-    origin: process.env.FRONTEND_URL || 'http://localhost:5173',
-    credentials: true
-  }
+    origin: (origin, cb) => {
+      if (!origin || allowedSocketOrigins.includes(origin) || (origin && origin.endsWith('.trycloudflare.com'))) {
+        return cb(null, true);
+      }
+      cb(new Error('Not allowed by CORS'));
+    },
+    credentials: true,
+  },
 });
 
 socketConfig.init(io);

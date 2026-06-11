@@ -1154,6 +1154,7 @@ a { color: inherit; }
 <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
 <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
 <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
 <script type="text/babel">
 
 // tweaks-panel.jsx
@@ -2079,6 +2080,24 @@ function resolveBackendUrl() {
 }
 let PLATE_PROXY_URL = resolveBackendUrl();
 
+// Converte o shape plano do backend para o shape aninhado que o frontend usa
+function normalizeQuotation(q, existingItems) {
+  return {
+    ...q,
+    vehicle: {
+      plate: q.license_plate,
+      make: q.make || '',
+      model: q.model || '',
+      year_model: q.year_model,
+      year_manuf: q.year_manuf,
+      color: q.color || '',
+      fuel: q.fuel || '',
+      chassis: q.chassis || '',
+    },
+    items: existingItems || q.items || [],
+  };
+}
+
 /* =========================================================
    Store (reducer)
    ========================================================= */
@@ -2126,7 +2145,7 @@ function renderTemplate(settings, quotation, items) {
     .replace(/\[PRAZO DE ENTREGA\]/g, deadline);
 }
 
-const STATE_VERSION = 7;
+const STATE_VERSION = 6;
 
 const initialState = {
   currentUserId: 2, // start as Vendas
@@ -2319,9 +2338,36 @@ function reducer(state, action) {
     case 'customer_response':
       return {
         ...state,
-        quotations: state.quotations.map(q => q.id === action.id ? { ...q, customer_approved: action.approved ? 1 : 0 } : q),
+        quotations: state.quotations.map(q => q.id === action.id
+          ? { ...q, customer_approved: action.approved ? 1 : 0, customer_approval_source: action.source || null }
+          : q),
         toasts: [...state.toasts, { id: Date.now(), type: action.approved ? 'success' : 'error', message: action.approved ? 'Cliente aprovou' : 'Cliente recusou' }],
       };
+    case 'add_notification':
+      return {
+        ...state,
+        notifications: [action.notification, ...state.notifications.filter(n => n.id !== action.notification.id)],
+      };
+    case 'upsert_quotation': {
+      const q = action.quotation;
+      const exists = state.quotations.some(x => x.id === q.id);
+      return {
+        ...state,
+        quotations: exists
+          ? state.quotations.map(x => x.id === q.id ? { ...x, ...q } : x)
+          : [q, ...state.quotations],
+      };
+    }
+    case 'load_quotations': {
+      // Substitui a lista local pelos dados do backend, preservando items já carregados
+      const incoming = action.quotations.map(q =>
+        normalizeQuotation(q, state.quotations.find(x => x.id === q.id)?.items)
+      );
+      // Mantém cotações locais que o backend não retornou (criadas offline)
+      const incomingIds = new Set(incoming.map(q => q.id));
+      const localOnly = state.quotations.filter(q => !incomingIds.has(q.id));
+      return { ...state, quotations: [...incoming, ...localOnly] };
+    }
     case 'send_whatsapp': {
       const approvalToken = Math.random().toString(36).slice(2, 14) + Math.random().toString(36).slice(2, 14);
       const approvalExpires = new Date(Date.now() + 48 * 3600 * 1000).toISOString();
@@ -2445,6 +2491,53 @@ function StoreProvider({ children }) {
     const { toasts, waConnectOpen, ...persist } = state;
     localStorage.setItem('cotou_state', JSON.stringify({ ...persist, _v: STATE_VERSION }));
   }, [state]);
+
+  // Sincroniza cotações do backend ao logar
+  useEffect(() => {
+    if (!state.loggedIn) return;
+    fetch(`${PLATE_PROXY_URL}/cotacoes?limit=500`, { credentials: 'include' })
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        if (data?.ok && Array.isArray(data.items)) {
+          dispatch({ type: 'load_quotations', quotations: data.items });
+        }
+      })
+      .catch(() => {});
+  }, [state.loggedIn]);
+
+  // Socket.io — conecta quando logado, desconecta ao sair
+  useEffect(() => {
+    if (!state.loggedIn || !state.currentUserId) return;
+    if (typeof io === 'undefined') return;
+
+    const socket = io(PLATE_PROXY_URL, { withCredentials: true, transports: ['websocket', 'polling'] });
+
+    socket.on('connect', () => {
+      socket.emit('registrar', { userId: state.currentUserId });
+    });
+
+    socket.on('nova_notificacao', (notif) => {
+      dispatch({ type: 'add_notification', notification: {
+        id: notif.id,
+        user_id: state.currentUserId,
+        type: notif.type,
+        title: notif.title,
+        message: notif.message,
+        quotation_id: notif.quotationId,
+        read_at: null,
+        created_at: notif.createdAt || new Date().toISOString(),
+      }});
+      dispatch({ type: 'toast', tone: 'info', message: notif.title });
+    });
+
+    socket.on('quotation_updated', ({ id, customer_approved, customer_approved_at, customer_approval_source }) => {
+      dispatch({ type: 'customer_response', id, approved: customer_approved === 1, source: customer_approval_source });
+      dispatch({ type: 'toast', tone: customer_approved === 1 ? 'success' : 'error',
+        message: customer_approved === 1 ? '✅ Cliente aprovou a cotação!' : '❌ Cliente recusou a cotação.' });
+    });
+
+    return () => socket.disconnect();
+  }, [state.loggedIn, state.currentUserId]);
 
   const value = useMemo(() => {
     const currentUser = state.users.find(u => u.id === state.currentUserId);
@@ -3214,12 +3307,9 @@ function LoginScreen() {
   }, []);
 
   // Backend URL configurator — necessário quando o frontend está no GitHub Pages
-  const onGitHubPages = window.location.hostname === 'owdarlley.github.io';
   const [backendUrl, setBackendUrl] = React.useState(PLATE_PROXY_URL);
   const [editingBackend, setEditingBackend] = React.useState(false);
   const [backendDraft, setBackendDraft] = React.useState(PLATE_PROXY_URL);
-  const backendSameOrigin = backendUrl === window.location.origin;
-  const needsConfig = onGitHubPages && backendSameOrigin;
 
   function applyBackend(url) {
     const clean = (url || '').trim().replace(/\/$/, '');
@@ -3466,12 +3556,25 @@ function QuotationsList() {
     if (state.route.params.filter) setFilter(state.route.params.filter);
   }, [state.route.params.filter]);
 
+  // Recarrega do backend toda vez que a lista é exibida
+  useEffect(() => {
+    fetch(`${PLATE_PROXY_URL}/cotacoes?limit=500`, { credentials: 'include' })
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        if (data?.ok && Array.isArray(data.items)) {
+          dispatch({ type: 'load_quotations', quotations: data.items });
+        }
+      })
+      .catch(() => {});
+  }, []);
+
   // Vendas only sees own quotations
   let list = currentUser.role === 'vendas'
     ? state.quotations.filter(x => x.created_by_user_id === currentUser.id)
     : state.quotations;
 
-  if (filter !== 'todos') list = list.filter(x => x.status === filter);
+  if (filter === 'respondidas') list = list.filter(x => x.customer_approved !== null && x.customer_approved !== undefined);
+  else if (filter !== 'todos') list = list.filter(x => x.status === filter);
   if (q.trim()) {
     const needle = q.toLowerCase();
     list = list.filter(x =>
@@ -3498,6 +3601,7 @@ function QuotationsList() {
     ['pendente', 'em_cotacao', 'cotado', 'peca_chegou', 'cancelado'].forEach(s => {
       map[s] = base.filter(x => x.status === s).length;
     });
+    map.respondidas = base.filter(x => x.customer_approved !== null && x.customer_approved !== undefined).length;
     return map;
   }, [state.quotations, currentUser]);
 
@@ -3531,6 +3635,7 @@ function QuotationsList() {
             { k: 'pendente', label: 'Pendentes' },
             { k: 'em_cotacao', label: 'Em cotação' },
             { k: 'cotado', label: 'Cotadas' },
+            { k: 'respondidas', label: 'Respondidas pelo cliente' },
             { k: 'peca_chegou', label: 'Peça chegou' },
             { k: 'cancelado', label: 'Canceladas' },
           ].map(tab => (
@@ -3617,6 +3722,19 @@ function QuotationDetail() {
   const [cancelOpen, setCancelOpen] = useState(false);
   const [waOpen, setWaOpen] = useState(false);
   const [quickConsultOpen, setQuickConsultOpen] = useState(false);
+
+  // Busca dados frescos ao abrir — garante que aprovação via WhatsApp aparece mesmo sem socket
+  React.useEffect(() => {
+    if (!id) return;
+    fetch(`${PLATE_PROXY_URL}/cotacoes/${id}`, { credentials: 'include' })
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        if (!data?.ok || !data.quotation) return;
+        const q = data.quotation;
+        dispatch({ type: 'upsert_quotation', quotation: { ...q, items: data.items || [] } });
+      })
+      .catch(() => {});
+  }, [id]);
 
   if (!qt) {
     return (
@@ -3838,15 +3956,37 @@ function QuotationDetail() {
                 <span className="mono">{fmt.phone(qt.customer_phone)}</span>
               </a>
               {qt.customer_approved != null && (
-                <div className={`badge ${qt.customer_approved ? 'badge-cotado' : 'badge-cancelado'}`} style={{ marginTop: 10 }}>
-                  <i className={`bi ${qt.customer_approved ? 'bi-check-circle-fill' : 'bi-x-circle-fill'}`}></i>
-                  Cliente {qt.customer_approved ? 'aprovou' : 'recusou'}
+                <div className={`badge ${qt.customer_approved ? 'badge-cotado' : 'badge-cancelado'}`} style={{ marginTop: 10, flexDirection: 'column', alignItems: 'flex-start', gap: 2 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                    <i className={`bi ${qt.customer_approved ? 'bi-check-circle-fill' : 'bi-x-circle-fill'}`}></i>
+                    Cliente {qt.customer_approved ? 'confirmou' : 'recusou'}
+                  </div>
+                  <div style={{ fontSize: 10, opacity: 0.8, fontWeight: 400 }}>
+                    {qt.customer_approval_source === 'whatsapp' && 'via WhatsApp'}
+                    {qt.customer_approval_source === 'link' && 'via link de aprovação'}
+                    {qt.customer_approval_source === 'manual' && 'registrado pelo vendedor'}
+                    {!qt.customer_approval_source && 'registrado pelo vendedor'}
+                  </div>
                 </div>
               )}
-              {qt.status === 'cotado' && qt.customer_approved == null && (isVendas || isAdmin) && (
+              {(qt.status === 'cotado' || qt.status === 'peca_chegou') && qt.customer_approved == null && (isVendas || isAdmin) && (
                 <div className="row" style={{ gap: 6, marginTop: 10 }}>
-                  <Button variant="secondary" size="sm" icon="bi-check-lg" onClick={() => dispatch({ type: 'customer_response', id: qt.id, approved: true })}>Aprovou</Button>
-                  <Button variant="ghost" size="sm" icon="bi-x-lg" onClick={() => dispatch({ type: 'customer_response', id: qt.id, approved: false })}>Recusou</Button>
+                  <Button variant="secondary" size="sm" icon="bi-check-lg" onClick={async () => {
+                    await fetch(`${PLATE_PROXY_URL}/cotacoes/${qt.id}/resposta-cliente`, {
+                      method: 'POST', credentials: 'include',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ approved: 1 }),
+                    }).catch(() => {});
+                    dispatch({ type: 'customer_response', id: qt.id, approved: true, source: 'manual' });
+                  }}>Aprovou</Button>
+                  <Button variant="ghost" size="sm" icon="bi-x-lg" onClick={async () => {
+                    await fetch(`${PLATE_PROXY_URL}/cotacoes/${qt.id}/resposta-cliente`, {
+                      method: 'POST', credentials: 'include',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ approved: 0 }),
+                    }).catch(() => {});
+                    dispatch({ type: 'customer_response', id: qt.id, approved: false, source: 'manual' });
+                  }}>Recusou</Button>
                 </div>
               )}
             </div>
@@ -3885,12 +4025,20 @@ function QuotationDetail() {
               {qt.approval_token && qt.customer_approved == null && (
                 <MetaRow label="Aprovação" value="⏳ Aguardando cliente" icon="bi-link-45deg" iconColor="var(--brand)" />
               )}
-              {qt.customer_approved === 1 && (
-                <MetaRow label="Aprovação" value="✅ Cliente aprovou" icon="bi-check-circle-fill" iconColor="#16a34a" />
-              )}
-              {qt.customer_approved === 0 && (
-                <MetaRow label="Aprovação" value="❌ Cliente recusou" icon="bi-x-circle-fill" iconColor="#dc2626" />
-              )}
+              {qt.customer_approved === 1 && (() => {
+                const src = qt.customer_approval_source;
+                const label = src === 'whatsapp' ? '✅ Cliente confirmou via WhatsApp'
+                            : src === 'link'     ? '✅ Cliente confirmou via link'
+                            : '✅ Confirmado pelo vendedor';
+                return <MetaRow label="Aprovação" value={label} icon="bi-check-circle-fill" iconColor="#16a34a" />;
+              })()}
+              {qt.customer_approved === 0 && (() => {
+                const src = qt.customer_approval_source;
+                const label = src === 'whatsapp' ? '❌ Cliente recusou via WhatsApp'
+                            : src === 'link'     ? '❌ Cliente recusou via link'
+                            : '❌ Recusado pelo vendedor';
+                return <MetaRow label="Aprovação" value={label} icon="bi-x-circle-fill" iconColor="#dc2626" />;
+              })()}
             </div>
           </div>
 
@@ -5656,33 +5804,19 @@ function AdminUsersScreen() {
   async function reloadUsers() {
     setLoadingUsers(true);
     try {
-      const baseUrl = PLATE_PROXY_URL;
-      const res = await fetch(`${baseUrl}/admin/usuarios`, { credentials: 'include' });
+      const res = await fetch(`${PLATE_PROXY_URL}/admin/usuarios`, { credentials: 'include' });
       if (!res.ok) {
         if (res.status === 401) dispatch({ type: 'logout' });
         return;
       }
       const data = await res.json();
       if (!data.ok || !data.users) return;
-      const users = await Promise.all(data.users.map(async u => {
-        let whatsapp_connected = false;
-        if (u.whatsapp_instance_name) {
-          try {
-            const st = await fetch(`${baseUrl}/api/whatsapp/instancia/status?targetUserId=${u.id}`, { credentials: 'include' });
-            if (st.ok) {
-              const stJson = await st.json().catch(() => ({}));
-              // Backend agora retorna connected baseado no estado REAL da Evolution API
-              whatsapp_connected = stJson.connected === true;
-            }
-          } catch (_) {}
-        }
-        return {
-          id: u.id, name: u.name, email: u.email, role: u.role,
-          active: !!u.active, phone_whatsapp: u.phone_whatsapp || '',
-          whatsapp_instance: u.whatsapp_instance_name || null,
-          whatsapp_connected,
-          created_at: u.created_at,
-        };
+      const users = data.users.map(u => ({
+        id: u.id, name: u.name, email: u.email, role: u.role,
+        active: !!u.active, phone_whatsapp: u.phone_whatsapp || '',
+        whatsapp_instance: u.whatsapp_instance_name || null,
+        whatsapp_connected: !!u.whatsapp_connected_at,
+        created_at: u.created_at,
       }));
       dispatch({ type: 'set_users', users });
     } catch (_) {} finally {
@@ -5743,7 +5877,6 @@ function AdminUsersScreen() {
                             try {
                               await fetch(`${PLATE_PROXY_URL}/api/whatsapp/instancia/desconectar?targetUserId=${u.id}`, { method: 'DELETE', credentials: 'include' });
                               dispatch({ type: 'whatsapp_disconnect', userId: u.id });
-                              await reloadUsers();
                             } catch (_) {
                               dispatch({ type: 'toast', tone: 'error', message: 'Erro ao desconectar. Tente novamente.' });
                             } finally {

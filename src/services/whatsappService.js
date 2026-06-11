@@ -17,12 +17,29 @@ Sua cotação está pronta! Veja os detalhes abaixo:
 [MÃO DE OBRA]💰 *Total estimado: R$ [TOTAL]*
 [PRAZO DE ENTREGA]
 
-Confirma para encomendarmos? 😊`;
+Para confirmar ou recusar, responda com:
+*1* — ✅ Confirmar pedido
+*2* — ❌ Não tenho interesse`;
 
 function formatPhone(phone) {
   const digits = phone.replace(/\D/g, '');
   if (digits.startsWith('55')) return digits;
   return `55${digits}`;
+}
+
+function buildShortMessage(quotation, items) {
+  const partsTotal = items.reduce((s, i) => s + (i.total_price || 0), 0);
+  const laborTotal = items.reduce((s, i) => s + (i.labor_cost_compras || i.labor_cost_vendas || 0), 0);
+  const grandTotal = partsTotal + laborTotal;
+  const vehicle = [quotation.make, quotation.model, quotation.year_model].filter(Boolean).join(' ');
+  const itens = items.map(i => {
+    let l = `• ${i.part_name}`;
+    if (i.total_price) l += ` — R$ ${i.total_price.toFixed(2)}`;
+    return l;
+  }).join('\n');
+  const prazo = items.filter(i => i.delivery_days).map(i => i.delivery_days);
+  const prazoLinha = prazo.length ? `\n⏱ *Prazo:* até ${Math.max(...prazo)} dias úteis` : '';
+  return `Olá, ${quotation.customer_name}! 👋\n\nSua cotação *${quotation.quote_number}* está pronta!\n\n🚗 *${vehicle}* — Placa ${quotation.license_plate}\n\n📦 *Peças:*\n${itens}${prazoLinha}\n\n💰 *Total: R$ ${grandTotal.toFixed(2)}*\n\nPara confirmar ou recusar, responda com:\n*1* — ✅ Confirmar pedido\n*2* — ❌ Não tenho interesse`;
 }
 
 function buildMessage(quotation, items, approvalToken) {
@@ -175,4 +192,21 @@ async function logoutInstance(instanceName) {
   );
 }
 
-module.exports = { sendQuoteMessage, sendTextMessage, buildMessage, createInstance, getQRCode, getStatus, deleteInstance, logoutInstance };
+async function setWebhook(instanceName, webhookUrl) {
+  const { apiUrl, headers, agent } = getClient();
+  await axios.post(
+    `${apiUrl}/webhook/set/${instanceName}`,
+    {
+      webhook: {
+        enabled: true,
+        url: webhookUrl,
+        webhookByEvents: false,
+        webhookBase64: false,
+        events: ['MESSAGES_UPSERT'],
+      },
+    },
+    { headers, httpsAgent: agent, timeout: 10000 }
+  );
+}
+
+module.exports = { sendQuoteMessage, sendTextMessage, createInstance, getQRCode, getStatus, deleteInstance, logoutInstance, setWebhook };
