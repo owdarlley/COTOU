@@ -13,6 +13,8 @@ const PartsCatalog = require('../models/PartsCatalog');
 const AuditLog = require('../models/AuditLog');
 const { generateQuoteNumber } = require('../services/quoteNumberService');
 const { notifyUser, notifyAllByRole } = require('../services/notificationService');
+const { sendTextMessage } = require('../services/whatsappService');
+const User = require('../models/User');
 
 router.use(requireAuth);
 
@@ -389,7 +391,23 @@ router.post('/:id/peca-chegou', requireRole('compras', 'admin'), async (req, res
     await notifyUser(quotation.created_by_user_id, notifPeca);
     await notifyAllByRole('admin', notifPeca);
   } catch (notifErr) {
-    console.error('[Quotation] Falha ao notificar:', notifErr.message);
+    const logger = require('../config/logger');
+    logger.error({ err: notifErr }, '[Quotation] falha ao notificar chegada de peça');
+  }
+
+  // WhatsApp automático ao cliente avisando que a peça chegou
+  if (quotation.customer_phone) {
+    const buyerUser = quotation.assigned_buyer_id ? User.findById(quotation.assigned_buyer_id) : null;
+    const sellerUser = quotation.created_by_user_id ? User.findById(quotation.created_by_user_id) : null;
+    const instance = buyerUser?.whatsapp_instance_name || sellerUser?.whatsapp_instance_name;
+    if (instance) {
+      const firstName = (quotation.customer_name || '').split(' ')[0] || 'Cliente';
+      const msg = `✅ Olá, *${firstName}*! Sua peça da cotação *${quotation.quote_number}* chegou! Entre em contato conosco para agendar a instalação. Obrigado! 😊`;
+      sendTextMessage(quotation.customer_phone, msg, instance).catch(e => {
+        const logger = require('../config/logger');
+        logger.warn({ err: e }, '[Quotation] falha ao enviar WhatsApp de chegada de peça');
+      });
+    }
   }
 
   res.json({ ok: true });

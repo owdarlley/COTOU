@@ -1169,11 +1169,53 @@ a { color: inherit; }
 @media (max-width: 768px) {
   .app-root { grid-template-columns: 1fr; }
   .sidebar { display: none; }
-  .page { padding: 16px; }
+  .page { padding: 16px; padding-bottom: 80px; }
   .stat-grid { grid-template-columns: 1fr 1fr; }
   .hide-mobile { display: none !important; }
   .modal { margin: 0; border-radius: 0; max-width: 100vw; width: 100vw; max-height: 100vh; }
   .modal-md, .modal-lg { max-width: 100vw; width: 100vw; }
+  .mobile-nav { display: flex !important; }
+}
+.mobile-nav {
+  display: none;
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  height: 60px;
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  z-index: 200;
+  align-items: stretch;
+  box-shadow: 0 -2px 12px rgba(0,0,0,.08);
+}
+.mobile-nav-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  color: var(--text-faint);
+  font-size: 10px;
+  font-family: inherit;
+  padding: 0;
+  position: relative;
+  transition: color 0.15s;
+}
+.mobile-nav-item.active { color: var(--brand); }
+.mobile-nav-item i { font-size: 18px; }
+.mobile-nav-badge {
+  position: absolute;
+  top: 8px; right: calc(50% - 14px);
+  background: var(--danger); color: #fff;
+  border-radius: 999px;
+  font-size: 9px; font-weight: 700;
+  padding: 1px 5px;
+  line-height: 1.4;
+  min-width: 14px;
+  text-align: center;
 }
 
 /* text truncation utility */
@@ -3170,12 +3212,13 @@ const { useState, useEffect, useRef } = React;
 const NAV_ITEMS_BY_ROLE = {
   vendas:  ['dashboard', 'quotations', 'new-quotation', 'customers', 'catalog', 'notifications'],
   compras: ['dashboard', 'quotations', 'customers', 'suppliers', 'catalog', 'notifications'],
-  admin:   ['dashboard', 'quotations', 'customers', 'suppliers', 'catalog', 'admin-users', 'admin-settings', 'notifications'],
+  admin:   ['dashboard', 'quotations', 'reports', 'customers', 'suppliers', 'catalog', 'admin-users', 'admin-settings', 'notifications'],
 };
 const NAV_META = {
   'dashboard':       { label: 'Dashboard',         icon: 'bi-grid-1x2' },
   'quotations':      { label: 'Cotações',          icon: 'bi-clipboard-data' },
   'new-quotation':   { label: 'Nova cotação',      icon: 'bi-plus-square' },
+  'reports':         { label: 'Relatórios',        icon: 'bi-bar-chart-line' },
   'customers':       { label: 'Clientes',          icon: 'bi-person-lines-fill' },
   'suppliers':       { label: 'Fornecedores',      icon: 'bi-truck' },
   'catalog':         { label: 'Catálogo de peças', icon: 'bi-box-seam' },
@@ -5260,6 +5303,17 @@ function NewQuotation() {
 
   const phoneDigits = customerPhone.replace(/\D/g, '');
   const canStep1 = customerName.trim() && (phoneDigits.length === 10 || phoneDigits.length === 11);
+
+  // Histórico do cliente: encontra cotações do telefone digitado
+  const existingCustomer = phoneDigits.length >= 10
+    ? (state.customers || []).find(c => c.phone && c.phone.replace(/\D/g, '') === phoneDigits)
+    : null;
+  const customerHistory = existingCustomer
+    ? (state.quotations || [])
+        .filter(q => q.customer_phone && q.customer_phone.replace(/\D/g, '') === phoneDigits)
+        .sort((a, b) => b.created_at.localeCompare(a.created_at))
+        .slice(0, 5)
+    : [];
   const canStep2 = plate && vehicle.make && vehicle.model;
   const validItems = items.filter(i => i.part_name && i.quantity > 0);
   const canSubmit = canStep1 && canStep2 && validItems.length > 0;
@@ -5329,6 +5383,54 @@ function NewQuotation() {
               </div>
             </Field>
           </div>
+          {/* Histórico do cliente — aparece quando o telefone já existe na base */}
+          {existingCustomer && (
+            <div style={{ border: '1px solid var(--border)', borderRadius: 'var(--r-md)', overflow: 'hidden' }}>
+              <div style={{ padding: '10px 14px', background: 'var(--brand-soft)', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 8 }}>
+                <i className="bi bi-person-check" style={{ color: 'var(--brand)', fontSize: 14 }}></i>
+                <span style={{ fontWeight: 600, fontSize: 13, color: 'var(--brand)' }}>Cliente já cadastrado</span>
+                {!customerName.trim() && (
+                  <button
+                    className="btn btn-ghost btn-sm"
+                    style={{ marginLeft: 'auto', fontSize: 11 }}
+                    onClick={() => setCustomerName(existingCustomer.name)}>
+                    Usar nome: {existingCustomer.name}
+                  </button>
+                )}
+              </div>
+              {customerHistory.length === 0 ? (
+                <div className="tiny faint" style={{ padding: '10px 14px' }}>Nenhuma cotação anterior.</div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                  {customerHistory.map((q, i) => {
+                    const { grandTotal } = calcTotals(q.items);
+                    const meta = STATUS_META[q.status] || {};
+                    return (
+                      <div key={q.id}
+                        onClick={() => dispatch({ type: 'navigate', name: 'quotation-detail', params: { id: q.id } })}
+                        style={{ padding: '8px 14px', borderBottom: i < customerHistory.length - 1 ? '1px solid var(--border)' : 'none', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}
+                        onMouseEnter={e => e.currentTarget.style.background = 'var(--surface-2)'}
+                        onMouseLeave={e => e.currentTarget.style.background = ''}>
+                        <div>
+                          <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 2 }}>
+                            <span className="mono bold" style={{ fontSize: 12 }}>{q.quote_number}</span>
+                            <StatusBadge status={q.status} />
+                          </div>
+                          <div className="tiny faint">
+                            {q.vehicle?.make} {q.vehicle?.model} · {fmt.ago(q.created_at)}
+                          </div>
+                        </div>
+                        {grandTotal > 0 && (
+                          <span className="mono small" style={{ fontWeight: 600, whiteSpace: 'nowrap' }}>{fmt.brl(grandTotal)}</span>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
+
           <div className="row" style={{ justifyContent: 'flex-end' }}>
             <Button variant="primary" iconRight="bi-arrow-right" onClick={() => { setStep1Touched(true); if (canStep1) setStep(2); }}>Próximo</Button>
           </div>
@@ -6725,6 +6827,160 @@ function CustomerModal({ customer, onClose }) {
   );
 }
 
+/* =========================================================
+   Relatórios / Analytics
+   ========================================================= */
+function ReportsScreen() {
+  const { state } = useStore();
+  const quotations = state.quotations || [];
+
+  // KPIs gerais
+  const total = quotations.length;
+  const approved = quotations.filter(q => q.customer_approved === 1).length;
+  const rejected = quotations.filter(q => q.customer_approved === 0).length;
+  const pending  = quotations.filter(q => q.customer_approved === null && q.status !== 'cancelado').length;
+  const cancelled = quotations.filter(q => q.status === 'cancelado').length;
+  const convRate = total > 0 ? Math.round((approved / total) * 100) : 0;
+
+  // Receita total aprovada
+  const revenue = quotations
+    .filter(q => q.customer_approved === 1)
+    .reduce((s, q) => s + calcTotals(q.items).grandTotal, 0);
+
+  // Cotações nos últimos 30 dias agrupadas por dia
+  const today = new Date(); today.setHours(0,0,0,0);
+  const last30 = Array.from({ length: 30 }, (_, i) => {
+    const d = new Date(today); d.setDate(d.getDate() - (29 - i));
+    const ymd = [d.getFullYear(), String(d.getMonth()+1).padStart(2,'0'), String(d.getDate()).padStart(2,'0')].join('-');
+    const label = d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+    const dayQ = quotations.filter(q => (q.created_at || '').slice(0,10) === ymd);
+    return { label, value: dayQ.length, revenue: dayQ.filter(q => q.customer_approved === 1).reduce((s, q) => s + calcTotals(q.items).grandTotal, 0) };
+  });
+  const maxBar = Math.max(...last30.map(d => d.value), 1);
+
+  // Top 5 clientes por volume (nº cotações)
+  const customerMap = {};
+  quotations.forEach(q => {
+    if (!q.customer_name) return;
+    if (!customerMap[q.customer_name]) customerMap[q.customer_name] = { name: q.customer_name, count: 0, revenue: 0 };
+    customerMap[q.customer_name].count++;
+    if (q.customer_approved === 1) customerMap[q.customer_name].revenue += calcTotals(q.items).grandTotal;
+  });
+  const topCustomers = Object.values(customerMap).sort((a, b) => b.count - a.count).slice(0, 5);
+  const maxCount = Math.max(...topCustomers.map(c => c.count), 1);
+
+  // Distribuição por status
+  const statusDist = Object.entries(STATUS_META).map(([key, meta]) => ({
+    key, label: meta.label, count: quotations.filter(q => q.status === key).length
+  })).filter(s => s.count > 0).sort((a, b) => b.count - a.count);
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+      {/* KPI strip */}
+      <div className="stat-grid">
+        {[
+          { label: 'Total de cotações', value: total,    icon: 'bi-clipboard-data', color: 'var(--brand)' },
+          { label: 'Aprovadas',         value: approved, icon: 'bi-check-circle',   color: 'var(--success)' },
+          { label: 'Recusadas',         value: rejected, icon: 'bi-x-circle',       color: 'var(--danger)' },
+          { label: 'Taxa de conversão', value: `${convRate}%`, icon: 'bi-graph-up', color: convRate >= 50 ? 'var(--success)' : 'var(--text-muted)' },
+        ].map(k => (
+          <div key={k.label} className="card card-pad" style={{ display: 'flex', gap: 14, alignItems: 'center' }}>
+            <div style={{ width: 40, height: 40, borderRadius: 'var(--r-md)', background: 'var(--surface-2)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <i className={`bi ${k.icon}`} style={{ fontSize: 18, color: k.color }}></i>
+            </div>
+            <div>
+              <div className="tiny faint" style={{ textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 2 }}>{k.label}</div>
+              <div style={{ fontSize: 22, fontWeight: 700, fontFamily: 'monospace', color: k.color }}>{k.value}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Receita aprovada */}
+      <div className="card card-pad" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
+        <div>
+          <div className="tiny faint" style={{ textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>Receita total aprovada</div>
+          <div style={{ fontSize: 28, fontWeight: 800, fontFamily: 'monospace', color: 'var(--success)' }}>{fmt.brl(revenue)}</div>
+        </div>
+        <div style={{ display: 'flex', gap: 20 }}>
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ fontSize: 18, fontWeight: 700, fontFamily: 'monospace' }}>{pending}</div>
+            <div className="tiny faint">Aguardando</div>
+          </div>
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ fontSize: 18, fontWeight: 700, fontFamily: 'monospace', color: 'var(--danger)' }}>{cancelled}</div>
+            <div className="tiny faint">Canceladas</div>
+          </div>
+        </div>
+      </div>
+
+      <div className="grid-side">
+        {/* Gráfico últimos 30 dias */}
+        <div className="card card-pad">
+          <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 16 }}>Cotações nos últimos 30 dias</div>
+          <div style={{ display: 'flex', alignItems: 'flex-end', gap: 3, height: 120, overflowX: 'auto' }}>
+            {last30.map((d, i) => (
+              <div key={i} title={`${d.label}: ${d.value} cotações`}
+                style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: '1 0 18px', gap: 2, minWidth: 0 }}>
+                <div style={{
+                  width: '100%', background: d.value > 0 ? 'var(--brand)' : 'var(--surface-2)',
+                  height: `${(d.value / maxBar) * 100}%`, minHeight: d.value > 0 ? 3 : 1,
+                  borderRadius: '2px 2px 0 0', transition: 'height 0.3s',
+                }} />
+                {i % 5 === 0 && <span className="tiny faint" style={{ fontSize: 9, whiteSpace: 'nowrap' }}>{d.label}</span>}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Distribuição por status */}
+        <div className="card card-pad">
+          <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 14 }}>Por status</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {statusDist.map(s => (
+              <div key={s.key}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                  <span className="small">{s.label}</span>
+                  <span className="mono small bold">{s.count}</span>
+                </div>
+                <div style={{ height: 6, background: 'var(--surface-2)', borderRadius: 3, overflow: 'hidden' }}>
+                  <div style={{ height: '100%', width: `${(s.count / total) * 100}%`, background: 'var(--brand)', borderRadius: 3 }} />
+                </div>
+              </div>
+            ))}
+            {statusDist.length === 0 && <div className="tiny faint">Nenhuma cotação ainda.</div>}
+          </div>
+        </div>
+      </div>
+
+      {/* Top clientes */}
+      <div className="card card-pad">
+        <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 14 }}>Top clientes</div>
+        {topCustomers.length === 0 ? (
+          <div className="tiny faint">Nenhum dado disponível.</div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            {topCustomers.map(c => (
+              <div key={c.name}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                  <span style={{ fontSize: 13, fontWeight: 600 }}>{c.name}</span>
+                  <div style={{ display: 'flex', gap: 16 }}>
+                    <span className="tiny faint">{c.count} cotação{c.count !== 1 ? 'ões' : ''}</span>
+                    {c.revenue > 0 && <span className="mono small bold" style={{ color: 'var(--success)' }}>{fmt.brl(c.revenue)}</span>}
+                  </div>
+                </div>
+                <div style={{ height: 6, background: 'var(--surface-2)', borderRadius: 3, overflow: 'hidden' }}>
+                  <div style={{ height: '100%', width: `${(c.count / maxCount) * 100}%`, background: 'var(--brand)', borderRadius: 3 }} />
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function SuppliersScreen() {
   const { state, dispatch } = useStore();
   const [modalOpen, setModalOpen] = useState(false);
@@ -6903,6 +7159,7 @@ function Router() {
     case 'admin-settings':    screen = <AdminSettingsScreen />; break;
     case 'customers':         screen = <CustomersScreen />; break;
     case 'suppliers':         screen = <SuppliersScreen />; break;
+    case 'reports':           screen = <ReportsScreen />; break;
     default:                  screen = <Dashboard />;
   }
 
@@ -6917,6 +7174,7 @@ function Router() {
     'admin-settings': { title: 'Configurações', subtitle: 'Personalização do sistema' },
     'customers': { title: 'Clientes', subtitle: 'Histórico e gestão de clientes' },
     'suppliers': { title: 'Fornecedores', subtitle: 'Cadastro de fornecedores' },
+    'reports':   { title: 'Relatórios', subtitle: 'Análise de desempenho' },
   };
   const t = titles[state.route.name] || titles.dashboard;
 
@@ -6927,6 +7185,7 @@ function Router() {
         <Topbar title={t.title} subtitle={t.subtitle} />
         {screen}
       </main>
+      <MobileNav />
       {state.waConnectOpen && (
         <WhatsAppConnectModal
           userId={currentUser.id}
@@ -6935,6 +7194,37 @@ function Router() {
       )}
       {showGuide && <GuidedTour onClose={() => setShowGuide(false)} />}
     </div>
+  );
+}
+
+function MobileNav() {
+  const { state, dispatch, currentUser, unreadCount } = useStore();
+  const role = currentUser?.role || 'vendas';
+
+  const items = {
+    vendas:  ['dashboard', 'quotations', 'new-quotation', 'notifications'],
+    compras: ['dashboard', 'quotations', 'customers', 'notifications'],
+    admin:   ['dashboard', 'quotations', 'reports', 'notifications'],
+  }[role] || ['dashboard', 'quotations', 'notifications'];
+
+  return (
+    <nav className="mobile-nav">
+      {items.map(key => {
+        const meta = NAV_META[key] || { label: key, icon: 'bi-circle' };
+        const isActive = state.route.name === key;
+        const badge = key === 'notifications' && unreadCount > 0 ? unreadCount : null;
+        return (
+          <button key={key} className={`mobile-nav-item ${isActive ? 'active' : ''}`}
+            onClick={() => dispatch({ type: 'navigate', name: key })}>
+            <div style={{ position: 'relative', display: 'inline-flex' }}>
+              <i className={`bi ${meta.icon}`}></i>
+              {badge && <span className="mobile-nav-badge">{badge > 9 ? '9+' : badge}</span>}
+            </div>
+            <span>{meta.label}</span>
+          </button>
+        );
+      })}
+    </nav>
   );
 }
 
