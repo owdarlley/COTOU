@@ -3,6 +3,7 @@ const router = express.Router();
 const { requireAuth, requireRole } = require('../middleware/auth');
 const User = require('../models/User');
 const Settings = require('../models/Settings');
+const AuditLog = require('../models/AuditLog');
 const { createInstance } = require('../services/whatsappService');
 
 router.use(requireAuth, requireRole('admin'));
@@ -79,6 +80,14 @@ router.post('/usuarios/:id/senha', async (req, res) => {
   }
   await User.updatePassword(parseInt(req.params.id), new_password);
   res.json({ ok: true });
+});
+
+// GET /admin/audit-log — log global de auditoria (admin only)
+router.get('/audit-log', (req, res) => {
+  const limit = Math.min(parseInt(req.query.limit) || 100, 500);
+  const offset = parseInt(req.query.offset) || 0;
+  const { rows, total } = AuditLog.findAll({ limit, offset });
+  res.json({ ok: true, logs: rows, total, limit, offset });
 });
 
 // GET /admin/settings

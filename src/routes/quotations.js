@@ -395,4 +395,19 @@ router.post('/:id/peca-chegou', requireRole('compras', 'admin'), async (req, res
   res.json({ ok: true });
 });
 
+// GET /api/cotacoes/:id/audit-log — histórico de auditoria da cotação
+router.get('/:id/audit-log', (req, res) => {
+  const id = parseInt(req.params.id);
+  const qt = Quotation.findById(id);
+  if (!qt) return res.status(404).json({ ok: false, error: 'Cotação não encontrada.' });
+
+  const { userRole, userId } = req.session;
+  const hasAccess = userRole === 'admin' || userRole === 'compras' ||
+    qt.created_by_user_id === userId || qt.assigned_buyer_id === userId;
+  if (!hasAccess) return res.status(403).json({ ok: false, error: 'Acesso negado.' });
+
+  const logs = AuditLog.findByQuotationId(id);
+  res.json({ ok: true, logs });
+});
+
 module.exports = router;
