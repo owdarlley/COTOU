@@ -2620,7 +2620,9 @@ function StoreProvider({ children }) {
 
   const value = useMemo(() => {
     const currentUser = state.users.find(u => u.id === state.currentUserId);
-    const myNotifs = state.notifications.filter(n => n.user_id === state.currentUserId);
+    const myNotifs = state.notifications
+      .filter(n => n.user_id === state.currentUserId)
+      .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
     const unreadCount = myNotifs.filter(n => !n.read_at).length;
     return { state, dispatch, currentUser, myNotifs, unreadCount, calcTotals };
   }, [state]);
