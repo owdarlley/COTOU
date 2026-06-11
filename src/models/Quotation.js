@@ -104,17 +104,26 @@ class Quotation {
     return q;
   }
 
-  static findPendingByPhone(phone) {
+  static findPendingByPhone(phone, instanceName) {
     const last11 = String(phone).replace(/\D/g, '').slice(-11);
+    // Quando instanceName é fornecido, só retorna cotações enviadas por usuários dessa instância
+    // (ou cotações sem whatsapp_sent_by, como dados de seed)
+    const instanceClause = instanceName
+      ? `AND (q.whatsapp_sent_by IS NULL OR EXISTS (
+            SELECT 1 FROM users WHERE id = q.whatsapp_sent_by AND whatsapp_instance_name = ?
+          ))`
+      : '';
+    const params = instanceName ? [`%${last11}`, instanceName] : [`%${last11}`];
     return db.prepare(`
       ${SELECT_FULL}
       WHERE REPLACE(REPLACE(REPLACE(REPLACE(c.phone,' ',''),'-',''),'(',''),')','') LIKE ?
         AND q.status IN ('cotado','peca_chegou')
         AND q.customer_approved IS NULL
         AND q.whatsapp_sent_at IS NOT NULL
+        ${instanceClause}
       ORDER BY q.updated_at DESC
       LIMIT 1
-    `).get(`%${last11}`);
+    `).get(...params);
   }
 
   static countByStatus(userId, role) {

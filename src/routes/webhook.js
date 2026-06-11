@@ -67,9 +67,9 @@ router.post('/whatsapp/webhook', express.json({ limit: '1mb' }), async (req, res
     if (!phone) return;
 
     console.log(`[WH] ${phone} → ação="${action}"`);
-    const quotation = Quotation.findPendingByPhone(phone);
+    const quotation = Quotation.findPendingByPhone(phone, instance);
     if (!quotation) {
-      console.log(`[WH] nenhuma cotação pendente para ${phone}`);
+      console.log(`[WH] nenhuma cotação pendente para ${phone} na instância ${instance}`);
       return;
     }
     console.log(`[WH] cotação encontrada: ${quotation.quote_number}`);
@@ -84,17 +84,23 @@ router.post('/whatsapp/webhook', express.json({ limit: '1mb' }), async (req, res
       message: `${quotation.customer_name} ${label} a cotação ${quotation.quote_number} via WhatsApp.`,
     };
 
-    // Notifica o vendedor que abriu a cotação
-    await notifyUser(quotation.created_by_user_id, notifPayload);
+    // Deduplicação: cada usuário recebe no máximo uma notificação por evento
+    const notifiedIds = new Set();
 
-    // Notifica o comprador atribuído (se houver e for diferente do vendedor)
-    if (quotation.assigned_buyer_id && quotation.assigned_buyer_id !== quotation.created_by_user_id) {
-      await notifyUser(quotation.assigned_buyer_id, notifPayload);
-    }
+    const notifyOnce = async (userId) => {
+      if (!userId || notifiedIds.has(userId)) return;
+      notifiedIds.add(userId);
+      await notifyUser(userId, notifPayload);
+    };
 
-    // Notifica todos do setor de compras quando cliente aprova (precisam encomendar a peça)
+    await notifyOnce(quotation.created_by_user_id);
+    await notifyOnce(quotation.assigned_buyer_id);
+
     if (action === 'approve') {
-      await notifyAllByRole('compras', notifPayload);
+      const User = require('../models/User');
+      for (const u of User.findAllByRole('compras')) {
+        await notifyOnce(u.id);
+      }
     }
 
     // Emite para TODOS os usuários conectados — qualquer um que esteja visualizando a cotação recebe

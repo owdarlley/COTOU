@@ -2505,6 +2505,28 @@ function StoreProvider({ children }) {
       .catch(() => {});
   }, [state.loggedIn]);
 
+  // Carrega notificações não lidas do backend ao logar (captura notificações recebidas offline)
+  useEffect(() => {
+    if (!state.loggedIn) return;
+    fetch(`${PLATE_PROXY_URL}/api/notificacoes`, { credentials: 'include' })
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        if (Array.isArray(data)) {
+          data.forEach(n => dispatch({ type: 'add_notification', notification: {
+            id: n.id,
+            user_id: n.user_id,
+            type: n.type,
+            title: n.title,
+            message: n.message,
+            quotation_id: n.quotation_id,
+            read_at: n.read_at,
+            created_at: n.created_at,
+          }}));
+        }
+      })
+      .catch(() => {});
+  }, [state.loggedIn]);
+
   // Socket.io — conecta quando logado, desconecta ao sair
   useEffect(() => {
     if (!state.loggedIn || !state.currentUserId) return;
