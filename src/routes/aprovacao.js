@@ -36,18 +36,15 @@ router.post('/api/aprovar/:token', express.json(), async (req, res) => {
     message: `${q.customer_name} ${label} a cotação ${q.quote_number} via link.`,
   };
 
-  // Notifica o vendedor em tempo real via Socket.io
+  // Notifica o vendedor, compras (se aprovado) e admin
   await notifyUser(q.created_by_user_id, notifPayload);
+  if (action === 'approve') await notifyAllByRole('compras', notifPayload);
+  await notifyAllByRole('admin', notifPayload);
 
-  // Notifica todos de compras se aprovado (precisam encomendar a peça)
-  if (action === 'approve') {
-    await notifyAllByRole('compras', notifPayload);
-  }
-
-  // Atualiza a UI de todos conectados em tempo real
+  // Atualiza a UI em tempo real apenas para quem tem acesso à cotação
   try {
-    const { getIO } = require('../config/socket');
-    getIO().emit('quotation_updated', {
+    const { emitQuotationUpdate } = require('../config/socket');
+    emitQuotationUpdate(q, {
       id: q.id,
       customer_approved: action === 'approve' ? 1 : 0,
       customer_approved_at: new Date().toISOString(),

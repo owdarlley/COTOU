@@ -52,9 +52,7 @@ const allowedOrigins = [
 ].filter(Boolean);
 app.use(cors({
   origin: (origin, cb) => {
-    if (!origin || allowedOrigins.includes(origin) || (origin && origin.endsWith('.trycloudflare.com'))) {
-      return cb(null, true);
-    }
+    if (!origin || allowedOrigins.includes(origin)) return cb(null, true);
     cb(new Error('Not allowed by CORS'));
   },
   credentials: true
@@ -100,6 +98,19 @@ const sessionMiddleware = session({
   }
 });
 app.use(sessionMiddleware);
+
+// CSRF — valida X-CSRF-Token em todas as mutations autenticadas
+app.use((req, res, next) => {
+  if (['GET', 'HEAD', 'OPTIONS'].includes(req.method)) return next();
+  const exempt = ['/auth/login', '/auth/logout', '/api/whatsapp/webhook'];
+  if (exempt.some(p => req.path === p)) return next();
+  if (/^\/(api\/)?aprovar\//.test(req.path)) return next();
+  const token = req.headers['x-csrf-token'];
+  if (!token || !req.session?.csrfToken || token !== req.session.csrfToken) {
+    return res.status(403).json({ ok: false, error: 'Token CSRF inválido. Recarregue a página.' });
+  }
+  next();
+});
 
 // Health check
 app.get('/health', (req, res) => res.json({ ok: true, uptime: process.uptime() }));

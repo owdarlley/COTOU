@@ -104,17 +104,16 @@ router.post('/whatsapp/webhook', express.json({ limit: '1mb' }), async (req, res
     await notifyOnce(quotation.created_by_user_id);
     await notifyOnce(quotation.assigned_buyer_id);
 
+    const User = require('../models/User');
     if (action === 'approve') {
-      const User = require('../models/User');
-      for (const u of User.findAllByRole('compras')) {
-        await notifyOnce(u.id);
-      }
+      for (const u of User.findAllByRole('compras')) await notifyOnce(u.id);
     }
+    for (const u of User.findAllByRole('admin')) await notifyOnce(u.id);
 
-    // Emite para TODOS os usuários conectados — qualquer um que esteja visualizando a cotação recebe
+    // Emite apenas para quem tem acesso à cotação
     try {
-      const { getIO } = require('../config/socket');
-      getIO().emit('quotation_updated', {
+      const { emitQuotationUpdate } = require('../config/socket');
+      emitQuotationUpdate(quotation, {
         id: quotation.id,
         customer_approved: action === 'approve' ? 1 : 0,
         customer_approved_at: new Date().toISOString(),

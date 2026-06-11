@@ -1723,6 +1723,22 @@ Object.assign(window, {
 });
 
 </script>
+<script>
+// CSRF — armazena token do login e o injeta em todas as mutations à API
+let _csrfToken = '';
+(function () {
+  const _orig = window.fetch.bind(window);
+  window.fetch = function (url, opts) {
+    opts = opts || {};
+    const method = (opts.method || 'GET').toUpperCase();
+    const isApi = typeof url === 'string' && (url.startsWith('/') || url.includes(window.__PLATE_PROXY_URL || ''));
+    if (isApi && !['GET', 'HEAD', 'OPTIONS'].includes(method) && _csrfToken) {
+      opts = { ...opts, headers: { 'X-CSRF-Token': _csrfToken, ...(opts.headers || {}) } };
+    }
+    return _orig(url, opts);
+  };
+})();
+</script>
 <script type="text/babel">
 // COTOU — mock data + in-memory store
 // Exposes: window.useStore, window.StoreProvider, window.COTOU_DATA, window.fmt
@@ -3474,6 +3490,7 @@ function LoginScreen() {
               phone_whatsapp: '', whatsapp_instance: null, whatsapp_connected: false };
         dispatch({ type: 'upsert_user', user: u });
       }
+      if (data.csrfToken) { _csrfToken = data.csrfToken; window.__PLATE_PROXY_URL = PLATE_PROXY_URL; }
       dispatch({ type: 'login', userId: data.user.id });
       // Sync real WA connection status from backend right after login
       try {

@@ -4,6 +4,7 @@ const { Server } = require('socket.io');
 const app = require('./src/app');
 const { sessionMiddleware } = require('./src/app');
 const socketConfig = require('./src/config/socket');
+const User = require('./src/models/User');
 
 const PORT = process.env.PORT || 3000;
 const server = http.createServer(app);
@@ -17,9 +18,7 @@ const allowedSocketOrigins = [
 const io = new Server(server, {
   cors: {
     origin: (origin, cb) => {
-      if (!origin || allowedSocketOrigins.includes(origin) || (origin && origin.endsWith('.trycloudflare.com'))) {
-        return cb(null, true);
-      }
+      if (!origin || allowedSocketOrigins.includes(origin)) return cb(null, true);
       cb(new Error('Not allowed by CORS'));
     },
     credentials: true,
@@ -36,11 +35,10 @@ io.use((socket, next) => {
 io.on('connection', (socket) => {
   socket.on('registrar', ({ userId }) => {
     const sessionUserId = socket.request.session?.userId;
-    // Só permite entrar no room se o userId declarado bater com a sessão autenticada
     if (sessionUserId && sessionUserId === userId) {
       socket.join(`user:${userId}`);
-    } else if (sessionUserId && userId && sessionUserId !== userId) {
-      // Usuário tenta registrar como outro — ignora silenciosamente (sem log para não spam)
+      const user = User.findById(userId);
+      if (user?.role) socket.join(`role:${user.role}`);
     }
   });
 });

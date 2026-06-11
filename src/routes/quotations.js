@@ -178,14 +178,16 @@ router.post('/', requireRole('vendas', 'admin'), createQuotationLimiter, async (
 
   try {
     const quotation = Quotation.findById(quotationId);
-    await notifyAllByRole('compras', {
+    const notifNova = {
       quotationId,
       type: 'nova_cotacao',
       title: `Nova cotação #${quoteNumber}`,
       message: `${quotation?.creator_name || req.session.userName} abriu cotação para ${customer_name} — ${vehicle_model || ''} ${vehicle_plate}`
-    });
+    };
+    await notifyAllByRole('compras', notifNova);
+    await notifyAllByRole('admin', notifNova);
   } catch (notifErr) {
-    console.error('[Quotation] Falha ao notificar compras:', notifErr.message);
+    console.error('[Quotation] Falha ao notificar:', notifErr.message);
   }
 
   res.status(201).json({ ok: true, quotationId, quoteNumber });
@@ -238,14 +240,16 @@ router.post('/:id/status', requireRole('compras', 'admin'), async (req, res) => 
   });
 
   try {
-    await notifyUser(quotation.created_by_user_id, {
+    const notifStatus = {
       quotationId: quotation.id,
       type: 'status_atualizado',
       title: `Cotação #${quotation.quote_number} atualizada`,
       message: `Status alterado para "${status === 'em_cotacao' ? 'Em cotação' : 'Cancelado'}" por ${req.session.userName}`
-    });
+    };
+    await notifyUser(quotation.created_by_user_id, notifStatus);
+    await notifyAllByRole('admin', notifStatus);
   } catch (notifErr) {
-    console.error('[Quotation] Falha ao notificar usuário:', notifErr.message);
+    console.error('[Quotation] Falha ao notificar:', notifErr.message);
   }
 
   res.json({ ok: true, status });
@@ -304,14 +308,16 @@ router.post('/:id/responder', requireRole('compras', 'admin'), async (req, res) 
   });
 
   try {
-    await notifyUser(quotation.created_by_user_id, {
+    const notifRespondida = {
       quotationId: quotation.id,
       type: 'cotacao_respondida',
       title: `Cotação #${quotation.quote_number} respondida!`,
       message: `O setor de compras (${req.session.userName}) preencheu os valores. Verifique e envie ao cliente.`
-    });
+    };
+    await notifyUser(quotation.created_by_user_id, notifRespondida);
+    await notifyAllByRole('admin', notifRespondida);
   } catch (notifErr) {
-    console.error('[Quotation] Falha ao notificar usuário:', notifErr.message);
+    console.error('[Quotation] Falha ao notificar:', notifErr.message);
   }
 
   res.json({ ok: true });
@@ -334,16 +340,18 @@ router.post('/:id/resposta-cliente', requireRole('vendas', 'admin'), async (req,
 
   const verb = approved ? 'APROVOU' : 'RECUSOU';
   try {
-    await notifyAllByRole('compras', {
+    const notifResposta = {
       quotationId: quotation.id,
       type: 'cotacao_atualizada',
       title: `Cliente ${verb} — Cotação #${quotation.quote_number}`,
       message: approved
         ? `${req.session.userName} informou que o cliente aprovou. Pode encomendar!`
         : `${req.session.userName} informou que o cliente recusou a cotação.`
-    });
+    };
+    await notifyAllByRole('compras', notifResposta);
+    await notifyAllByRole('admin', notifResposta);
   } catch (notifErr) {
-    console.error('[Quotation] Falha ao notificar compras:', notifErr.message);
+    console.error('[Quotation] Falha ao notificar:', notifErr.message);
   }
 
   res.json({ ok: true, approved });
@@ -372,14 +380,16 @@ router.post('/:id/peca-chegou', requireRole('compras', 'admin'), async (req, res
   });
 
   try {
-    await notifyUser(quotation.created_by_user_id, {
+    const notifPeca = {
       quotationId: quotation.id,
       type: 'peca_chegou',
       title: `Peça chegou — Cotação #${quotation.quote_number}`,
       message: `O comprador ${req.session.userName} confirmou a chegada da peça. Avise o cliente!`
-    });
+    };
+    await notifyUser(quotation.created_by_user_id, notifPeca);
+    await notifyAllByRole('admin', notifPeca);
   } catch (notifErr) {
-    console.error('[Quotation] Falha ao notificar usuário:', notifErr.message);
+    console.error('[Quotation] Falha ao notificar:', notifErr.message);
   }
 
   res.json({ ok: true });

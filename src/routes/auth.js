@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const crypto = require('crypto');
 const { rateLimit, ipKeyGenerator } = require('express-rate-limit');
 const User = require('../models/User');
 const { requireAuth } = require('../middleware/auth');
@@ -30,16 +31,17 @@ router.post('/login', loginLimiter, async (req, res) => {
     return res.status(401).json({ ok: false, error: 'E-mail ou senha inválidos.' });
   }
 
-  req.session.userId   = user.id;
-  req.session.userRole = user.role;
-  req.session.userName = user.name;
+  req.session.userId    = user.id;
+  req.session.userRole  = user.role;
+  req.session.userName  = user.name;
+  req.session.csrfToken = crypto.randomBytes(32).toString('hex');
 
   req.session.save((err) => {
     if (err) {
       console.error('[Login] Erro ao salvar sessão:', err);
       return res.status(500).json({ ok: false, error: 'Erro interno. Tente novamente.' });
     }
-    res.json({ ok: true, user: { id: user.id, name: user.name, role: user.role } });
+    res.json({ ok: true, user: { id: user.id, name: user.name, role: user.role }, csrfToken: req.session.csrfToken });
   });
 });
 
@@ -55,6 +57,14 @@ router.get('/users', (req, res) => {
 // POST /auth/logout
 router.post('/logout', (req, res) => {
   req.session.destroy(() => res.json({ ok: true }));
+});
+
+// GET /auth/csrf — retorna (ou gera) token CSRF da sessão atual
+router.get('/csrf', requireAuth, (req, res) => {
+  if (!req.session.csrfToken) {
+    req.session.csrfToken = crypto.randomBytes(32).toString('hex');
+  }
+  res.json({ ok: true, csrfToken: req.session.csrfToken });
 });
 
 // GET /auth/me
