@@ -154,10 +154,10 @@
       <div class="card">
         <div class="card-title">Sua decisão</div>
         <div class="actions">
-          <button id="btn-confirm" class="btn btn-confirm" onclick="decide('approve')">
+          <button id="btn-confirm" class="btn btn-confirm">
             <i class="bi bi-check-lg"></i> Confirmar encomenda
           </button>
-          <button id="btn-reject" class="btn btn-reject" onclick="decide('reject')">
+          <button id="btn-reject" class="btn btn-reject">
             <i class="bi bi-x-lg"></i> Recusar cotação
           </button>
         </div>
@@ -166,6 +166,9 @@
         </p>
       </div>
     `;
+
+    document.getElementById('btn-confirm').addEventListener('click', () => decide('approve'));
+    document.getElementById('btn-reject').addEventListener('click', () => decide('reject'));
   }
 
   async function decide(action) {
@@ -179,11 +182,15 @@
     if (clickedBtn) clickedBtn.innerHTML = '<i class="bi bi-arrow-clockwise spin"></i> Aguarde…';
 
     try {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 15000);
       const r = await fetch(API, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action }),
+        signal: controller.signal,
       });
+      clearTimeout(timer);
       const data = await r.json().catch(() => ({}));
       if (!data.ok) {
         if (clickedBtn) clickedBtn.innerHTML = origLabel;
@@ -192,10 +199,13 @@
         return;
       }
       renderResult(action === 'approve');
-    } catch (_) {
+    } catch (err) {
       if (clickedBtn) clickedBtn.innerHTML = origLabel;
       btns.forEach(b => b.disabled = false);
-      renderError('Erro de conexão. Verifique sua internet e tente novamente.');
+      const msg = err.name === 'AbortError'
+        ? 'Tempo esgotado. Verifique sua conexão e tente novamente.'
+        : 'Erro de conexão. Verifique sua internet e tente novamente.';
+      renderError(msg);
     }
   }
 
