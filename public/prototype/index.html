@@ -5418,22 +5418,20 @@ function Dashboard() {
   const respondedCount = visible.filter(q => ['cotado', 'peca_chegou'].includes(q.status)).length;
   const approveRate = respondedCount ? Math.round((approvedCount / respondedCount) * 100) : 0;
 
-  // Synthetic 14-day chart data (deterministic based on count)
+  // Real 14-day chart data grouped from quotations in store
   const chartData = useMemo(() => {
-    const days = [];
     const today = new Date();
-    for (let i = 13; i >= 0; i--) {
-      const d = new Date(today); d.setDate(d.getDate() - i);
+    today.setHours(0, 0, 0, 0);
+    return Array.from({ length: 14 }, (_, i) => {
+      const d = new Date(today);
+      d.setDate(d.getDate() - (13 - i));
+      const ymd = [d.getFullYear(), String(d.getMonth() + 1).padStart(2, '0'), String(d.getDate()).padStart(2, '0')].join('-');
       const label = d.toLocaleDateString('pt-BR', { day: '2-digit' });
-      // pseudo-random but deterministic
-      const seed = (d.getDate() * 7 + d.getMonth() * 13) % 19;
-      const value = 2 + (seed % 11);
-      const won = Math.max(0, value - 2 + (seed % 3));
-      days.push({ label, value, won });
-    }
-    return days;
-  }, []);
-  const maxBar = Math.max(...chartData.map(d => d.value));
+      const dayQ = visible.filter(q => (q.created_at || '').slice(0, 10) === ymd);
+      return { label, value: dayQ.length, won: dayQ.filter(q => ['cotado', 'peca_chegou'].includes(q.status)).length };
+    });
+  }, [visible]);
+  const maxBar = Math.max(...chartData.map(d => d.value), 1);
 
   // Donut for status mix
   const statusMix = [
