@@ -32,6 +32,10 @@ class Notification {
     return db.prepare('SELECT COUNT(*) as count FROM notifications WHERE user_id=? AND read_at IS NULL').get(userId).count;
   }
 
+  static deleteAll(userId) {
+    db.prepare('DELETE FROM notifications WHERE user_id = ?').run(userId);
+  }
+
   static hasUnreadOfType(userId, type) {
     return !!db.prepare('SELECT 1 FROM notifications WHERE user_id=? AND type=? AND read_at IS NULL LIMIT 1').get(userId, type);
   }

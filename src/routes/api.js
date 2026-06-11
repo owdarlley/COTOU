@@ -72,6 +72,11 @@ router.post('/notificacoes/todas-lidas', (req, res) => {
   res.json({ ok: true });
 });
 
+router.delete('/notificacoes', (req, res) => {
+  Notification.deleteAll(req.session.userId);
+  res.json({ ok: true });
+});
+
 // WhatsApp — gerenciamento de instância por usuário
 // Admin pode passar targetUserId no body para gerenciar instância de outro usuário
 function resolveTargetUserId(req) {

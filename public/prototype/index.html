@@ -2444,6 +2444,11 @@ function reducer(state, action) {
         ...state,
         notifications: state.notifications.map(n => n.user_id === state.currentUserId ? { ...n, read_at: n.read_at || new Date().toISOString() } : n),
       };
+    case 'clear_notifications':
+      return {
+        ...state,
+        notifications: state.notifications.filter(n => n.user_id !== state.currentUserId),
+      };
     case 'add_part':
       return { ...state, parts: [{ id: nextId(state.parts), ...action.payload }, ...state.parts],
         toasts: [...state.toasts, { id: Date.now(), type: 'success', message: 'Peça adicionada ao catálogo' }] };
@@ -3317,9 +3322,18 @@ function NotificationsBell() {
         <div className="dropdown">
           <div className="dropdown-head">
             <strong>Notificações</strong>
-            {unreadCount > 0 && (
-              <button className="btn btn-ghost btn-sm" onClick={() => dispatch({ type: 'mark_all_read' })}>Marcar todas</button>
-            )}
+            <div className="row" style={{ gap: 4 }}>
+              {unreadCount > 0 && (
+                <button className="btn btn-ghost btn-sm" onClick={() => dispatch({ type: 'mark_all_read' })}>Marcar todas</button>
+              )}
+              {recent.length > 0 && (
+                <button className="btn btn-ghost btn-sm" style={{ color: 'var(--danger)' }} onClick={() => {
+                  if (!confirm('Limpar todas as notificações?')) return;
+                  dispatch({ type: 'clear_notifications' });
+                  fetch(`${PLATE_PROXY_URL}/api/notificacoes`, { method: 'DELETE', credentials: 'include' }).catch(() => {});
+                }}>Limpar</button>
+              )}
+            </div>
           </div>
           <div className="dropdown-list scrollbar-thin">
             {recent.length === 0 && (
@@ -5846,11 +5860,22 @@ function NotificationsScreen() {
           <h2 className="page-title">Notificações</h2>
           <p className="page-sub">{unread.length > 0 ? plural(unread.length, 'nova notificação', 'novas notificações') : 'Tudo em dia'}</p>
         </div>
-        {unread.length > 0 && (
-          <Button variant="secondary" icon="bi-check2-all" onClick={() => dispatch({ type: 'mark_all_read' })}>
-            Marcar tudo como lido
-          </Button>
-        )}
+        <div className="row" style={{ gap: 8 }}>
+          {unread.length > 0 && (
+            <Button variant="secondary" icon="bi-check2-all" onClick={() => dispatch({ type: 'mark_all_read' })}>
+              Marcar tudo como lido
+            </Button>
+          )}
+          {myNotifs.length > 0 && (
+            <Button variant="danger" icon="bi-trash" onClick={() => {
+              if (!confirm('Limpar todas as notificações?')) return;
+              dispatch({ type: 'clear_notifications' });
+              fetch(`${PLATE_PROXY_URL}/api/notificacoes`, { method: 'DELETE', credentials: 'include' }).catch(() => {});
+            }}>
+              Limpar tudo
+            </Button>
+          )}
+        </div>
       </div>
 
       {unread.length > 0 && (
