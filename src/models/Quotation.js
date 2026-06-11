@@ -75,6 +75,12 @@ class Quotation {
   }
 
   static generateApprovalToken(id) {
+    // Preserva token existente ainda válido — evita invalidar link aberto no celular do cliente
+    const existing = db.prepare(
+      `SELECT approval_token FROM quotations WHERE id = ? AND approval_token IS NOT NULL AND approval_token_expires_at > datetime('now') AND customer_approved IS NULL`
+    ).get(id);
+    if (existing) return existing.approval_token;
+
     const token = crypto.randomBytes(24).toString('base64url');
     const expires = new Date(Date.now() + 48 * 3600 * 1000).toISOString();
     db.prepare(`UPDATE quotations SET approval_token=?, approval_token_expires_at=?, updated_at=datetime('now') WHERE id=?`)
