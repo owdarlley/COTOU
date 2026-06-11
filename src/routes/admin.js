@@ -8,6 +8,13 @@ const { createInstance } = require('../services/whatsappService');
 
 router.use(requireAuth, requireRole('admin'));
 
+function validatePassword(password) {
+  if (!password || password.length < 8) return 'A senha deve ter pelo menos 8 caracteres.';
+  if (!/[A-Z]/.test(password)) return 'A senha deve ter pelo menos uma letra maiúscula.';
+  if (!/[0-9]/.test(password)) return 'A senha deve conter pelo menos um número.';
+  return null;
+}
+
 // GET /admin/usuarios — lista usuários
 router.get('/usuarios', (req, res) => {
   const users = User.findAll();
@@ -23,6 +30,8 @@ router.post('/usuarios', async (req, res) => {
   if (!['vendas', 'compras', 'admin'].includes(role)) {
     return res.status(400).json({ ok: false, error: 'Role inválida. Use: vendas, compras ou admin.' });
   }
+  const pwErr = validatePassword(password);
+  if (pwErr) return res.status(400).json({ ok: false, error: pwErr });
   try {
     const user = await User.create({ name: name.trim(), email: email.trim().toLowerCase(), password, role, phone_whatsapp });
     const instanceName = `cotou-user-${user.id}`;
@@ -52,7 +61,11 @@ router.put('/usuarios/:id', async (req, res) => {
   const user = User.findById(id);
   if (!user) return res.status(404).json({ ok: false, error: 'Usuário não encontrado.' });
   User.update(id, { name, email, role, phone_whatsapp, active: active !== undefined ? (active ? 1 : 0) : user.active });
-  if (new_password) await User.updatePassword(id, new_password);
+  if (new_password) {
+    const pwErr = validatePassword(new_password);
+    if (pwErr) return res.status(400).json({ ok: false, error: pwErr });
+    await User.updatePassword(id, new_password);
+  }
   res.json({ ok: true });
 });
 
@@ -75,9 +88,8 @@ router.post('/usuarios/:id/ativar', (req, res) => {
 // POST /admin/usuarios/:id/senha — redefinir senha
 router.post('/usuarios/:id/senha', async (req, res) => {
   const { new_password } = req.body;
-  if (!new_password || new_password.length < 6) {
-    return res.status(400).json({ ok: false, error: 'Senha deve ter pelo menos 6 caracteres.' });
-  }
+  const pwErr = validatePassword(new_password);
+  if (pwErr) return res.status(400).json({ ok: false, error: pwErr });
   await User.updatePassword(parseInt(req.params.id), new_password);
   res.json({ ok: true });
 });

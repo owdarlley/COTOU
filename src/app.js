@@ -9,6 +9,8 @@ const path = require('path');
 const fs = require('fs');
 
 const { runMigrations } = require('./config/database');
+const logger = require('./config/logger');
+const pinoHttp = require('pino-http');
 const { requireAuth } = require('./middleware/auth');
 const Quotation = require('./models/Quotation');
 const Notification = require('./models/Notification');
@@ -57,7 +59,7 @@ app.use(cors({
   },
   credentials: true
 }));
-app.use(require('morgan')('[:date[iso]] :method :url :status :res[content-length] - :response-time ms'));
+app.use(pinoHttp({ logger, autoLogging: { ignore: (req) => req.url === '/health' } }));
 app.use(express.json({ limit: '2mb' }));
 app.use(express.urlencoded({ extended: true, limit: '2mb' }));
 
@@ -81,7 +83,7 @@ if (!sessionSecret) {
   if (process.env.NODE_ENV === 'production') {
     throw new Error('SESSION_SECRET não definida. Configure a variável de ambiente.');
   }
-  console.warn('[AVISO] SESSION_SECRET não definida — usando valor temporário. Configure o .env antes de ir para produção.');
+  logger.warn('[AVISO] SESSION_SECRET não definida — usando valor temporário. Configure o .env antes de ir para produção.');
 }
 
 const sessionMiddleware = session({
@@ -145,7 +147,7 @@ app.use('/api', apiRoutes);
 
 app.use((req, res) => res.status(404).json({ ok: false, error: 'Rota não encontrada' }));
 app.use((err, req, res, next) => {
-  console.error(err.stack);
+  logger.error({ err }, 'Erro interno do servidor');
   res.status(500).json({ ok: false, error: 'Erro interno do servidor' });
 });
 

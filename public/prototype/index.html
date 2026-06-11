@@ -6225,7 +6225,16 @@ function UserModal({ user, onClose }) {
       setSaving(false);
     }
   }
-  const valid = form.name && form.email && form.role && (user || form.new_password);
+  function pwStrength(pw) {
+    if (!pw) return null;
+    const ok = pw.length >= 8 && /[A-Z]/.test(pw) && /[0-9]/.test(pw);
+    return ok ? 'ok' : 'weak';
+  }
+  const pwStatus = pwStrength(form.new_password);
+  const pwRequired = !user;
+  const valid = form.name && form.email && form.role &&
+    (!pwRequired || (form.new_password && pwStatus === 'ok')) &&
+    (!form.new_password || pwStatus === 'ok');
   return (
     <Modal open onClose={onClose} title={user ? 'Editar usuário' : 'Novo usuário'} icon="bi-person"
       footer={<>
@@ -6253,7 +6262,18 @@ function UserModal({ user, onClose }) {
             <input className="input mono" value={form.phone_whatsapp} onChange={e => setForm({ ...form, phone_whatsapp: e.target.value })} placeholder="11999998888" />
           </Field>
           <Field label={user ? 'Nova senha (opcional)' : 'Senha *'}>
-            <input className="input" type="password" value={form.new_password || ''} onChange={e => setForm({ ...form, new_password: e.target.value })} placeholder="•••••••" />
+            <input className="input" type="password" value={form.new_password || ''}
+              onChange={e => setForm({ ...form, new_password: e.target.value })}
+              placeholder="•••••••"
+              style={form.new_password && pwStatus === 'weak' ? { borderColor: 'var(--danger)' } : {}} />
+            {form.new_password && pwStatus === 'weak' && (
+              <div className="tiny" style={{ color: 'var(--danger)', marginTop: 4 }}>
+                Mín. 8 caracteres, 1 maiúscula e 1 número.
+              </div>
+            )}
+            {!form.new_password && (
+              <div className="tiny faint" style={{ marginTop: 4 }}>Mín. 8 caracteres, 1 maiúscula e 1 número.</div>
+            )}
           </Field>
         </div>
         <div style={{ borderTop: '1px solid var(--border)', paddingTop: 14, marginTop: 2, display: 'flex', alignItems: 'center', gap: 10 }}>

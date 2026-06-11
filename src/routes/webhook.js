@@ -5,6 +5,7 @@ const AuditLog = require('../models/AuditLog');
 const { notifyUser, notifyAllByRole } = require('../services/notificationService');
 const { sendTextMessage } = require('../services/whatsappService');
 const { normalizePhone } = require('../utils/phone');
+const logger = require('../config/logger');
 
 function extractPhone(jid) {
   return normalizePhone(String(jid || '').replace(/@.*$/, ''));
@@ -16,14 +17,14 @@ router.post('/whatsapp/webhook', express.json({ limit: '1mb' }), async (req, res
   try {
     const { event, instance, data } = req.body;
 
-    console.log(`[WH] evento="${event}" instance="${instance}" fromMe=${data?.key?.fromMe}`);
+    logger.info({ event, instance, fromMe: data?.key?.fromMe }, '[WH] evento recebido');
 
     if (event !== 'messages.upsert') {
-      console.log(`[WH] evento ignorado: "${event}"`);
+      logger.info({ event }, '[WH] evento ignorado');
       return;
     }
     if (!data || data.key?.fromMe !== false) {
-      console.log(`[WH] fromMe=${data?.key?.fromMe}, ignorando`);
+      logger.info({ fromMe: data?.key?.fromMe }, '[WH] ignorando mensagem própria');
       return;
     }
 
@@ -47,7 +48,7 @@ router.post('/whatsapp/webhook', express.json({ limit: '1mb' }), async (req, res
         if (params.id === 'btn_aprovar') action = 'approve';
         else if (params.id === 'btn_recusar') action = 'reject';
       } catch (parseErr) {
-        console.warn('[WH] Falha ao parsear nativeFlowResponseMessage:', parseErr.message);
+        logger.warn({ err: parseErr }, '[WH] Falha ao parsear nativeFlowResponseMessage');
       }
     } else if (msgType === 'conversation' || msgType === 'extendedTextMessage') {
       // Fallback: cliente digita "1" ou "2"
@@ -61,20 +62,20 @@ router.post('/whatsapp/webhook', express.json({ limit: '1mb' }), async (req, res
     }
 
     if (!action) {
-      console.log(`[WH] ${remoteJid} msgType="${msgType}" — sem ação reconhecida`);
+      logger.info({ remoteJid, msgType }, '[WH] sem ação reconhecida');
       return;
     }
 
     const phone = extractPhone(remoteJid);
     if (!phone) return;
 
-    console.log(`[WH] ${phone} → ação="${action}"`);
+    logger.info({ phone, action }, '[WH] processando ação do cliente');
     const quotation = Quotation.findPendingByPhone(phone, instance);
     if (!quotation) {
-      console.log(`[WH] nenhuma cotação pendente para ${phone} na instância ${instance}`);
+      logger.info({ phone, instance }, '[WH] nenhuma cotação pendente encontrada');
       return;
     }
-    console.log(`[WH] cotação encontrada: ${quotation.quote_number}`);
+    logger.info({ quoteNumber: quotation.quote_number }, '[WH] cotação encontrada');
 
     Quotation.setCustomerApproval(quotation.id, action === 'approve', 'whatsapp');
 
@@ -120,7 +121,7 @@ router.post('/whatsapp/webhook', express.json({ limit: '1mb' }), async (req, res
         customer_approval_source: 'whatsapp',
       });
     } catch (socketErr) {
-      console.warn('[WH] Falha ao emitir evento Socket.io:', socketErr.message);
+      logger.warn({ err: socketErr }, '[WH] Falha ao emitir evento Socket.io');
     }
 
     const firstName = (quotation.customer_name || '').split(' ')[0];
@@ -129,10 +130,10 @@ router.post('/whatsapp/webhook', express.json({ limit: '1mb' }), async (req, res
       : `😔 Entendemos, ${firstName}. Recusa registrada. Qualquer dúvida, é só chamar!`;
 
     await sendTextMessage(phone, confirmMsg, instance).catch(e => {
-      console.warn('[WH] Falha ao enviar confirmação ao cliente:', e.message);
+      logger.warn({ err: e }, '[WH] Falha ao enviar confirmação ao cliente');
     });
   } catch (err) {
-    console.error('[WH] Erro ao processar mensagem:', err.message, err.stack);
+    logger.error({ err }, '[WH] Erro ao processar mensagem');
   }
 });
 

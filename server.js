@@ -5,6 +5,7 @@ const app = require('./src/app');
 const { sessionMiddleware } = require('./src/app');
 const socketConfig = require('./src/config/socket');
 const User = require('./src/models/User');
+const logger = require('./src/config/logger');
 
 const PORT = process.env.PORT || 3000;
 const server = http.createServer(app);
@@ -44,6 +45,5 @@ io.on('connection', (socket) => {
 });
 
 server.listen(PORT, () => {
-  console.log(`\n🚀 COTOU API rodando em http://localhost:${PORT}`);
-  console.log(`   Ambiente: ${process.env.NODE_ENV || 'development'}\n`);
+  logger.info({ port: PORT, env: process.env.NODE_ENV || 'development' }, 'COTOU API iniciada');
 });

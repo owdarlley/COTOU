@@ -1,4 +1,5 @@
 const { db } = require('../config/database');
+const logger = require('../config/logger');
 
 class AuditLog {
   static insert({ userId, quotationId, action, oldValue, newValue, ip }) {
@@ -14,7 +15,7 @@ class AuditLog {
         ip || null
       );
     } catch (err) {
-      console.error('[AuditLog] Falha ao registrar entrada:', err.message);
+      logger.error({ err }, '[AuditLog] falha ao registrar entrada');
     }
   }
 

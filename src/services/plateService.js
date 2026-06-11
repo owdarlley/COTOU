@@ -1,4 +1,20 @@
 const axios = require('axios');
+const { db } = require('../config/database');
+const logger = require('../config/logger');
+
+const CACHE_TTL_DAYS = 30;
+
+function getCached(plate) {
+  return db.prepare(
+    `SELECT data_json FROM plate_cache WHERE plate = ? AND cached_at > datetime('now', '-${CACHE_TTL_DAYS} days')`
+  ).get(plate);
+}
+
+function setCache(plate, data) {
+  try {
+    db.prepare('INSERT OR REPLACE INTO plate_cache (plate, data_json, cached_at) VALUES (?, ?, datetime(\'now\'))').run(plate, JSON.stringify(data));
+  } catch (_) {}
+}
 
 function isValidPlate(plate) {
   const p = plate.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
@@ -13,6 +29,12 @@ async function lookupPlate(plate) {
 
   if (!token) return null;
 
+  const cached = getCached(clean);
+  if (cached) {
+    logger.info({ plate: clean }, '[PlateService] cache hit');
+    return JSON.parse(cached.data_json);
+  }
+
   try {
     const { data } = await axios.get(`${baseUrl}/consulta/${clean}/${token}`, {
       timeout: 10000,
@@ -23,21 +45,23 @@ async function lookupPlate(plate) {
 
     const hasVehicleData = data.MARCA || data.marca || data.MODELO || data.modelo;
     if (!hasVehicleData) {
-      console.warn('[PlateService] Sem dados do veículo:', JSON.stringify(data).substring(0, 200));
+      logger.warn({ snippet: JSON.stringify(data).substring(0, 200) }, '[PlateService] sem dados do veículo');
       return null;
     }
 
-    return normalize(data);
+    const result = normalize(data);
+    if (result) setCache(clean, result);
+    return result;
   } catch (err) {
     if (err.response) {
       const status = err.response.status;
-      console.warn('[PlateService] Status HTTP:', status);
+      logger.warn({ status }, '[PlateService] status HTTP inesperado');
       if (status === 401) throw Object.assign(new Error('Placa inválida ou não encontrada.'), { code: 'INVALID_PLATE' });
       if (status === 402) throw Object.assign(new Error('Token da API inválido.'), { code: 'INVALID_TOKEN' });
       if (status === 406) throw Object.assign(new Error('Sem resultados para esta placa.'), { code: 'NO_RESULTS' });
       if (status === 429) throw Object.assign(new Error('Limite de consultas diárias atingido.'), { code: 'RATE_LIMIT' });
     }
-    console.warn('[PlateService] Erro na consulta:', err.message);
+    logger.warn({ err }, '[PlateService] erro na consulta de placa');
     return null;
   }
 }
@@ -53,7 +77,7 @@ async function getBalance() {
     });
     return data;
   } catch (err) {
-    console.warn('[PlateService] Erro ao consultar saldo:', err.message);
+    logger.warn({ err }, '[PlateService] erro ao consultar saldo');
     return null;
   }
 }
