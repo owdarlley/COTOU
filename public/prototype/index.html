@@ -311,6 +311,30 @@ a { color: inherit; }
   0% { transform: scale(0.6); opacity: 0.5; }
   100% { transform: scale(1.8); opacity: 0; }
 }
+@keyframes bellRing {
+  0%,100% { transform: rotate(0deg); }
+  15%     { transform: rotate(18deg); }
+  35%     { transform: rotate(-16deg); }
+  55%     { transform: rotate(12deg); }
+  75%     { transform: rotate(-8deg); }
+  90%     { transform: rotate(4deg); }
+}
+.bell-ring { animation: bellRing 0.7s ease-in-out; color: var(--brand) !important; }
+.notif-count-badge {
+  position: absolute;
+  top: 3px; right: 3px;
+  min-width: 17px; height: 17px;
+  padding: 0 4px;
+  border-radius: 99px;
+  background: #dc2626;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+  border: 2px solid var(--surface);
+  line-height: 1;
+  pointer-events: none;
+}
 
 /* =========================================================
    Page container
@@ -808,24 +832,35 @@ a { color: inherit; }
    Toast
    ========================================================= */
 
-.toast-host { position: fixed; bottom: 24px; right: 24px; z-index: 200; display: flex; flex-direction: column; gap: 8px; }
+.toast-host { position: fixed; bottom: 24px; right: 24px; z-index: 200; display: flex; flex-direction: column; gap: 8px; align-items: flex-end; }
 .toast {
   background: var(--surface);
   border: 1px solid var(--border);
-  border-left: 3px solid var(--brand);
-  padding: 12px 16px;
+  border-left: 4px solid var(--brand);
+  padding: 12px 14px;
   border-radius: var(--r-md);
   box-shadow: var(--shadow-md);
-  min-width: 280px;
+  min-width: 300px;
+  max-width: 380px;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 10px;
   animation: slideInRight 240ms cubic-bezier(.2,.8,.2,1);
   font-size: 13px;
+  position: relative;
 }
 .toast.success { border-left-color: #16a34a; }
-.toast.error { border-left-color: #dc2626; }
-.toast i { font-size: 16px; }
+.toast.error   { border-left-color: #dc2626; }
+.toast.info    { border-left-color: var(--brand); }
+.toast-clickable { cursor: pointer; }
+.toast-clickable:hover { background: var(--surface-2); }
+.toast-body { flex: 1; min-width: 0; }
+.toast-title { font-weight: 600; line-height: 1.3; }
+.toast-detail { font-size: 12px; color: var(--text-muted); margin-top: 3px; line-height: 1.35; }
+.toast-action { font-size: 11px; color: var(--brand); font-weight: 700; margin-top: 5px; display: inline-block; }
+.toast-close { background: none; border: none; cursor: pointer; color: var(--text-faint); padding: 0; line-height: 1; font-size: 15px; flex-shrink: 0; margin-top: 1px; }
+.toast-close:hover { color: var(--text); }
+.toast > i:first-child { font-size: 17px; flex-shrink: 0; margin-top: 1px; }
 @keyframes slideInRight { from { transform: translateX(20px); opacity: 0 } to { transform: translateX(0); opacity: 1 } }
 
 /* =========================================================
@@ -2442,7 +2477,14 @@ function reducer(state, action) {
       return { ...state, suppliers: state.suppliers.map(s => s.id === action.id ? { ...s, active: 0 } : s),
         toasts: [...state.toasts, { id: Date.now(), type: 'error', message: 'Fornecedor removido' }] };
     case 'toast':
-      return { ...state, toasts: [...state.toasts, { id: Date.now(), type: action.tone || 'info', message: action.message }] };
+      return { ...state, toasts: [...state.toasts, {
+        id: Date.now(),
+        type: action.tone || 'info',
+        message: action.message,
+        detail: action.detail || null,
+        quotationId: action.quotationId || null,
+        duration: action.duration || 3200,
+      }] };
     case 'dismiss_toast':
       return { ...state, toasts: state.toasts.filter(t => t.id !== action.id) };
     case 'send_message': {
@@ -2527,6 +2569,14 @@ function StoreProvider({ children }) {
       .catch(() => {});
   }, [state.loggedIn]);
 
+  // Pede permissão de notificação do browser ao logar
+  useEffect(() => {
+    if (!state.loggedIn) return;
+    if (typeof Notification !== 'undefined' && Notification.permission === 'default') {
+      Notification.requestPermission();
+    }
+  }, [state.loggedIn]);
+
   // Socket.io — conecta quando logado, desconecta ao sair
   useEffect(() => {
     if (!state.loggedIn || !state.currentUserId) return;
@@ -2549,7 +2599,15 @@ function StoreProvider({ children }) {
         read_at: null,
         created_at: notif.createdAt || new Date().toISOString(),
       }});
-      dispatch({ type: 'toast', tone: 'info', message: notif.title });
+      dispatch({ type: 'toast', tone: 'info', message: notif.title, detail: notif.message, quotationId: notif.quotationId, duration: 7000 });
+      // Notificação do browser quando aba não está em foco
+      if (typeof Notification !== 'undefined' && Notification.permission === 'granted' && document.hidden) {
+        try {
+          const bn = new Notification(notif.title, { body: notif.message, icon: '/favicon.ico' });
+          bn.onclick = () => { window.focus(); bn.close(); };
+          setTimeout(() => bn.close(), 8000);
+        } catch {}
+      }
     });
 
     socket.on('quotation_updated', ({ id, customer_approved, customer_approved_at, customer_approval_source }) => {
@@ -2752,16 +2810,36 @@ function Modal({ open, onClose, title, icon, children, footer, size }) {
 function Toasts() {
   const { state, dispatch } = useStore();
   useEffect(() => {
-    const timers = state.toasts.map(t => setTimeout(() => dispatch({ type: 'dismiss_toast', id: t.id }), 3200));
+    const timers = state.toasts.map(t =>
+      setTimeout(() => dispatch({ type: 'dismiss_toast', id: t.id }), t.duration || 3200)
+    );
     return () => timers.forEach(clearTimeout);
   }, [state.toasts]);
   if (!state.toasts.length) return null;
+  const iconMap = { success: 'bi-check-circle-fill', error: 'bi-exclamation-circle-fill', info: 'bi-bell-fill' };
+  const colorMap = { success: '#16a34a', error: '#dc2626', info: 'var(--brand)' };
   return (
     <div className="toast-host">
       {state.toasts.map(t => (
-        <div key={t.id} className={`toast ${t.type}`}>
-          <i className={`bi ${t.type === 'success' ? 'bi-check-circle-fill' : t.type === 'error' ? 'bi-exclamation-circle-fill' : 'bi-info-circle-fill'}`} style={{ color: t.type === 'success' ? '#16a34a' : t.type === 'error' ? '#dc2626' : 'var(--text-muted)' }}></i>
-          <span>{t.message}</span>
+        <div
+          key={t.id}
+          className={`toast ${t.type}${t.quotationId ? ' toast-clickable' : ''}`}
+          onClick={() => {
+            if (t.quotationId) {
+              dispatch({ type: 'navigate', name: 'quotation-detail', params: { id: t.quotationId } });
+              dispatch({ type: 'dismiss_toast', id: t.id });
+            }
+          }}
+        >
+          <i className={`bi ${iconMap[t.type] || 'bi-info-circle-fill'}`} style={{ color: colorMap[t.type] || 'var(--text-muted)' }}></i>
+          <div className="toast-body">
+            <div className="toast-title">{t.message}</div>
+            {t.detail && <div className="toast-detail">{t.detail}</div>}
+            {t.quotationId && <span className="toast-action">Ver cotação →</span>}
+          </div>
+          <button className="toast-close" title="Fechar" onClick={e => { e.stopPropagation(); dispatch({ type: 'dismiss_toast', id: t.id }); }}>
+            <i className="bi bi-x"></i>
+          </button>
         </div>
       ))}
     </div>
@@ -3208,7 +3286,20 @@ function Sidebar() {
 function NotificationsBell() {
   const { myNotifs, unreadCount, dispatch } = useStore();
   const [open, setOpen] = useState(false);
+  const [ringing, setRinging] = useState(false);
+  const prevCountRef = useRef(unreadCount);
   const ref = useRef(null);
+
+  useEffect(() => {
+    if (unreadCount > prevCountRef.current) {
+      setRinging(true);
+      const t = setTimeout(() => setRinging(false), 800);
+      prevCountRef.current = unreadCount;
+      return () => clearTimeout(t);
+    }
+    prevCountRef.current = unreadCount;
+  }, [unreadCount]);
+
   useEffect(() => {
     const onDown = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
     document.addEventListener('mousedown', onDown);
@@ -3217,9 +3308,9 @@ function NotificationsBell() {
   const recent = myNotifs.slice(0, 7);
   return (
     <div ref={ref} style={{ position: 'relative' }}>
-      <button className="icon-btn" data-tour="notif-bell" onClick={() => setOpen(o => !o)} title="Notificações">
-        <i className="bi bi-bell"></i>
-        {unreadCount > 0 && <span className="dot"></span>}
+      <button className="icon-btn" data-tour="notif-bell" onClick={() => setOpen(o => !o)} title={`Notificações${unreadCount ? ` (${unreadCount} não lidas)` : ''}`}>
+        <i className={`bi ${ringing ? 'bi-bell-fill' : 'bi-bell'}${ringing ? ' bell-ring' : ''}`}></i>
+        {unreadCount > 0 && <span className="notif-count-badge">{unreadCount > 99 ? '99+' : unreadCount}</span>}
       </button>
       {open && (
         <div className="dropdown">
