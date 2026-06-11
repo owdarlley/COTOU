@@ -2635,27 +2635,27 @@ function useStore() { return useContext(StoreContext); }
    Formatters
    ========================================================= */
 
+// SQLite devolve "YYYY-MM-DD HH:MM:SS" sem fuso — tratar como UTC
+const parseUTC = (iso) => new Date(iso && !iso.includes('T') ? iso.replace(' ', 'T') + 'Z' : iso);
+
 const fmt = {
   brl: (v) => (v == null ? '—' : v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })),
   brlShort: (v) => (v == null ? '—' : 'R$ ' + Math.round(v).toLocaleString('pt-BR')),
   date: (iso) => {
     if (!iso) return '—';
-    const d = new Date(iso);
-    return d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit' });
+    return parseUTC(iso).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit' });
   },
   datetime: (iso) => {
     if (!iso) return '—';
-    const d = new Date(iso);
-    return d.toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' });
+    return parseUTC(iso).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' });
   },
   time: (iso) => {
     if (!iso) return '—';
-    const d = new Date(iso);
-    return d.toLocaleString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    return parseUTC(iso).toLocaleString('pt-BR', { hour: '2-digit', minute: '2-digit' });
   },
   ago: (iso) => {
     if (!iso) return '—';
-    const diff = Date.now() - new Date(iso).getTime();
+    const diff = Date.now() - parseUTC(iso).getTime();
     const min = Math.floor(diff / 60000);
     if (min < 1) return 'agora';
     if (min < 60) return `${min}min`;
@@ -2663,7 +2663,7 @@ const fmt = {
     if (h < 24) return `${h}h`;
     const d = Math.floor(h / 24);
     if (d < 30) return `${d}d`;
-    return new Date(iso).toLocaleDateString('pt-BR');
+    return parseUTC(iso).toLocaleDateString('pt-BR');
   },
   phone: (p) => {
     if (!p) return '—';
