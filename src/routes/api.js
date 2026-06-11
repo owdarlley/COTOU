@@ -205,7 +205,7 @@ router.post('/whatsapp/enviar/:id', whatsappSendLimiter, async (req, res) => {
     const approvalToken = Quotation.generateApprovalToken(quotation.id);
     await sendQuoteMessage(quotation.customer_phone, quotation, items, instanceName, approvalToken);
     Quotation.markWhatsappSent(quotation.id, req.session.userId);
-    res.json({ ok: true, message: 'Mensagem enviada com sucesso!' });
+    res.json({ ok: true, message: 'Mensagem enviada com sucesso!', approvalToken });
   } catch (err) {
     const isConnectionClosed = JSON.stringify(err.evolutionBody || '').includes('Connection Closed');
     if (isConnectionClosed) {

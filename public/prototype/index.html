@@ -2404,14 +2404,13 @@ function reducer(state, action) {
       return { ...state, quotations: [...incoming, ...localOnly] };
     }
     case 'send_whatsapp': {
-      const approvalToken = Math.random().toString(36).slice(2, 14) + Math.random().toString(36).slice(2, 14);
       const approvalExpires = new Date(Date.now() + 48 * 3600 * 1000).toISOString();
       return {
         ...state,
         quotations: state.quotations.map(q => q.id === action.id
-          ? { ...q, whatsapp_sent_at: new Date().toISOString(), approval_token: approvalToken, approval_token_expires_at: approvalExpires }
+          ? { ...q, whatsapp_sent_at: new Date().toISOString(), approval_token: action.approvalToken || null, approval_token_expires_at: approvalExpires }
           : q),
-        toasts: [...state.toasts, { id: Date.now(), type: 'success', message: 'WhatsApp enviado! Link de aprovação gerado.' }],
+        toasts: [...state.toasts, { id: Date.now(), type: 'success', message: 'WhatsApp enviado! Link de aprovação gerado.', duration: 3200 }],
       };
     }
     case 'open_wa_connect':
@@ -4135,9 +4134,30 @@ function QuotationDetail() {
               {qt.whatsapp_sent_at && (
                 <MetaRow label="WhatsApp" value={fmt.datetime(qt.whatsapp_sent_at)} mono icon="bi-whatsapp" iconColor="#16a34a" />
               )}
-              {qt.approval_token && qt.customer_approved == null && (
-                <MetaRow label="Aprovação" value="⏳ Aguardando cliente" icon="bi-link-45deg" iconColor="var(--brand)" />
-              )}
+              {qt.approval_token && qt.customer_approved == null && (() => {
+                const approvalUrl = `${PLATE_PROXY_URL}/aprovar/${qt.approval_token}`;
+                return (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 0' }}>
+                    <i className="bi bi-link-45deg" style={{ color: 'var(--brand)', fontSize: 14, flexShrink: 0 }}></i>
+                    <span style={{ fontSize: 12, color: 'var(--text-muted)', flexShrink: 0 }}>Aprovação</span>
+                    <span style={{ flex: 1 }} />
+                    <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>⏳ Aguardando</span>
+                    <button
+                      title="Copiar link de aprovação"
+                      style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--brand)', fontSize: 13, padding: '2px 6px', borderRadius: 6, display: 'flex', alignItems: 'center', gap: 3 }}
+                      onClick={() => navigator.clipboard.writeText(approvalUrl).then(() => dispatch({ type: 'toast', tone: 'success', message: 'Link copiado!', duration: 2000 }))}
+                    >
+                      <i className="bi bi-clipboard"></i>
+                    </button>
+                    <a href={approvalUrl} target="_blank" rel="noopener noreferrer"
+                      title="Abrir link de aprovação"
+                      style={{ color: 'var(--brand)', fontSize: 13, padding: '2px 6px', borderRadius: 6, display: 'flex', alignItems: 'center', gap: 3, textDecoration: 'none' }}
+                    >
+                      <i className="bi bi-box-arrow-up-right"></i>
+                    </a>
+                  </div>
+                );
+              })()}
               {qt.customer_approved === 1 && (() => {
                 const src = qt.customer_approval_source;
                 const label = src === 'whatsapp' ? '✅ Cliente confirmou via WhatsApp'
@@ -4743,7 +4763,7 @@ function WhatsAppModal({ quotation, onClose }) {
       setSending(false);
       return;
     }
-    dispatch({ type: 'send_whatsapp', id: quotation.id });
+    dispatch({ type: 'send_whatsapp', id: quotation.id, approvalToken: json.approvalToken || null });
     dispatch({ type: 'toast', tone: 'success', message: 'WhatsApp enviado!' });
     setSending(false);
     onClose();

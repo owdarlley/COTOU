@@ -85,15 +85,16 @@
   async function load() {
     try {
       const r = await fetch(API);
-      const data = await r.json();
+      const data = await r.json().catch(() => null);
+      if (!data) { renderError('Resposta inesperada do servidor. Tente novamente.'); return; }
 
       if (!data.ok && data.expired) { renderExpired(); return; }
       if (!data.ok && data.used) { renderUsed(data.approved); return; }
-      if (!data.ok) { renderError(data.message); return; }
+      if (!data.ok) { renderError(data.message || data.error || 'Não foi possível carregar a cotação.'); return; }
 
       renderQuotation(data.quotation, data.items);
-    } catch (_) {
-      renderError('Não foi possível carregar a cotação. Verifique sua conexão.');
+    } catch (err) {
+      renderError('Não foi possível carregar a cotação. Verifique sua conexão e tente novamente.');
     }
   }
 
@@ -153,10 +154,10 @@
       <div class="card">
         <div class="card-title">Sua decisão</div>
         <div class="actions">
-          <button class="btn btn-confirm" onclick="decide('approve')">
+          <button id="btn-confirm" class="btn btn-confirm" onclick="decide('approve')">
             <i class="bi bi-check-lg"></i> Confirmar encomenda
           </button>
-          <button class="btn btn-reject" onclick="decide('reject')">
+          <button id="btn-reject" class="btn btn-reject" onclick="decide('reject')">
             <i class="bi bi-x-lg"></i> Recusar cotação
           </button>
         </div>
@@ -168,18 +169,33 @@
   }
 
   async function decide(action) {
-    document.querySelectorAll('.btn').forEach(b => b.disabled = true);
+    const btns = document.querySelectorAll('.btn');
+    btns.forEach(b => b.disabled = true);
+
+    // Mostra spinner no botão clicado
+    const clickedId = action === 'approve' ? 'btn-confirm' : 'btn-reject';
+    const clickedBtn = document.getElementById(clickedId);
+    const origLabel = clickedBtn ? clickedBtn.innerHTML : '';
+    if (clickedBtn) clickedBtn.innerHTML = '<i class="bi bi-arrow-clockwise spin"></i> Aguarde…';
+
     try {
       const r = await fetch(API, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action }),
       });
-      const data = await r.json();
-      if (!data.ok) { renderError(data.message); return; }
+      const data = await r.json().catch(() => ({}));
+      if (!data.ok) {
+        if (clickedBtn) clickedBtn.innerHTML = origLabel;
+        btns.forEach(b => b.disabled = false);
+        renderError(data.message || data.error || 'Não foi possível registrar sua resposta. Tente novamente.');
+        return;
+      }
       renderResult(action === 'approve');
     } catch (_) {
-      renderError('Erro ao registrar sua resposta. Tente novamente.');
+      if (clickedBtn) clickedBtn.innerHTML = origLabel;
+      btns.forEach(b => b.disabled = false);
+      renderError('Erro de conexão. Verifique sua internet e tente novamente.');
     }
   }
 
