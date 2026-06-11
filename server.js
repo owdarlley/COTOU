@@ -2,6 +2,7 @@ require('dotenv').config();
 const http = require('http');
 const { Server } = require('socket.io');
 const app = require('./src/app');
+const { sessionMiddleware } = require('./src/app');
 const socketConfig = require('./src/config/socket');
 
 const PORT = process.env.PORT || 3000;
@@ -27,9 +28,20 @@ const io = new Server(server, {
 
 socketConfig.init(io);
 
+// Injeta sessão express nas conexões Socket.io para verificar autenticação
+io.use((socket, next) => {
+  sessionMiddleware(socket.request, {}, next);
+});
+
 io.on('connection', (socket) => {
   socket.on('registrar', ({ userId }) => {
-    if (userId) socket.join(`user:${userId}`);
+    const sessionUserId = socket.request.session?.userId;
+    // Só permite entrar no room se o userId declarado bater com a sessão autenticada
+    if (sessionUserId && sessionUserId === userId) {
+      socket.join(`user:${userId}`);
+    } else if (sessionUserId && userId && sessionUserId !== userId) {
+      // Usuário tenta registrar como outro — ignora silenciosamente (sem log para não spam)
+    }
   });
 });
 

@@ -86,7 +86,7 @@ if (!sessionSecret) {
   console.warn('[AVISO] SESSION_SECRET não definida — usando valor temporário. Configure o .env antes de ir para produção.');
 }
 
-app.use(session({
+const sessionMiddleware = session({
   store: new FileStore({ path: './data/sessions', ttl: 28800, retries: 0, logFn: () => {} }),
   secret: sessionSecret || 'cotou-dev-only',
   resave: false,
@@ -98,7 +98,8 @@ app.use(session({
     secure: process.env.COOKIE_SECURE === 'true',
     sameSite: process.env.COOKIE_SECURE === 'true' ? 'none' : 'lax'
   }
-}));
+});
+app.use(sessionMiddleware);
 
 // Health check
 app.get('/health', (req, res) => res.json({ ok: true, uptime: process.uptime() }));
@@ -138,3 +139,4 @@ app.use((err, req, res, next) => {
 });
 
 module.exports = app;
+module.exports.sessionMiddleware = sessionMiddleware;

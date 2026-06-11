@@ -44,10 +44,11 @@ router.post('/login', loginLimiter, async (req, res) => {
 });
 
 // GET /auth/users — lista pública de usuários ativos (para tela de login)
+// Retorna apenas id e name — email e role não são expostos sem autenticação
 router.get('/users', (req, res) => {
   const users = User.findAll()
     .filter(u => u.active)
-    .map(u => ({ id: u.id, name: u.name, email: u.email, role: u.role }));
+    .map(u => ({ id: u.id, name: u.name }));
   res.json({ ok: true, users });
 });
 

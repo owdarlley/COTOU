@@ -1,22 +1,22 @@
 const express = require('express');
 const router = express.Router();
 const Quotation = require('../models/Quotation');
+const AuditLog = require('../models/AuditLog');
 const { notifyUser, notifyAllByRole } = require('../services/notificationService');
 const { sendTextMessage } = require('../services/whatsappService');
+const { normalizePhone } = require('../utils/phone');
 
 function extractPhone(jid) {
-  return String(jid || '').replace(/@.*$/, '').replace(/\D/g, '');
+  return normalizePhone(String(jid || '').replace(/@.*$/, ''));
 }
 
 router.post('/whatsapp/webhook', express.json({ limit: '1mb' }), async (req, res) => {
   res.json({ ok: true }); // responde imediatamente — a Evolution API não espera processamento
 
   try {
-    const { event, instance, data, apikey } = req.body;
+    const { event, instance, data } = req.body;
 
     console.log(`[WH] evento="${event}" instance="${instance}" fromMe=${data?.key?.fromMe}`);
-
-    console.log(`[WH] apikey recebida="${apikey}"`);
 
     if (event !== 'messages.upsert') {
       console.log(`[WH] evento ignorado: "${event}"`);
@@ -46,7 +46,9 @@ router.post('/whatsapp/webhook', express.json({ limit: '1mb' }), async (req, res
         );
         if (params.id === 'btn_aprovar') action = 'approve';
         else if (params.id === 'btn_recusar') action = 'reject';
-      } catch (_) {}
+      } catch (parseErr) {
+        console.warn('[WH] Falha ao parsear nativeFlowResponseMessage:', parseErr.message);
+      }
     } else if (msgType === 'conversation' || msgType === 'extendedTextMessage') {
       // Fallback: cliente digita "1" ou "2"
       const text = (
@@ -75,6 +77,12 @@ router.post('/whatsapp/webhook', express.json({ limit: '1mb' }), async (req, res
     console.log(`[WH] cotação encontrada: ${quotation.quote_number}`);
 
     Quotation.setCustomerApproval(quotation.id, action === 'approve', 'whatsapp');
+
+    AuditLog.insert({
+      quotationId: quotation.id,
+      action: action === 'approve' ? 'customer_approved_whatsapp' : 'customer_rejected_whatsapp',
+      newValue: { phone },
+    });
 
     const label = action === 'approve' ? 'aprovou' : 'recusou';
     const notifPayload = {
@@ -112,15 +120,21 @@ router.post('/whatsapp/webhook', express.json({ limit: '1mb' }), async (req, res
         customer_approved_at: new Date().toISOString(),
         customer_approval_source: 'whatsapp',
       });
-    } catch (_) {}
+    } catch (socketErr) {
+      console.warn('[WH] Falha ao emitir evento Socket.io:', socketErr.message);
+    }
 
     const firstName = (quotation.customer_name || '').split(' ')[0];
     const confirmMsg = action === 'approve'
       ? `✅ Perfeito, ${firstName}! Sua confirmação foi registrada. Em breve entraremos em contato.`
       : `😔 Entendemos, ${firstName}. Recusa registrada. Qualquer dúvida, é só chamar!`;
 
-    await sendTextMessage(phone, confirmMsg, instance).catch(() => {});
-  } catch (_) {}
+    await sendTextMessage(phone, confirmMsg, instance).catch(e => {
+      console.warn('[WH] Falha ao enviar confirmação ao cliente:', e.message);
+    });
+  } catch (err) {
+    console.error('[WH] Erro ao processar mensagem:', err.message, err.stack);
+  }
 });
 
 module.exports = router;

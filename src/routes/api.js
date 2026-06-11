@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const { rateLimit } = require('express-rate-limit');
 const { requireAuth, requireRole } = require('../middleware/auth');
 const { lookupPlate, getBalance, isValidPlate } = require('../services/plateService');
 const { sendQuoteMessage, sendTextMessage, createInstance, getQRCode, getStatus, logoutInstance, setWebhook } = require('../services/whatsappService');
@@ -10,6 +11,14 @@ const Quotation = require('../models/Quotation');
 const QuotationItem = require('../models/QuotationItem');
 const Supplier = require('../models/Supplier');
 const Customer = require('../models/Customer');
+
+const whatsappSendLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { ok: false, error: 'Muitos envios em pouco tempo. Aguarde um momento.' },
+});
 
 router.use(requireAuth);
 
@@ -35,7 +44,7 @@ router.get('/placa/:plate', async (req, res) => {
 // Saldo de consultas (somente admin)
 router.get('/saldo', requireRole('admin'), async (req, res) => {
   const balance = await getBalance();
-  if (!balance) return res.status(503).json({ ok: false, message: 'Não foi possível consultar o saldo.' });
+  if (!balance) return res.status(503).json({ ok: false, error: 'Não foi possível consultar o saldo.' });
   res.json({ ok: true, data: balance });
 });
 
@@ -80,7 +89,7 @@ router.post('/whatsapp/instancia/criar', async (req, res) => {
     User.setWhatsappInstanceName(targetId, instanceName);
     res.json({ ok: true, instanceName });
   } catch (err) {
-    res.status(502).json({ ok: false, message: err.message });
+    res.status(502).json({ ok: false, error: err.message });
   }
 });
 
@@ -98,7 +107,7 @@ router.get('/whatsapp/instancia/qrcode', async (req, res) => {
     }
     res.json({ ok: true, data });
   } catch (err) {
-    res.status(502).json({ ok: false, message: err.message });
+    res.status(502).json({ ok: false, error: err.message });
   }
 });
 
@@ -115,7 +124,9 @@ router.get('/whatsapp/instancia/status', async (req, res) => {
       User.markWhatsappConnected(targetId);
       // Configura webhook automaticamente na primeira conexão
       const webhookUrl = process.env.APP_URL ? `${process.env.APP_URL}/api/whatsapp/webhook` : null;
-      if (webhookUrl) setWebhook(user.whatsapp_instance_name, webhookUrl).catch(() => {});
+      if (webhookUrl) setWebhook(user.whatsapp_instance_name, webhookUrl).catch(e => {
+        console.error('[WhatsApp] Falha ao configurar webhook:', e.message);
+      });
     } else if (!status.connected && user.whatsapp_connected_at) {
       User.clearWhatsappConnectedAt(targetId);
     }
@@ -130,7 +141,9 @@ router.delete('/whatsapp/instancia/desconectar', async (req, res) => {
   const user = User.findById(targetId);
   if (user?.whatsapp_instance_name) {
     // Só faz logout — mantém a instância para que o QR fique disponível imediatamente
-    try { await logoutInstance(user.whatsapp_instance_name); } catch (_) {}
+    try { await logoutInstance(user.whatsapp_instance_name); } catch (e) {
+      console.warn('[WhatsApp] Falha ao desconectar instância:', e.message);
+    }
     User.clearWhatsappConnectedAt(targetId);
   }
   res.json({ ok: true });
@@ -158,33 +171,33 @@ router.post('/whatsapp/consultar-fornecedor', async (req, res) => {
     await sendTextMessage(supplierPhone, message, user.whatsapp_instance_name);
     res.json({ ok: true });
   } catch (err) {
-    res.status(502).json({ ok: false, message: err.message });
+    res.status(502).json({ ok: false, error: err.message });
   }
 });
 
 // Envio WhatsApp
-router.post('/whatsapp/enviar/:id', async (req, res) => {
+router.post('/whatsapp/enviar/:id', whatsappSendLimiter, async (req, res) => {
   const quotation = Quotation.findById(parseInt(req.params.id));
-  if (!quotation) return res.json({ ok: false, message: 'Cotação não encontrada.' });
+  if (!quotation) return res.status(404).json({ ok: false, error: 'Cotação não encontrada.' });
   if (quotation.status !== 'cotado' && quotation.status !== 'peca_chegou') {
-    return res.json({ ok: false, message: 'Cotação ainda não foi respondida pelo setor de compras.' });
+    return res.status(400).json({ ok: false, error: 'Cotação ainda não foi respondida pelo setor de compras.' });
   }
 
   const user = User.findById(req.session.userId);
   const instanceName = user?.whatsapp_instance_name || null;
 
   if (!instanceName) {
-    return res.status(400).json({ ok: false, message: 'WhatsApp não configurado. Conecte seu WhatsApp nas configurações antes de enviar.' });
+    return res.status(400).json({ ok: false, error: 'WhatsApp não configurado. Conecte seu WhatsApp nas configurações antes de enviar.' });
   }
 
   // Verifica conexão antes de tentar enviar
   try {
     const status = await getStatus(instanceName);
     if (!status.connected) {
-      return res.status(400).json({ ok: false, message: 'WhatsApp desconectado. Reconecte sua instância nas configurações antes de enviar.' });
+      return res.status(400).json({ ok: false, error: 'WhatsApp desconectado. Reconecte sua instância nas configurações antes de enviar.' });
     }
   } catch (_) {
-    return res.status(400).json({ ok: false, message: 'Não foi possível verificar a conexão do WhatsApp. Verifique sua instância nas configurações.' });
+    return res.status(400).json({ ok: false, error: 'Não foi possível verificar a conexão do WhatsApp. Verifique sua instância nas configurações.' });
   }
 
   const items = QuotationItem.findByQuotationId(quotation.id);
@@ -196,17 +209,17 @@ router.post('/whatsapp/enviar/:id', async (req, res) => {
   } catch (err) {
     const isConnectionClosed = JSON.stringify(err.evolutionBody || '').includes('Connection Closed');
     if (isConnectionClosed) {
-      return res.status(400).json({ ok: false, code: 'CONNECTION_CLOSED', message: 'Sessão WhatsApp encerrada. Desconecte e reconecte seu WhatsApp nas configurações.' });
+      return res.status(400).json({ ok: false, code: 'CONNECTION_CLOSED', error: 'Sessão WhatsApp encerrada. Desconecte e reconecte seu WhatsApp nas configurações.' });
     }
-    res.status(502).json({ ok: false, message: err.message });
+    res.status(502).json({ ok: false, error: err.message });
   }
 });
 
 // Clientes
-router.get('/customers',        (req, res) => res.json({ ok: true, data: Customer.findAll() }));
+router.get('/customers',        (req, res) => res.json({ ok: true, data: Customer.findAll({}) }));
 router.get('/customers/search', (req, res) => res.json(Customer.search(req.query.q || '')));
 router.put('/customers/:id',    requireRole('admin', 'vendas'), (req, res) => {
-  if (!req.body?.name) return res.status(400).json({ ok: false, message: 'Nome é obrigatório.' });
+  if (!req.body?.name) return res.status(400).json({ ok: false, error: 'Nome é obrigatório.' });
   Customer.update(parseInt(req.params.id, 10), req.body);
   res.json({ ok: true });
 });
@@ -214,12 +227,12 @@ router.put('/customers/:id',    requireRole('admin', 'vendas'), (req, res) => {
 // Fornecedores
 router.get('/suppliers',        (req, res) => res.json({ ok: true, data: Supplier.findAll() }));
 router.post('/suppliers',       requireRole('admin', 'compras'), (req, res) => {
-  if (!req.body?.name) return res.status(400).json({ ok: false, message: 'Nome é obrigatório.' });
+  if (!req.body?.name) return res.status(400).json({ ok: false, error: 'Nome é obrigatório.' });
   const r = Supplier.create(req.body);
   res.json({ ok: true, id: r.lastInsertRowid });
 });
 router.put('/suppliers/:id',    requireRole('admin', 'compras'), (req, res) => {
-  if (!req.body?.name) return res.status(400).json({ ok: false, message: 'Nome é obrigatório.' });
+  if (!req.body?.name) return res.status(400).json({ ok: false, error: 'Nome é obrigatório.' });
   Supplier.update(parseInt(req.params.id, 10), req.body);
   res.json({ ok: true });
 });

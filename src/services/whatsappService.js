@@ -1,6 +1,7 @@
 const axios = require('axios');
 const https = require('https');
 const Settings = require('../models/Settings');
+const { formatPhoneForWhatsApp } = require('../utils/phone');
 
 // Self-hosted Evolution API uses self-signed cert — skip TLS verification
 const httpsAgent = new https.Agent({ rejectUnauthorized: false });
@@ -20,12 +21,6 @@ Sua cotação está pronta! Veja os detalhes abaixo:
 Para confirmar ou recusar, responda com:
 *1* — ✅ Confirmar pedido
 *2* — ❌ Não tenho interesse`;
-
-function formatPhone(phone) {
-  const digits = phone.replace(/\D/g, '');
-  if (digits.startsWith('55')) return digits;
-  return `55${digits}`;
-}
 
 function buildShortMessage(quotation, items) {
   const partsTotal = items.reduce((s, i) => s + (i.total_price || 0), 0);
@@ -110,7 +105,7 @@ async function sendQuoteMessage(customerPhone, quotation, items, instanceName, a
   const instance = instanceName || process.env.WHATSAPP_INSTANCE_NAME;
   if (!instance) throw new Error('Instância WhatsApp não definida. Conecte seu WhatsApp nas configurações.');
 
-  const number = formatPhone(customerPhone);
+  const number = formatPhoneForWhatsApp(customerPhone);
   const text = buildMessage(quotation, items, approvalToken);
 
   try {
@@ -132,7 +127,7 @@ async function sendTextMessage(phone, text, instanceName) {
   try {
     const { data } = await axios.post(
       `${apiUrl}/message/sendText/${instance}`,
-      { number: formatPhone(phone), text },
+      { number: formatPhoneForWhatsApp(phone), text },
       { headers, httpsAgent: agent, timeout: 15000 }
     );
     return data;

@@ -1,5 +1,6 @@
 const { db } = require('../config/database');
 const crypto = require('crypto');
+const { normalizePhone } = require('../utils/phone');
 
 const SELECT_FULL = `
   SELECT
@@ -111,7 +112,7 @@ class Quotation {
   }
 
   static findPendingByPhone(phone, instanceName) {
-    const last11 = String(phone).replace(/\D/g, '').slice(-11);
+    const last11 = normalizePhone(phone).slice(-11);
     // Quando instanceName é fornecido, só retorna cotações enviadas por usuários dessa instância
     // (ou cotações sem whatsapp_sent_by, como dados de seed)
     const instanceClause = instanceName
