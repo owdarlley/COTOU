@@ -353,8 +353,8 @@ function CatalogScreen() {
               <tr>
                 <th style={{ width: 110 }}>Código</th>
                 <th>Nome</th>
-                <th>Descrição</th>
-                <th>Categoria</th>
+                <th className="hide-mobile">Descrição</th>
+                <th className="hide-mobile">Categoria</th>
                 <th style={{ width: 120 }}>Preço padrão</th>
                 {canEdit && <th style={{ width: 90 }}></th>}
               </tr>
@@ -364,8 +364,8 @@ function CatalogScreen() {
                 <tr key={p.id}>
                   <td><span className="mono semibold small">{p.code}</span></td>
                   <td className="semibold">{p.name}</td>
-                  <td className="small muted">{p.description}</td>
-                  <td><Badge>{p.category}</Badge></td>
+                  <td className="hide-mobile small muted">{p.description}</td>
+                  <td className="hide-mobile"><Badge>{p.category}</Badge></td>
                   <td><span className="mono">{fmt.brl(p.default_price)}</span></td>
                   {canEdit && (
                     <td>
@@ -597,11 +597,11 @@ function AdminUsersScreen() {
           <thead>
             <tr>
               <th>Usuário</th>
-              <th>E-mail</th>
+              <th className="hide-mobile">E-mail</th>
               <th>Função</th>
-              <th>WhatsApp</th>
-              <th>Status</th>
-              <th>Criado</th>
+              <th className="hide-mobile">WhatsApp</th>
+              <th className="hide-mobile">Status</th>
+              <th className="hide-mobile">Criado</th>
               <th style={{ width: 90 }}></th>
             </tr>
           </thead>
@@ -613,12 +613,15 @@ function AdminUsersScreen() {
                     <div className="avatar" style={{ background: u.active ? 'var(--brand)' : 'var(--surface-3)', color: u.active ? 'var(--brand-text)' : 'var(--text-faint)' }}>
                       {u.name.split(' ').map(s => s[0]).slice(0, 2).join('')}
                     </div>
-                    <div className="semibold">{u.name}</div>
+                    <div>
+                      <div className="semibold">{u.name}</div>
+                      <div className="tiny mono faint show-mobile" style={{ display: 'none' }}>{u.email}</div>
+                    </div>
                   </div>
                 </td>
-                <td><span className="mono small">{u.email}</span></td>
+                <td className="hide-mobile"><span className="mono small">{u.email}</span></td>
                 <td><RoleBadge role={u.role} /></td>
-                <td>
+                <td className="hide-mobile">
                   {u.whatsapp_connected
                     ? <div className="row" style={{ gap: 6, alignItems: 'center' }}>
                         <Badge className="badge-cotado" style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
@@ -644,12 +647,12 @@ function AdminUsersScreen() {
                         onClick={() => setConnectUserId(u.id)}>Conectar</Button>
                   }
                 </td>
-                <td>
+                <td className="hide-mobile">
                   {u.active
                     ? <Badge className="badge-cotado"><span className="dot-sm"></span> Ativo</Badge>
                     : <Badge className="badge-cancelado"><span className="dot-sm"></span> Inativo</Badge>}
                 </td>
-                <td><span className="tiny mono faint">{fmt.date(u.created_at)}</span></td>
+                <td className="hide-mobile"><span className="tiny mono faint">{fmt.date(u.created_at)}</span></td>
                 <td>
                   <div className="row" style={{ gap: 4 }}>
                     <button className="icon-btn" onClick={() => setEditing(u)} title="Editar">
@@ -1398,7 +1401,7 @@ function SuppliersScreen() {
               <tr style={{ borderBottom: '1px solid var(--border)' }}>
                 <th style={{ textAlign: 'left', padding: '8px 12px', fontSize: 11, fontWeight: 600, color: 'var(--text-faint)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Nome</th>
                 <th style={{ textAlign: 'left', padding: '8px 12px', fontSize: 11, fontWeight: 600, color: 'var(--text-faint)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Telefone (WhatsApp)</th>
-                <th style={{ textAlign: 'left', padding: '8px 12px', fontSize: 11, fontWeight: 600, color: 'var(--text-faint)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Observações</th>
+                <th className="hide-mobile" style={{ textAlign: 'left', padding: '8px 12px', fontSize: 11, fontWeight: 600, color: 'var(--text-faint)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Observações</th>
                 <th style={{ width: 80 }}></th>
               </tr>
             </thead>
@@ -1414,7 +1417,7 @@ function SuppliersScreen() {
                         </span>
                       : <span style={{ color: 'var(--text-faint)' }}>—</span>}
                   </td>
-                  <td style={{ padding: '10px 12px', fontSize: 12, color: 'var(--text-faint)' }}>{s.notes || '—'}</td>
+                  <td className="hide-mobile" style={{ padding: '10px 12px', fontSize: 12, color: 'var(--text-faint)' }}>{s.notes || '—'}</td>
                   <td style={{ padding: '10px 12px' }}>
                     <div style={{ display: 'flex', gap: 4 }}>
                       <button className="icon-btn" title="Editar"

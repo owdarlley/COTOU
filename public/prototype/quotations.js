@@ -134,10 +134,10 @@ function QuotationsList() {
               <tr>
                 <th style={{ width: 130, cursor: 'pointer' }} onClick={() => toggleSort('quote_number')}>Número{sortIcon('quote_number')}</th>
                 <th style={{ cursor: 'pointer' }} onClick={() => toggleSort('customer_name')}>Cliente{sortIcon('customer_name')}</th>
-                <th>Veículo</th>
-                <th>Itens</th>
+                <th className="hide-mobile">Veículo</th>
+                <th className="hide-mobile">Itens</th>
                 <th style={{ cursor: 'pointer' }} onClick={() => toggleSort('total')}>Total{sortIcon('total')}</th>
-                <th style={{ cursor: 'pointer' }} onClick={() => toggleSort('created_at')}>Aberta em{sortIcon('created_at')}</th>
+                <th className="hide-mobile" style={{ cursor: 'pointer' }} onClick={() => toggleSort('created_at')}>Aberta em{sortIcon('created_at')}</th>
                 <th style={{ cursor: 'pointer' }} onClick={() => toggleSort('status')}>Status{sortIcon('status')}</th>
                 <th style={{ width: 44 }}></th>
               </tr>
@@ -156,13 +156,13 @@ function QuotationsList() {
                       <div className="semibold">{qt.customer_name}</div>
                       <div className="tiny faint mono">{fmt.phone(qt.customer_phone)}</div>
                     </td>
-                    <td>
+                    <td className="hide-mobile">
                       <Plate value={qt.vehicle.plate} />
                       <div className="tiny faint" style={{ marginTop: 3 }}>{qt.vehicle.make} {qt.vehicle.model}</div>
                     </td>
-                    <td><span className="mono">{qt.items.length}</span></td>
+                    <td className="hide-mobile"><span className="mono">{qt.items.length}</span></td>
                     <td><span className="mono semibold">{totals.grandTotal > 0 ? fmt.brl(totals.grandTotal) : <span className="faint">—</span>}</span></td>
-                    <td><span className="tiny mono faint">{fmt.datetime(qt.created_at)}</span></td>
+                    <td className="hide-mobile"><span className="tiny mono faint">{fmt.datetime(qt.created_at)}</span></td>
                     <td><StatusBadge status={qt.status} /></td>
                     <td><i className="bi bi-chevron-right faint"></i></td>
                   </tr>
