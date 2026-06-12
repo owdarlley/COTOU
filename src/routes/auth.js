@@ -31,10 +31,11 @@ router.post('/login', loginLimiter, async (req, res) => {
     return res.status(401).json({ ok: false, error: 'E-mail ou senha inválidos.' });
   }
 
-  req.session.userId    = user.id;
-  req.session.userRole  = user.role;
-  req.session.userName  = user.name;
-  req.session.csrfToken = crypto.randomBytes(32).toString('hex');
+  req.session.userId         = user.id;
+  req.session.userRole       = user.role;
+  req.session.userName       = user.name;
+  req.session.organizationId = user.organization_id ?? 1;
+  req.session.csrfToken      = crypto.randomBytes(32).toString('hex');
 
   req.session.save((err) => {
     if (err) {
