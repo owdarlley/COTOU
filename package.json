@@ -7,7 +7,7 @@
     "start": "node --no-warnings server.js",
     "dev": "nodemon --exec \"node --no-warnings\" server.js",
     "migrate": "node -e \"require('./src/config/database').runMigrations(); console.log('OK')\"",
-    "seed": "node scripts/seed-admin.js && node scripts/seed-quotations.js && node scripts/seed-parts.js",
+    "seed": "node scripts/seed-admin.js && node scripts/seed-cotadas.js",
     "test": "node --no-warnings --test test/*.test.js"
   },
   "dependencies": {
@@ -20,8 +20,6 @@
     "express-rate-limit": "^8.5.2",
     "express-session": "^1.18.1",
     "helmet": "^8.0.0",
-    "memorystore": "^1.6.7",
-    "morgan": "^1.10.0",
     "pino": "^10.3.1",
     "pino-http": "^11.0.0",
     "qrcode": "^1.5.3",
