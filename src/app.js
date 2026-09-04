@@ -36,7 +36,7 @@ app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       ...helmet.contentSecurityPolicy.getDefaultDirectives(),
-      'script-src': ["'self'", 'https://unpkg.com', "'unsafe-inline'", "'unsafe-eval'"],
+      'script-src': ["'self'", 'https://unpkg.com', 'https://cdn.socket.io', "'unsafe-inline'", "'unsafe-eval'"],
       'style-src':  ["'self'", 'https:', "'unsafe-inline'"],
       'font-src':   ["'self'", 'https:', 'data:'],
       'img-src':    ["'self'", 'data:', 'https:'],

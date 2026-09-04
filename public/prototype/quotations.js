@@ -80,9 +80,9 @@ function QuotationsList() {
           </p>
         </div>
         <div className="row" style={{ gap: 8 }}>
-          <div style={{ position: 'relative' }}>
-            <i className="bi bi-search" style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-faint)', fontSize: 13 }}></i>
-            <input className="input" placeholder="Buscar #, cliente, placa…" value={q} onChange={e => setQ(e.target.value)} style={{ maxWidth: 280, width: '100%', paddingLeft: 34 }} />
+          <div className="input-group" style={{ maxWidth: 280 }}>
+            <i className="bi bi-search input-icon"></i>
+            <input className="input" placeholder="Buscar #, cliente, placa…" value={q} onChange={e => setQ(e.target.value)} />
           </div>
           {(currentUser.role === 'vendas' || currentUser.role === 'admin') && (
             <Button variant="primary" icon="bi-plus-lg" onClick={() => dispatch({ type: 'navigate', name: 'new-quotation' })}>
@@ -93,8 +93,8 @@ function QuotationsList() {
       </div>
 
       {/* Status tabs */}
-      <div className="card" data-tour="filter-tabs" style={{ marginBottom: 16, overflow: 'visible' }}>
-        <div style={{ padding: '12px 16px', display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
+      <div className="card" data-tour="filter-tabs" style={{ marginBottom: 12, overflow: 'visible' }}>
+        <div style={{ padding: '8px 12px', display: 'flex', gap: 5, flexWrap: 'wrap', alignItems: 'center' }}>
           {[
             { k: 'todos', label: 'Todas' },
             { k: 'pendente', label: 'Pendentes' },
@@ -132,13 +132,10 @@ function QuotationsList() {
           <div className="tbl-wrap"><table className="tbl">
             <thead>
               <tr>
-                <th style={{ width: 130, cursor: 'pointer' }} onClick={() => toggleSort('quote_number')}>Número{sortIcon('quote_number')}</th>
                 <th style={{ cursor: 'pointer' }} onClick={() => toggleSort('customer_name')}>Cliente{sortIcon('customer_name')}</th>
                 <th className="hide-mobile">Veículo</th>
-                <th className="hide-mobile">Itens</th>
-                <th style={{ cursor: 'pointer' }} onClick={() => toggleSort('total')}>Total{sortIcon('total')}</th>
-                <th className="hide-mobile" style={{ cursor: 'pointer' }} onClick={() => toggleSort('created_at')}>Aberta em{sortIcon('created_at')}</th>
-                <th style={{ cursor: 'pointer' }} onClick={() => toggleSort('status')}>Status{sortIcon('status')}</th>
+                <th style={{ width: 140, cursor: 'pointer' }} onClick={() => toggleSort('total')}>Total{sortIcon('total')}</th>
+                <th style={{ width: 160, cursor: 'pointer' }} onClick={() => toggleSort('status')}>Status{sortIcon('status')}</th>
                 <th style={{ width: 44 }}></th>
               </tr>
             </thead>
@@ -151,18 +148,22 @@ function QuotationsList() {
                     className="clickable"
                     onClick={() => dispatch({ type: 'navigate', name: 'quotation-detail', params: { id: qt.id } })}
                   >
-                    <td><span className="mono semibold" style={{ fontSize: 12 }}>{qt.quote_number}</span></td>
                     <td>
                       <div className="semibold">{qt.customer_name}</div>
-                      <div className="tiny faint mono">{fmt.phone(qt.customer_phone)}</div>
+                      <div className="row tiny faint" style={{ gap: 6, marginTop: 2 }}>
+                        <span className="mono">{qt.quote_number}</span>
+                        <span>·</span>
+                        <span className="mono">{fmt.phone(qt.customer_phone)}</span>
+                      </div>
                     </td>
                     <td className="hide-mobile">
                       <Plate value={qt.vehicle.plate} />
                       <div className="tiny faint" style={{ marginTop: 3 }}>{qt.vehicle.make} {qt.vehicle.model}</div>
                     </td>
-                    <td className="hide-mobile"><span className="mono">{qt.items.length}</span></td>
-                    <td><span className="mono semibold">{totals.grandTotal > 0 ? fmt.brl(totals.grandTotal) : <span className="faint">—</span>}</span></td>
-                    <td className="hide-mobile"><span className="tiny mono faint">{fmt.datetime(qt.created_at)}</span></td>
+                    <td>
+                      <div className="mono semibold">{totals.grandTotal > 0 ? fmt.brl(totals.grandTotal) : <span className="faint">—</span>}</div>
+                      <div className="tiny faint mono hide-mobile" style={{ marginTop: 2 }}>{fmt.datetime(qt.created_at)}</div>
+                    </td>
                     <td><StatusBadge status={qt.status} /></td>
                     <td><i className="bi bi-chevron-right faint"></i></td>
                   </tr>
@@ -225,7 +226,7 @@ function QuotationDetail() {
     <div className="page">
 
       {/* ── Compact page header ── */}
-      <div style={{ marginBottom: 20 }}>
+      <div style={{ marginBottom: 14 }}>
         <div className="row between" style={{ alignItems: 'flex-start', gap: 12, flexWrap: 'wrap' }}>
           <div style={{ minWidth: 0 }}>
             <button className="btn btn-ghost btn-sm" onClick={() => dispatch({ type: 'navigate', name: 'quotations' })} style={{ marginBottom: 8, paddingLeft: 0 }}>
@@ -238,7 +239,7 @@ function QuotationDetail() {
                 <span className="mono semibold" style={{ fontSize: 14, color: 'var(--brand)' }}>{fmt.brl(totals.grandTotal)}</span>
               )}
             </div>
-            <div className="row" style={{ gap: 6, marginTop: 5, color: 'var(--text-faint)', fontSize: 12.5, flexWrap: 'wrap' }}>
+            <div className="row" style={{ gap: 6, marginTop: 5, color: 'var(--text-faint)', fontSize: 13, flexWrap: 'wrap' }}>
               <span>{qt.items.length} {qt.items.length === 1 ? 'peça' : 'peças'}</span>
               <span>·</span><span>{qt.customer_name}</span>
               <span>·</span><span>{qt.vehicle.make} {qt.vehicle.model}</span>
@@ -284,16 +285,16 @@ function QuotationDetail() {
         </div>
       </div>
 
+      {/* ── Timeline — largura total, acima do grid ── */}
+      <div style={{ marginBottom: 16, padding: '10px 20px', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--r-md)' }}>
+        <StatusTimeline quotation={qt} />
+      </div>
+
       {/* ── 2-column layout: 65% / 35% ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 300px', gap: 20, alignItems: 'start' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 260px', gap: 16, alignItems: 'start' }}>
 
         {/* LEFT column */}
-        <div className="col" style={{ gap: 16 }}>
-
-          {/* Timeline — compact */}
-          <div className="card" style={{ padding: '14px 20px' }}>
-            <StatusTimeline quotation={qt} />
-          </div>
+        <div className="col" style={{ gap: 12 }}>
 
           {/* Items table — smart columns (hide Unit/MO/Total/Prazo when not filled) */}
           <div className="card">
@@ -362,60 +363,58 @@ function QuotationDetail() {
             </table></div>
           </div>
 
-          {/* Observations — 2 columns side by side with avatar initials */}
-          <div className="grid-2">
-            <div className="card">
-              <div className="card-head">
-                <div style={{ width: 26, height: 26, borderRadius: 99, background: 'var(--st-em-cotacao-bg)', color: 'var(--st-em-cotacao)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, flexShrink: 0 }}>
-                  {qt.creator_name ? qt.creator_name.trim().split(/\s+/).slice(0, 2).map(w => w[0].toUpperCase()).join('') : 'V'}
-                </div>
-                <h3>Obs. Vendas</h3>
-              </div>
-              <div className="card-pad" style={{ paddingTop: 12 }}>
-                <p className="small" style={{ margin: 0, color: qt.notes_vendas ? 'var(--text)' : 'var(--text-faint)', lineHeight: 1.55 }}>
-                  {qt.notes_vendas || 'Nenhuma observação.'}
-                </p>
-                {qt.creator_name && (
-                  <div className="tiny faint" style={{ marginTop: 10 }}>{qt.creator_name}</div>
-                )}
-              </div>
+          {/* Observações — card único, Vendas | Compras lado a lado */}
+          <div className="card">
+            <div className="card-head">
+              <i className="bi bi-chat-left-text" style={{ color: 'var(--text-muted)' }}></i>
+              <h3>Observações</h3>
             </div>
-            <div className="card">
-              <div className="card-head">
-                <div style={{ width: 26, height: 26, borderRadius: 99, background: 'var(--st-cotado-bg)', color: 'var(--st-cotado)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, flexShrink: 0 }}>
-                  {qt.buyer_name ? qt.buyer_name.trim().split(/\s+/).slice(0, 2).map(w => w[0].toUpperCase()).join('') : 'C'}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', borderTop: '1px solid var(--border)' }}>
+              <div style={{ padding: '14px 18px' }}>
+                <div className="row" style={{ gap: 7, marginBottom: 10 }}>
+                  <div style={{ width: 22, height: 22, borderRadius: 99, background: 'var(--st-em-cotacao-bg)', color: 'var(--st-em-cotacao)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 700, flexShrink: 0 }}>
+                    {qt.creator_name ? qt.creator_name.trim().split(/\s+/).slice(0, 2).map(w => w[0].toUpperCase()).join('') : 'V'}
+                  </div>
+                  <span className="small semibold">Vendas</span>
+                  {qt.creator_name && <span className="tiny faint" style={{ marginLeft: 'auto' }}>{qt.creator_name.split(' ')[0]}</span>}
                 </div>
-                <h3>Obs. Compras</h3>
-              </div>
-              <div className="card-pad" style={{ paddingTop: 12 }}>
-                <p className="small" style={{ margin: 0, color: qt.notes_compras ? 'var(--text)' : 'var(--text-faint)', lineHeight: 1.55 }}>
-                  {qt.notes_compras || 'Ainda não respondida.'}
+                <p className="small" style={{ margin: 0, color: qt.notes_vendas ? 'var(--text)' : 'var(--text-faint)', lineHeight: 1.6 }}>
+                  {qt.notes_vendas || 'Sem observações.'}
                 </p>
-                {qt.buyer_name && (
-                  <div className="tiny faint" style={{ marginTop: 10 }}>{qt.buyer_name}</div>
-                )}
+              </div>
+              <div style={{ padding: '14px 18px', borderLeft: '1px solid var(--border)' }}>
+                <div className="row" style={{ gap: 7, marginBottom: 10 }}>
+                  <div style={{ width: 22, height: 22, borderRadius: 99, background: 'var(--st-cotado-bg)', color: 'var(--st-cotado)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 700, flexShrink: 0 }}>
+                    {qt.buyer_name ? qt.buyer_name.trim().split(/\s+/).slice(0, 2).map(w => w[0].toUpperCase()).join('') : 'C'}
+                  </div>
+                  <span className="small semibold">Compras</span>
+                  {qt.buyer_name && <span className="tiny faint" style={{ marginLeft: 'auto' }}>{qt.buyer_name.split(' ')[0]}</span>}
+                </div>
+                <p className="small" style={{ margin: 0, color: qt.notes_compras ? 'var(--text)' : 'var(--text-faint)', lineHeight: 1.6 }}>
+                  {qt.notes_compras || 'Sem resposta.'}
+                </p>
               </div>
             </div>
           </div>
         </div>
 
         {/* RIGHT column — sticky sidebar */}
-        <div className="col" style={{ gap: 12, position: 'sticky', top: 24, alignSelf: 'start' }}>
+        <div className="col" style={{ gap: 10, position: 'sticky', top: 20, alignSelf: 'start' }}>
 
-          {/* Client card */}
+          {/* Solicitante — Cliente + Veículo unificados */}
           <div className="card">
-            <div className="card-head" style={{ paddingBottom: 10 }}>
+            <div className="card-head">
               <i className="bi bi-person-circle" style={{ color: 'var(--text-muted)' }}></i>
-              <h3>Cliente</h3>
+              <h3>Solicitante</h3>
             </div>
             <div className="card-pad" style={{ paddingTop: 10 }}>
               <div className="semibold">{qt.customer_name}</div>
               <a
                 href={`https://wa.me/55${String(qt.customer_phone).replace(/\D/g, '')}`}
-                target="_blank"
-                rel="noopener noreferrer"
+                target="_blank" rel="noopener noreferrer"
+                aria-label={`WhatsApp de ${qt.customer_name}`}
                 className="row"
-                style={{ gap: 6, marginTop: 6, color: '#16a34a', textDecoration: 'none', fontSize: 13 }}
+                style={{ gap: 6, marginTop: 6, color: 'var(--whatsapp)', textDecoration: 'none', fontSize: 13 }}
               >
                 <i className="bi bi-whatsapp"></i>
                 <span className="mono">{fmt.phone(qt.customer_phone)}</span>
@@ -427,10 +426,9 @@ function QuotationDetail() {
                     Cliente {qt.customer_approved ? 'confirmou' : 'recusou'}
                   </div>
                   <div style={{ fontSize: 10, opacity: 0.8, fontWeight: 400 }}>
-                    {qt.customer_approval_source === 'whatsapp' && 'via WhatsApp'}
-                    {qt.customer_approval_source === 'link' && 'via link de aprovação'}
-                    {qt.customer_approval_source === 'manual' && 'registrado pelo vendedor'}
-                    {!qt.customer_approval_source && 'registrado pelo vendedor'}
+                    {qt.customer_approval_source === 'whatsapp' ? 'via WhatsApp' :
+                     qt.customer_approval_source === 'link' ? 'via link de aprovação' :
+                     'registrado pelo vendedor'}
                   </div>
                 </div>
               )}
@@ -454,24 +452,18 @@ function QuotationDetail() {
                   }}>Recusou</Button>
                 </div>
               )}
-            </div>
-          </div>
 
-          {/* Vehicle card — compact inline layout */}
-          <div className="card">
-            <div className="card-head" style={{ paddingBottom: 10 }}>
-              <i className="bi bi-car-front" style={{ color: 'var(--text-muted)' }}></i>
-              <h3>Veículo</h3>
-            </div>
-            <div className="card-pad" style={{ paddingTop: 10 }}>
-              <div className="row" style={{ gap: 10, alignItems: 'flex-start' }}>
-                <Plate value={qt.vehicle.plate} />
-                <div style={{ minWidth: 0 }}>
-                  <div className="semibold" style={{ fontSize: 13, lineHeight: 1.3 }}>{qt.vehicle.make} {qt.vehicle.model}</div>
-                  <div className="row" style={{ gap: 5, marginTop: 3, flexWrap: 'wrap' }}>
-                    <span className="mono tiny faint">{qt.vehicle.year_manuf}/{qt.vehicle.year_model}</span>
-                    {qt.vehicle.color && <><span className="tiny faint">·</span><span className="mono tiny faint">{qt.vehicle.color}</span></>}
-                    {qt.vehicle.fuel && <><span className="tiny faint">·</span><span className="mono tiny faint">{qt.vehicle.fuel}</span></>}
+              {/* Veículo — separado por divisor interno */}
+              <div style={{ margin: '14px -16px 0', borderTop: '1px solid var(--border)', padding: '12px 16px 0' }}>
+                <div className="row" style={{ gap: 10, alignItems: 'flex-start' }}>
+                  <Plate value={qt.vehicle.plate} />
+                  <div style={{ minWidth: 0 }}>
+                    <div className="semibold" style={{ fontSize: 13, lineHeight: 1.3 }}>{qt.vehicle.make} {qt.vehicle.model}</div>
+                    <div className="row" style={{ gap: 5, marginTop: 3, flexWrap: 'wrap' }}>
+                      <span className="mono tiny faint">{qt.vehicle.year_manuf}/{qt.vehicle.year_model}</span>
+                      {qt.vehicle.color && <><span className="tiny faint">·</span><span className="mono tiny faint">{qt.vehicle.color}</span></>}
+                      {qt.vehicle.fuel && <><span className="tiny faint">·</span><span className="mono tiny faint">{qt.vehicle.fuel}</span></>}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -485,7 +477,7 @@ function QuotationDetail() {
               <MetaRow label="Comprador" value={qt.buyer_name || '—'} />
               <MetaRow label="Criada" value={fmt.datetime(qt.created_at)} mono />
               {qt.whatsapp_sent_at && (
-                <MetaRow label="WhatsApp" value={fmt.datetime(qt.whatsapp_sent_at)} mono icon="bi-whatsapp" iconColor="#16a34a" />
+                <MetaRow label="WhatsApp" value={fmt.datetime(qt.whatsapp_sent_at)} mono icon="bi-whatsapp" iconColor="var(--success)" />
               )}
               {qt.approval_token && qt.customer_approved == null && (() => {
                 const approvalUrl = `${PLATE_PROXY_URL}/aprovar/${qt.approval_token}`;
@@ -516,7 +508,7 @@ function QuotationDetail() {
                 const label = src === 'whatsapp' ? '✅ Cliente confirmou via WhatsApp'
                             : src === 'link'     ? '✅ Cliente confirmou via link'
                             : '✅ Confirmado pelo vendedor';
-                return <MetaRow label="Aprovação" value={label} icon="bi-check-circle-fill" iconColor="#16a34a" />;
+                return <MetaRow label="Aprovação" value={label} icon="bi-check-circle-fill" iconColor="var(--success)" />;
               })()}
               {qt.customer_approved === 0 && (() => {
                 const src = qt.customer_approval_source;
@@ -536,7 +528,7 @@ function QuotationDetail() {
             </div>
             <div style={{ padding: '0 14px 14px' }}>
               {qt.photo_path ? (
-                <img src={qt.photo_path} alt="Foto" style={{ width: '100%', maxHeight: 80, objectFit: 'cover', borderRadius: 'var(--r-sm)', border: '1px solid var(--border)' }} />
+                <img src={qt.photo_path} alt="Foto da peça" style={{ width: '100%', maxHeight: 120, objectFit: 'cover', borderRadius: 'var(--r-sm)', border: '1px solid var(--border)' }} />
               ) : (
                 <div style={{ border: '1.5px dashed var(--border-strong)', borderRadius: 'var(--r-sm)', padding: '10px 12px', display: 'flex', alignItems: 'center', gap: 10, color: 'var(--text-faint)' }}>
                   <i className="bi bi-camera" style={{ fontSize: 16 }}></i>
@@ -764,7 +756,7 @@ function AuditLogPanel({ quotationId }) {
    Respond modal
    ========================================================= */
 function RespondModal({ quotation, onClose }) {
-  const { dispatch, state, currentUser } = useStore();
+  const { dispatch, state } = useStore();
   const [items, setItems] = useState(quotation.items.map(it => ({
     id: it.id,
     unit_price: '',
@@ -774,28 +766,28 @@ function RespondModal({ quotation, onClose }) {
     notes: '',
   })));
   const [notesCompras, setNotesCompras] = useState('');
-  const [consultarItem, setConsultarItem] = useState(null); // { items, supplier, quotationId }
+  const [consultarItem, setConsultarItem] = useState(null);
+  const [showItemNote, setShowItemNote] = useState(() => quotation.items.map(() => false));
 
   function update(idx, field, v) {
     setItems(prev => prev.map((it, i) => i === idx ? { ...it, [field]: v } : it));
   }
+  function toggleNote(idx) {
+    setShowItemNote(prev => prev.map((v, i) => i === idx ? !v : v));
+  }
+
   const allFilled = items.every(it => Number(it.unit_price) > 0 && Number(it.delivery_days) > 0);
+  const filledCount = items.filter(it => Number(it.unit_price) > 0 && Number(it.delivery_days) > 0).length;
 
   function submit() {
     if (!allFilled) return;
-    dispatch({
-      type: 'respond_quotation',
-      payload: { id: quotation.id, items, notes_compras: notesCompras }
-    });
+    dispatch({ type: 'respond_quotation', payload: { id: quotation.id, items, notes_compras: notesCompras } });
     onClose();
   }
 
-  // Live total
   const liveTotal = items.reduce((s, it, i) => {
-    const q = quotation.items[i].quantity;
-    const u = Number(it.unit_price) || 0;
-    const l = Number(it.labor_cost_compras) || 0;
-    return s + (u * q) + l;
+    const qty = quotation.items[i].quantity;
+    return s + ((Number(it.unit_price) || 0) * qty) + (Number(it.labor_cost_compras) || 0);
   }, 0);
 
   const activeSuppliers = (state.suppliers || []).filter(s => s.active);
@@ -804,7 +796,7 @@ function RespondModal({ quotation, onClose }) {
     <>
       <Modal
         open={true} onClose={onClose}
-        title={`Responder cotação ${quotation.quote_number}`}
+        title={`Responder ${quotation.quote_number}`}
         icon="bi-currency-exchange"
         size="lg"
         footer={
@@ -816,8 +808,39 @@ function RespondModal({ quotation, onClose }) {
           </>
         }
       >
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+
+          {/* Contexto: cliente + veículo + progresso */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px', background: 'var(--surface-2)', borderRadius: 'var(--r-md)', border: '1px solid var(--border)' }}>
+            <i className="bi bi-person-circle" style={{ fontSize: 20, color: 'var(--text-muted)', flexShrink: 0 }}></i>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div className="semibold" style={{ fontSize: 13 }}>{quotation.customer_name}</div>
+              <div className="tiny faint" style={{ marginTop: 2 }}>
+                {quotation.vehicle.make} {quotation.vehicle.model}
+                {quotation.vehicle.plate && <span className="mono"> · {quotation.vehicle.plate}</span>}
+              </div>
+            </div>
+            {quotation.items.length > 1 && (
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 5, flexShrink: 0 }}>
+                <span className="tiny" style={{ color: allFilled ? 'var(--success)' : 'var(--text-faint)', fontWeight: allFilled ? 600 : 400, transition: 'color 250ms, font-weight 250ms' }}>
+                  {filledCount} / {quotation.items.length} preenchidas
+                </span>
+                <div role="progressbar" aria-valuenow={filledCount} aria-valuemax={quotation.items.length}
+                  style={{ width: 80, height: 4, background: 'var(--surface-3)', borderRadius: 99, overflow: 'hidden' }}>
+                  <div style={{
+                    height: '100%',
+                    background: allFilled ? 'var(--success)' : 'var(--brand)',
+                    width: `${(filledCount / quotation.items.length) * 100}%`,
+                    transition: 'width 300ms ease, background 300ms',
+                  }} />
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Item cards */}
           {quotation.items.map((it, i) => {
+            const isFilled = Number(items[i].unit_price) > 0 && Number(items[i].delivery_days) > 0;
             const activeSupplier = activeSuppliers.find(s => s.name === items[i].supplier_name);
             const canConsult = !!(activeSupplier?.phone);
             const sameSupplierCount = items.filter(f => f.supplier_name && f.supplier_name === items[i].supplier_name).length;
@@ -825,86 +848,158 @@ function RespondModal({ quotation, onClose }) {
               !activeSupplier?.phone ? 'Fornecedor sem telefone cadastrado' :
               sameSupplierCount > 1 ? `Consultar ${activeSupplier.name} (${sameSupplierCount} itens) via WhatsApp` :
               `Consultar ${activeSupplier.name} via WhatsApp`;
+            const itemTotal = ((Number(items[i].unit_price) || 0) * it.quantity) + (Number(items[i].labor_cost_compras) || 0);
+
             return (
-              <div key={it.id} className="card card-pad" style={{ background: 'var(--surface-2)', border: '1px solid var(--border)' }}>
-                <div className="row between" style={{ marginBottom: 12 }}>
-                  <div>
-                    <div className="bold">{it.part_name}</div>
-                    <div className="tiny faint mono">{it.part_code || '—'} · qtd {it.quantity}</div>
+              <div key={it.id} style={{
+                border: `1.5px solid ${isFilled ? 'var(--st-cotado)' : 'var(--border)'}`,
+                borderRadius: 'var(--r-lg)',
+                overflow: 'hidden',
+                background: 'var(--surface)',
+                transition: 'border-color 250ms',
+              }}>
+                {/* Cabeçalho — fica verde quando preenchido */}
+                <div style={{
+                  padding: '10px 16px',
+                  background: isFilled ? 'var(--st-cotado-bg)' : 'var(--surface-2)',
+                  borderBottom: '1px solid var(--border)',
+                  display: 'flex', alignItems: 'center', gap: 10,
+                  transition: 'background 250ms',
+                }}>
+                  <span style={{
+                    width: 22, height: 22, borderRadius: 99, flexShrink: 0,
+                    background: isFilled ? 'var(--st-cotado)' : 'var(--surface-3)',
+                    color: isFilled ? '#fff' : 'var(--text-faint)',
+                    fontSize: 11, fontWeight: 700,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    transition: 'background 250ms, color 250ms',
+                  }}>
+                    {isFilled ? <i className="bi bi-check" style={{ fontSize: 14 }}></i> : i + 1}
+                  </span>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div className="semibold" style={{ fontSize: 13, color: isFilled ? 'var(--st-cotado)' : 'var(--text)', transition: 'color 250ms' }}>
+                      {it.part_name}
+                    </div>
+                    <div className="row tiny" style={{ gap: 5, marginTop: 2, color: isFilled ? 'var(--st-cotado)' : 'var(--text-faint)', opacity: 0.85, transition: 'color 250ms' }}>
+                      {it.part_code && <span className="mono">{it.part_code}</span>}
+                      {it.part_code && <span>·</span>}
+                      <span>{it.quantity} {it.quantity === 1 ? 'unidade' : 'unidades'}</span>
+                    </div>
                   </div>
-                  <span className="mono small bold">
-                    {fmt.brl(((Number(items[i].unit_price) || 0) * it.quantity) + (Number(items[i].labor_cost_compras) || 0))}
+                  <span className="mono bold" style={{
+                    fontSize: 14, flexShrink: 0,
+                    color: itemTotal > 0 ? (isFilled ? 'var(--st-cotado)' : 'var(--text)') : 'var(--text-faint)',
+                    transition: 'color 250ms',
+                  }}>
+                    {itemTotal > 0 ? fmt.brl(itemTotal) : '—'}
                   </span>
                 </div>
-                <div className="grid-4">
-                  <Field label="Preço unit. *">
-                    <div className="input-group">
-                      <span className="input-icon mono">R$</span>
-                      <input className="input mono" type="number" step="0.01" placeholder="0,00" min="0.01"
-                        value={items[i].unit_price} onChange={e => update(i, 'unit_price', e.target.value)}
-                        style={items[i].unit_price !== '' && Number(items[i].unit_price) <= 0 ? { borderColor: '#dc2626' } : {}} />
-                    </div>
-                  </Field>
-                  <Field label="Mão de obra">
-                    <div className="input-group">
-                      <span className="input-icon mono">R$</span>
-                      <input className="input mono" type="number" step="0.01" placeholder="0,00"
-                        value={items[i].labor_cost_compras} onChange={e => update(i, 'labor_cost_compras', e.target.value)} />
-                    </div>
-                  </Field>
-                  <Field label="Prazo (dias) *">
-                    <input className="input mono" type="number" placeholder="3" min="1"
-                      value={items[i].delivery_days} onChange={e => update(i, 'delivery_days', e.target.value)}
-                      style={items[i].delivery_days !== '' && Number(items[i].delivery_days) <= 0 ? { borderColor: '#dc2626' } : {}} />
-                  </Field>
-                  <Field label="Fornecedor">
-                    <div style={{ display: 'flex', gap: 6 }}>
-                      <select className="input" style={{ flex: 1 }}
-                        value={items[i].supplier_name}
-                        onChange={e => update(i, 'supplier_name', e.target.value)}>
-                        <option value="">— Selecione —</option>
-                        {activeSuppliers.map(s => (
-                          <option key={s.id} value={s.name}>{s.name}</option>
-                        ))}
-                      </select>
-                      <button
-                        title={consultTitle}
-                        disabled={!canConsult}
-                        onClick={() => {
-                          if (!canConsult) return;
-                          const grouped = quotation.items.reduce((acc, qItem, j) => {
-                            if (items[j].supplier_name === items[i].supplier_name) acc.push(qItem);
-                            return acc;
-                          }, []);
-                          setConsultarItem({ items: grouped, supplier: activeSupplier, quotationId: quotation.id });
-                        }}
-                        style={{ flexShrink: 0, width: 34, borderRadius: 'var(--r-md)', border: '1px solid var(--border)', background: canConsult ? '#25d366' : 'var(--surface)', color: canConsult ? 'white' : 'var(--text-faint)', cursor: canConsult ? 'pointer' : 'not-allowed', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <i className="bi bi-whatsapp" style={{ fontSize: 15 }}></i>
-                      </button>
-                    </div>
-                  </Field>
-                </div>
-                <div style={{ marginTop: 12 }}>
-                  <Field label="Observação do item">
-                    <input className="input" placeholder="Notas opcionais sobre disponibilidade, marca…"
-                      value={items[i].notes} onChange={e => update(i, 'notes', e.target.value)} />
-                  </Field>
+
+                {/* Campos */}
+                <div style={{ padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {/* Linha primária: campos obrigatórios */}
+                  <div className="grid-2">
+                    <Field label="Preço unitário *">
+                      <div className="input-group">
+                        <span className="input-icon mono" style={{ fontSize: 11 }}>R$</span>
+                        <input className="input mono" type="number" step="0.01" placeholder="0,00" min="0.01"
+                          value={items[i].unit_price} onChange={e => update(i, 'unit_price', e.target.value)}
+                          style={items[i].unit_price !== '' && Number(items[i].unit_price) <= 0 ? { borderColor: 'var(--error)' } : {}} />
+                      </div>
+                    </Field>
+                    <Field label="Prazo (dias) *">
+                      <input className="input mono" type="number" placeholder="3" min="1"
+                        value={items[i].delivery_days} onChange={e => update(i, 'delivery_days', e.target.value)}
+                        style={items[i].delivery_days !== '' && Number(items[i].delivery_days) <= 0 ? { borderColor: 'var(--error)' } : {}} />
+                    </Field>
+                  </div>
+
+                  {/* Linha secundária: campos opcionais */}
+                  <div className="grid-2">
+                    <Field label="Mão de obra">
+                      <div className="input-group">
+                        <span className="input-icon mono" style={{ fontSize: 11 }}>R$</span>
+                        <input className="input mono" type="number" step="0.01" placeholder="0,00"
+                          value={items[i].labor_cost_compras} onChange={e => update(i, 'labor_cost_compras', e.target.value)} />
+                      </div>
+                    </Field>
+                    <Field label="Fornecedor">
+                      <div className="row" style={{ gap: 6 }}>
+                        <select className="select" style={{ flex: 1 }}
+                          value={items[i].supplier_name}
+                          onChange={e => update(i, 'supplier_name', e.target.value)}>
+                          <option value="">— Selecione —</option>
+                          {activeSuppliers.map(s => (
+                            <option key={s.id} value={s.name}>{s.name}</option>
+                          ))}
+                        </select>
+                        <button
+                          className="btn btn-icon"
+                          title={consultTitle}
+                          disabled={!canConsult}
+                          style={{
+                            flexShrink: 0,
+                            background: canConsult ? 'var(--whatsapp)' : 'var(--surface-2)',
+                            color: canConsult ? '#fff' : 'var(--text-faint)',
+                            border: '1px solid var(--border)',
+                          }}
+                          onClick={() => {
+                            if (!canConsult) return;
+                            const grouped = quotation.items.reduce((acc, qItem, j) => {
+                              if (items[j].supplier_name === items[i].supplier_name) acc.push(qItem);
+                              return acc;
+                            }, []);
+                            setConsultarItem({ items: grouped, supplier: activeSupplier, quotationId: quotation.id });
+                          }}>
+                          <i className="bi bi-whatsapp" style={{ fontSize: 15 }}></i>
+                        </button>
+                      </div>
+                    </Field>
+                  </div>
+
+                  {/* Observação: colapsível para não inflar o card */}
+                  {showItemNote[i] ? (
+                    <Field label="Observação">
+                      <input className="input" placeholder="Marca, disponibilidade, condições especiais…"
+                        autoFocus
+                        value={items[i].notes} onChange={e => update(i, 'notes', e.target.value)} />
+                    </Field>
+                  ) : (
+                    <button
+                      onClick={() => toggleNote(i)}
+                      style={{ alignSelf: 'flex-start', background: 'none', border: 'none', padding: '2px 0', cursor: 'pointer', fontSize: 12, color: 'var(--text-faint)', display: 'flex', alignItems: 'center', gap: 4 }}>
+                      <i className="bi bi-plus-circle"></i> Observação
+                    </button>
+                  )}
                 </div>
               </div>
             );
           })}
 
-          <Field label="Observação geral de Compras">
-            <textarea className="textarea" placeholder="Notas que vão para a Cotação inteira"
-              value={notesCompras} onChange={e => setNotesCompras(e.target.value)} />
-          </Field>
+          {/* Observação geral */}
+          <div style={{ borderTop: '1px solid var(--border)', paddingTop: 12 }}>
+            <Field label="Observação geral de compras">
+              <textarea className="textarea" placeholder="Notas que se aplicam a toda a cotação…"
+                value={notesCompras} onChange={e => setNotesCompras(e.target.value)} />
+            </Field>
+          </div>
 
-          <div className="row between" style={{ padding: 14, background: 'var(--brand-soft)', borderRadius: 'var(--r-md)' }}>
-            <div>
-              <div className="tiny" style={{ textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--brand)' }}>Total da cotação</div>
-              <div className="mono bold" style={{ fontSize: 24, color: 'var(--brand)' }}>{fmt.brl(liveTotal)}</div>
+          {/* Total + status de preenchimento */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '12px 14px', background: 'var(--surface-2)', borderRadius: 'var(--r-md)', border: '1px solid var(--border)' }}>
+            <div style={{ flex: 1 }}>
+              <div className="tiny faint" style={{ textTransform: 'uppercase', letterSpacing: '0.1em', fontFamily: 'var(--mono)', marginBottom: 2 }}>Total estimado</div>
+              <div className="mono bold" style={{ fontSize: 22 }}>{fmt.brl(liveTotal)}</div>
             </div>
-            {!allFilled && <span className="tiny" style={{ color: 'var(--brand)' }}>Preencha preço unit. e prazo de todos os itens</span>}
+            {allFilled ? (
+              <div className="row" style={{ gap: 6, color: 'var(--success)', fontSize: 13, fontWeight: 600, flexShrink: 0 }}>
+                <i className="bi bi-check-circle-fill"></i>
+                Pronto para enviar
+              </div>
+            ) : (
+              <div style={{ fontSize: 12, color: 'var(--text-faint)', textAlign: 'right', maxWidth: 160, lineHeight: 1.5, flexShrink: 0 }}>
+                Preencha preço e prazo de todos os itens
+              </div>
+            )}
           </div>
         </div>
       </Modal>

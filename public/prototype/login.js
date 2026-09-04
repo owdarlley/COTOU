@@ -161,7 +161,7 @@ function LoginScreen() {
                   type="button"
                   className="icon-btn"
                   onClick={() => setShowPwd(s => !s)}
-                  style={{ position: 'absolute', right: 4, top: 50, transform: 'translateY(-50%)', width: 30, height: 30 }}
+                  style={{ position: 'absolute', right: 4, top: '50%', transform: 'translateY(-50%)', width: 30, height: 30 }}
                   title="Mostrar senha"
                 >
                   <i className={`bi ${showPwd ? 'bi-eye-slash' : 'bi-eye'}`} style={{ fontSize: 13 }}></i>

@@ -73,7 +73,7 @@ function Sidebar() {
       </nav>
 
       {/* WhatsApp connection strip */}
-      <div style={{ padding: '6px 10px', borderTop: '1px solid var(--border)', flexShrink: 0 }}>
+      <div className="wa-strip-section">
         <button
           disabled={disconnecting}
           onClick={async () => {
@@ -91,23 +91,16 @@ function Sidebar() {
               dispatch({ type: 'open_wa_connect' });
             }
           }}
-          style={{
-            width: '100%', display: 'flex', alignItems: 'center', gap: 9,
-            background: 'none', border: '1px solid var(--border)', borderRadius: 8,
-            padding: '7px 10px', cursor: disconnecting ? 'wait' : 'pointer', transition: 'background 0.15s',
-            opacity: disconnecting ? 0.6 : 1,
-          }}
+          className="wa-strip"
           title={connected ? 'Desconectar WhatsApp' : 'Conectar meu WhatsApp'}
           data-tour="wa-strip"
         >
           <i className={`bi ${disconnecting ? 'bi-arrow-clockwise' : 'bi-whatsapp'}`}
-             style={{ fontSize: 15, color: connected ? '#16a34a' : 'var(--text-faint)', flexShrink: 0,
+             style={{ fontSize: 15, color: connected ? 'var(--success)' : 'var(--text-faint)', flexShrink: 0,
                       animation: disconnecting ? 'spin 1s linear infinite' : 'none' }}></i>
-          <div style={{ flex: 1, minWidth: 0, textAlign: 'left' }}>
-            <div style={{ fontSize: 11.5, fontWeight: 600, color: 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-              Meu WhatsApp
-            </div>
-            <div style={{ fontSize: 10.5, color: connected ? '#16a34a' : 'var(--text-faint)', fontFamily: 'var(--mono)' }}>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div className="wa-strip-name">Meu WhatsApp</div>
+            <div className="wa-strip-status" style={{ color: connected ? 'var(--success)' : 'var(--text-faint)' }}>
               {disconnecting ? '○ Desconectando…' : connected ? '● Conectado' : '○ Desconectado'}
             </div>
           </div>
@@ -243,7 +236,10 @@ function Topbar({ title, subtitle, actions }) {
 
   return (
     <div className="topbar">
-      <h1>{title}</h1>
+      <div>
+        <h1>{title}</h1>
+        {subtitle && <p style={{ margin: 0, fontSize: 12, color: 'var(--text-muted)', marginTop: 1 }}>{subtitle}</p>}
+      </div>
       <div className="topbar-actions">
         {actions}
         <button

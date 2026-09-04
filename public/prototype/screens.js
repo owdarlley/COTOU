@@ -1,6 +1,6 @@
 // COTOU — Misc screens: Dashboard, Catalog, Notifications, Admin
 
-const { useState, useMemo } = React;
+const { useState, useMemo, useEffect } = React;
 
 /* =========================================================
    Dashboard
@@ -79,7 +79,7 @@ function Dashboard() {
       </div>
 
       {/* KPI grid */}
-      <div className="stat-grid" style={{ marginBottom: 16 }}>
+      <div className="stat-grid" style={{ marginBottom: 12 }}>
         <Stat
           label="Pendentes"
           value={counts.pendente}
@@ -114,8 +114,8 @@ function Dashboard() {
         />
       </div>
 
-      {/* Chart + Donut */}
-      <div className="grid-side" style={{ marginBottom: 16 }}>
+      {/* Chart + painel direito (Donut + Taxa) */}
+      <div className="grid-side" style={{ marginBottom: 14 }}>
         <div className="card">
           <div className="card-head">
             <i className="bi bi-bar-chart" style={{ color: 'var(--text-muted)' }}></i>
@@ -128,9 +128,9 @@ function Dashboard() {
           <div className="card-pad">
             <div className="chart-bar-grid">
               {chartData.map((d, i) => (
-                <div key={i} style={{ display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', height: '100%', gap: 2 }} title={`${d.label}: ${d.value} abertas`}>
+                <div key={i} style={{ display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', height: '100%', gap: 2 }} title={`${d.label}: ${d.value} abertas, ${d.won} concluídas`}>
                   <div className="chart-bar" style={{ height: `${(d.value / maxBar) * 100}%` }}></div>
-                  <div className="chart-bar alt" style={{ height: `${(d.won / maxBar) * 30}%`, marginTop: -2 }}></div>
+                  <div className="chart-bar alt" style={{ height: `${(d.won / maxBar) * 30}%` }}></div>
                 </div>
               ))}
             </div>
@@ -142,96 +142,87 @@ function Dashboard() {
           </div>
         </div>
 
-        <div className="card">
-          <div className="card-head">
-            <i className="bi bi-pie-chart" style={{ color: 'var(--text-muted)' }}></i>
-            <h3>Status</h3>
+        {/* Painel direito: status mix + taxa de aprovação */}
+        <div className="col" style={{ gap: 12 }}>
+          <div className="card">
+            <div className="card-head">
+              <i className="bi bi-pie-chart" style={{ color: 'var(--text-muted)' }}></i>
+              <h3>Mix de status</h3>
+            </div>
+            <div className="card-pad" style={{ textAlign: 'center' }}>
+              <DonutChart segments={statusMix} total={mixTotal} active={active} />
+              <div className="col" style={{ gap: 5, marginTop: 10, textAlign: 'left' }}>
+                {statusMix.map(s => (
+                  <div key={s.k} className="row between">
+                    <span className="row tiny" style={{ gap: 8 }}>
+                      <span style={{ width: 8, height: 8, background: s.color, borderRadius: 2 }}></span>
+                      {s.label}
+                    </span>
+                    <span className="mono small bold">{s.value}</span>
+                  </div>
+                ))}
+                {statusMix.length === 0 && <div className="empty tiny" style={{ padding: 16 }}>Sem dados</div>}
+              </div>
+            </div>
           </div>
-          <div className="card-pad" style={{ textAlign: 'center' }}>
-            <DonutChart segments={statusMix} total={mixTotal} active={active} />
-            <div className="col" style={{ gap: 6, marginTop: 16, textAlign: 'left' }}>
-              {statusMix.map(s => (
-                <div key={s.k} className="row between">
-                  <span className="row tiny" style={{ gap: 8 }}>
-                    <span style={{ width: 8, height: 8, background: s.color, borderRadius: 2 }}></span>
-                    {s.label}
-                  </span>
-                  <span className="mono small bold">{s.value}</span>
-                </div>
-              ))}
-              {statusMix.length === 0 && <div className="empty tiny" style={{ padding: 16 }}>Sem dados</div>}
+
+          <div className="card card-pad">
+            <div className="tiny faint" style={{ textTransform: 'uppercase', letterSpacing: '0.12em', fontFamily: 'var(--mono)', marginBottom: 8 }}>Taxa de aprovação</div>
+            <div className="row between" style={{ alignItems: 'center' }}>
+              <div>
+                <div className="bold" style={{ fontSize: 30, lineHeight: 1 }}>{approveRate}<span style={{ fontSize: 18, color: 'var(--text-muted)' }}>%</span></div>
+                <div className="tiny faint" style={{ marginTop: 4 }}>{approvedCount} confirmadas · {respondedCount} cotadas</div>
+              </div>
+              <ProgressRing value={approveRate} />
             </div>
           </div>
         </div>
       </div>
 
-      {/* Approve rate + recent */}
-      <div className="grid-side">
-        <div className="card">
-          <div className="card-head">
-            <i className="bi bi-clock-history" style={{ color: 'var(--text-muted)' }}></i>
-            <h3>Cotações recentes</h3>
-            <button className="btn btn-ghost btn-sm" style={{ marginLeft: 'auto' }} onClick={() => dispatch({ type: 'navigate', name: 'quotations' })}>
-              Ver todas <i className="bi bi-arrow-right"></i>
-            </button>
-          </div>
-          {recent.length === 0 ? (
-            <EmptyState icon="bi-inbox" title="Sem cotações recentes" />
-          ) : (
-            <div className="tbl-wrap"><table className="tbl">
-              <tbody>
-                {recent.map(q => {
-                  const totals = calcTotals(q.items);
-                  return (
-                    <tr
-                      key={q.id} className="clickable"
-                      onClick={() => dispatch({ type: 'navigate', name: 'quotation-detail', params: { id: q.id } })}
-                    >
-                      <td style={{ width: 130 }}><span className="mono semibold" style={{ fontSize: 12 }}>{q.quote_number}</span></td>
-                      <td>
-                        <div className="semibold">{q.customer_name}</div>
-                        <div className="tiny faint">{q.vehicle.make} {q.vehicle.model}</div>
-                      </td>
-                      <td><Plate value={q.vehicle.plate} /></td>
-                      <td><span className="mono small">{totals.grandTotal > 0 ? fmt.brl(totals.grandTotal) : <span className="faint">—</span>}</span></td>
-                      <td><StatusBadge status={q.status} /></td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table></div>
-          )}
+      {/* Cotações recentes — full width */}
+      <div className="card">
+        <div className="card-head">
+          <i className="bi bi-clock-history" style={{ color: 'var(--text-muted)' }}></i>
+          <h3>Cotações recentes</h3>
+          <button className="btn btn-ghost btn-sm" style={{ marginLeft: 'auto' }} onClick={() => dispatch({ type: 'navigate', name: 'quotations' })}>
+            Ver todas <i className="bi bi-arrow-right"></i>
+          </button>
         </div>
-
-        <div className="col" style={{ gap: 16 }}>
-          {/* Approve rate */}
-          <div className="card card-pad">
-            <div className="row between">
-              <div>
-                <div className="tiny faint" style={{ textTransform: 'uppercase', letterSpacing: '0.12em', fontFamily: 'var(--mono)' }}>Taxa de aprovação</div>
-                <div className="bold" style={{ fontSize: 36, lineHeight: 1, marginTop: 8 }}>{approveRate}<span style={{ fontSize: 22, color: 'var(--text-muted)' }}>%</span></div>
-                <div className="tiny faint" style={{ marginTop: 4 }}>{approvedCount} de {respondedCount} cotadas</div>
-              </div>
-              <ProgressRing value={approveRate} />
-            </div>
-          </div>
-
-          {/* Quick actions */}
-          <div className="card">
-            <div className="card-head">
-              <i className="bi bi-lightning-charge-fill" style={{ color: 'var(--brand)' }}></i>
-              <h3>Atalhos rápidos</h3>
-            </div>
-            <div className="card-pad" style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-              {currentUser.role === 'vendas' && (
-                <QuickAction icon="bi-plus-square-fill" label="Abrir nova cotação" onClick={() => dispatch({ type: 'navigate', name: 'new-quotation' })} />
-              )}
-              <QuickAction icon="bi-clipboard-data" label="Ver fila de cotações" onClick={() => dispatch({ type: 'navigate', name: 'quotations' })} />
-              <QuickAction icon="bi-box-seam" label="Catálogo de peças" onClick={() => dispatch({ type: 'navigate', name: 'catalog' })} />
-              <QuickAction icon="bi-bell-fill" label={`Notificações${unreadCount ? ` (${unreadCount})` : ''}`} onClick={() => dispatch({ type: 'navigate', name: 'notifications' })} />
-            </div>
-          </div>
-        </div>
+        {recent.length === 0 ? (
+          <EmptyState icon="bi-inbox" title="Sem cotações recentes" />
+        ) : (
+          <div className="tbl-wrap"><table className="tbl">
+            <thead>
+              <tr>
+                <th>Número</th>
+                <th>Cliente</th>
+                <th className="hide-mobile">Veículo</th>
+                <th>Total</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {recent.map(q => {
+                const totals = calcTotals(q.items);
+                return (
+                  <tr
+                    key={q.id} className="clickable"
+                    onClick={() => dispatch({ type: 'navigate', name: 'quotation-detail', params: { id: q.id } })}
+                  >
+                    <td style={{ width: 130 }}><span className="mono semibold" style={{ fontSize: 12 }}>{q.quote_number}</span></td>
+                    <td>
+                      <div className="semibold">{q.customer_name}</div>
+                      <div className="tiny faint">{q.vehicle.make} {q.vehicle.model}</div>
+                    </td>
+                    <td className="hide-mobile"><Plate value={q.vehicle.plate} /></td>
+                    <td><span className="mono small">{totals.grandTotal > 0 ? fmt.brl(totals.grandTotal) : <span className="faint">—</span>}</span></td>
+                    <td><StatusBadge status={q.status} /></td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table></div>
+        )}
       </div>
     </div>
   );
@@ -239,11 +230,17 @@ function Dashboard() {
 
 function Stat({ label, value, icon, color, deltaUp, deltaText, onClick }) {
   return (
-    <div className="stat" onClick={onClick} style={onClick ? { cursor: 'pointer' } : null}>
-      <div className="stat-icon" style={{ color: color || 'var(--text-muted)' }}>
-        <i className={`bi ${icon}`}></i>
+    <div
+      className={`stat${onClick ? ' clickable' : ''}`}
+      onClick={onClick}
+      style={{ '--stat-accent': color, cursor: onClick ? 'pointer' : null }}
+    >
+      <div className="stat-head">
+        <div className="stat-icon" style={{ color: color || 'var(--text-muted)' }}>
+          <i className={`bi ${icon}`}></i>
+        </div>
+        <div className="stat-label">{label}</div>
       </div>
-      <div className="stat-label">{label}</div>
       <div className="stat-value">{value}</div>
       <div className={`stat-delta ${deltaUp != null ? (deltaUp ? 'up' : 'down') : ''}`}>
         {deltaText}
@@ -253,6 +250,11 @@ function Stat({ label, value, icon, color, deltaUp, deltaText, onClick }) {
 }
 
 function DonutChart({ segments, total, active }) {
+  const [ready, setReady] = useState(false);
+  useEffect(() => {
+    const t = setTimeout(() => setReady(true), 16);
+    return () => clearTimeout(t);
+  }, []);
   const R = 56, C = 2 * Math.PI * R;
   let offset = 0;
   return (
@@ -261,13 +263,13 @@ function DonutChart({ segments, total, active }) {
         <circle cx="80" cy="80" r={R} className="ring-bg" strokeWidth="14"></circle>
         {segments.map((s, i) => {
           const len = (s.value / total) * C;
-          const dash = `${len} ${C - len}`;
+          const dash = ready ? `${len} ${C - len}` : `0 ${C}`;
           const el = (
             <circle key={s.k} cx="80" cy="80" r={R} fill="none"
               stroke={s.color} strokeWidth="14"
               strokeDasharray={dash}
               strokeDashoffset={-offset}
-              style={{ transition: 'stroke-dasharray 320ms' }}
+              style={{ transition: 'stroke-dasharray 600ms cubic-bezier(.4,0,.2,1)' }}
             />
           );
           offset += len;
@@ -295,15 +297,7 @@ function ProgressRing({ value }) {
 
 function QuickAction({ icon, label, onClick }) {
   return (
-    <button onClick={onClick} className="row" style={{
-      width: '100%', padding: '10px 12px', borderRadius: 'var(--r-md)',
-      border: '1px solid var(--border)', background: 'var(--surface)',
-      cursor: 'pointer', fontSize: 13, fontWeight: 600,
-      gap: 10, transition: 'background 120ms, border-color 120ms',
-    }}
-    onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--brand)'; e.currentTarget.style.background = 'var(--surface-2)'; }}
-    onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.background = 'var(--surface)'; }}
-    >
+    <button onClick={onClick} className="quick-action">
       <i className={`bi ${icon}`} style={{ color: 'var(--brand)', fontSize: 15 }}></i>
       <span style={{ flex: 1, textAlign: 'left' }}>{label}</span>
       <i className="bi bi-arrow-right faint" style={{ fontSize: 12 }}></i>
@@ -334,9 +328,9 @@ function CatalogScreen() {
           <p className="page-sub">{state.parts.length} peças cadastradas em {categories.length} categorias.</p>
         </div>
         <div className="row" style={{ gap: 8 }}>
-          <div style={{ position: 'relative' }}>
-            <i className="bi bi-search" style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-faint)', fontSize: 13 }}></i>
-            <input className="input" placeholder="Buscar peça…" value={q} onChange={e => setQ(e.target.value)} style={{ maxWidth: 280, width: '100%', paddingLeft: 34 }} />
+          <div className="input-group" style={{ maxWidth: 280 }}>
+            <i className="bi bi-search input-icon"></i>
+            <input className="input" placeholder="Buscar peça…" value={q} onChange={e => setQ(e.target.value)} />
           </div>
           {canEdit && (
             <Button variant="primary" icon="bi-plus-lg" onClick={() => setEditing('new')}>Nova peça</Button>

@@ -812,6 +812,20 @@ function StoreProvider({ children }) {
     localStorage.setItem('cotou_state', JSON.stringify({ ...persist, _v: STATE_VERSION }));
   }, [state]);
 
+  // Restaura o token CSRF ao recarregar com sessão persistida do localStorage —
+  // sem isso toda mutação (POST/PUT/DELETE) falha com 403 pois _csrfToken só é
+  // setado na resposta do /auth/login, que não roda de novo num reload.
+  useEffect(() => {
+    if (!state.loggedIn) return;
+    fetch(`${PLATE_PROXY_URL}/auth/csrf`, { credentials: 'include' })
+      .then(r => {
+        if (r.status === 401) { dispatch({ type: 'logout' }); return null; }
+        return r.ok ? r.json() : null;
+      })
+      .then(data => { if (data?.csrfToken) _csrfToken = data.csrfToken; })
+      .catch(() => {});
+  }, [state.loggedIn]);
+
   // Sincroniza cotações do backend ao logar
   useEffect(() => {
     if (!state.loggedIn) return;
