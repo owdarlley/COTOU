@@ -20,7 +20,7 @@ services:
       - evolution_postgres_data:/var/lib/postgresql/data
 
   evolution-api:
-    image: atendai/evolution-api:latest
+    image: evoapicloud/evolution-api:v2.3.7
     container_name: cotou-evolution-api
     restart: unless-stopped
     ports:
