@@ -1,0 +1,42 @@
+# Evolution API (WhatsApp) para desenvolvimento local.
+# Sobe Postgres + Evolution API em containers isolados, sem afetar a VPS de produção.
+#
+# Uso:
+#   docker compose -f docker-compose.evolution.yml up -d
+#
+# Depois, no .env do COTOU:
+#   WHATSAPP_API_URL=http://localhost:8080
+#   WHATSAPP_API_KEY=cotou-local-dev-key
+services:
+  evolution-postgres:
+    image: postgres:15
+    container_name: cotou-evolution-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: evolution
+      POSTGRES_PASSWORD: evolution
+      POSTGRES_DB: evolution
+    volumes:
+      - evolution_postgres_data:/var/lib/postgresql/data
+
+  evolution-api:
+    image: atendai/evolution-api:latest
+    container_name: cotou-evolution-api
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8080:8080"
+    depends_on:
+      - evolution-postgres
+    environment:
+      AUTHENTICATION_API_KEY: cotou-local-dev-key
+      DATABASE_PROVIDER: postgresql
+      DATABASE_CONNECTION_URI: postgresql://evolution:evolution@evolution-postgres:5432/evolution?schema=evolution_api
+      CACHE_REDIS_ENABLED: "false"
+      CACHE_LOCAL_ENABLED: "true"
+      SERVER_URL: http://localhost:8080
+    volumes:
+      - evolution_instances:/evolution/instances
+
+volumes:
+  evolution_postgres_data:
+  evolution_instances:
