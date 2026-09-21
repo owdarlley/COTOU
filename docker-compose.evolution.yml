@@ -5,8 +5,11 @@
 #   docker compose -f docker-compose.evolution.yml up -d
 #
 # Depois, no .env do COTOU:
-#   WHATSAPP_API_URL=http://localhost:8080
+#   WHATSAPP_API_URL=http://localhost:8081
 #   WHATSAPP_API_KEY=cotou-local-dev-key
+#
+# Porta 8081 no host (não 8080) para evitar conflito com outros serviços
+# que já costumam ocupar a 8080 na máquina de desenvolvimento.
 services:
   evolution-postgres:
     image: postgres:15
@@ -24,7 +27,7 @@ services:
     container_name: cotou-evolution-api
     restart: unless-stopped
     ports:
-      - "127.0.0.1:8080:8080"
+      - "127.0.0.1:8081:8080"
     depends_on:
       - evolution-postgres
     environment:
@@ -33,7 +36,7 @@ services:
       DATABASE_CONNECTION_URI: postgresql://evolution:evolution@evolution-postgres:5432/evolution?schema=evolution_api
       CACHE_REDIS_ENABLED: "false"
       CACHE_LOCAL_ENABLED: "true"
-      SERVER_URL: http://localhost:8080
+      SERVER_URL: http://localhost:8081
     volumes:
       - evolution_instances:/evolution/instances
 
