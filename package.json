@@ -7,7 +7,7 @@
     "start": "node --no-warnings server.js",
     "dev": "nodemon --exec \"node --no-warnings\" server.js",
     "migrate": "node -e \"require('./src/config/database').runMigrations(); console.log('OK')\"",
-    "seed": "node scripts/seed-admin.js && node scripts/seed-quotations.js && node scripts/seed-parts.js",
+    "seed": "node scripts/seed-admin.js",
     "test": "node --no-warnings --test test/*.test.js"
   },
   "dependencies": {
