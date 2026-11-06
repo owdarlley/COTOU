@@ -21,22 +21,22 @@ function addTimeLabel(n) {
 }
 
 // GET /notificacoes — lista de notificações do usuário (query: page)
-router.get('/', (req, res) => {
+router.get('/', async (req, res) => {
   const { page = 1 } = req.query;
-  const result = Notification.findByUserId(req.session.userId, { page: parseInt(page) });
+  const result = await Notification.findByUserId(req.session.userId, { page: parseInt(page) });
   const notifications = result.items.map(addTimeLabel);
   res.json({ ok: true, ...result, items: notifications });
 });
 
 // POST /notificacoes/marcar-todas — marcar todas como lidas
-router.post('/marcar-todas', (req, res) => {
-  Notification.markAllRead(req.session.userId);
+router.post('/marcar-todas', async (req, res) => {
+  await Notification.markAllRead(req.session.userId);
   res.json({ ok: true });
 });
 
 // POST /notificacoes/todas-lidas — alias para compatibilidade
-router.post('/todas-lidas', (req, res) => {
-  Notification.markAllRead(req.session.userId);
+router.post('/todas-lidas', async (req, res) => {
+  await Notification.markAllRead(req.session.userId);
   res.json({ ok: true });
 });
 

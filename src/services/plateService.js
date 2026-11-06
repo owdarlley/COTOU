@@ -4,15 +4,20 @@ const logger = require('../config/logger');
 
 const CACHE_TTL_DAYS = 30;
 
-function getCached(plate) {
-  return db.prepare(
-    `SELECT data_json FROM plate_cache WHERE plate = ? AND cached_at > datetime('now', '-${CACHE_TTL_DAYS} days')`
-  ).get(plate);
+async function getCached(plate) {
+  try {
+    return await db.prepare(
+      `SELECT data_json FROM plate_cache WHERE plate = ? AND cached_at > now() - interval '${CACHE_TTL_DAYS} days'`
+    ).get(plate);
+  } catch (_) { return null; }
 }
 
-function setCache(plate, data) {
+async function setCache(plate, data) {
   try {
-    db.prepare('INSERT OR REPLACE INTO plate_cache (plate, data_json, cached_at) VALUES (?, ?, datetime(\'now\'))').run(plate, JSON.stringify(data));
+    await db.prepare(
+      'INSERT INTO plate_cache (plate, data_json, cached_at) VALUES (?, ?, now()) ' +
+      'ON CONFLICT (plate) DO UPDATE SET data_json = EXCLUDED.data_json, cached_at = now()'
+    ).run(plate, JSON.stringify(data));
   } catch (_) {}
 }
 
@@ -29,7 +34,7 @@ async function lookupPlate(plate) {
 
   if (!token) return null;
 
-  const cached = getCached(clean);
+  const cached = await getCached(clean);
   if (cached) {
     logger.info({ plate: clean }, '[PlateService] cache hit');
     return JSON.parse(cached.data_json);
@@ -50,7 +55,7 @@ async function lookupPlate(plate) {
     }
 
     const result = normalize(data);
-    if (result) setCache(clean, result);
+    if (result) await setCache(clean, result);
     return result;
   } catch (err) {
     if (err.response) {

@@ -21,7 +21,7 @@ router.post('/login', loginLimiter, async (req, res) => {
     return res.status(400).json({ ok: false, error: 'Preencha todos os campos.' });
   }
 
-  const user = User.findByEmail((email || '').trim().toLowerCase());
+  const user = await User.findByEmail((email || '').trim().toLowerCase());
   if (!user) {
     return res.status(401).json({ ok: false, error: 'E-mail ou senha inválidos.' });
   }
@@ -48,20 +48,20 @@ router.post('/login', loginLimiter, async (req, res) => {
 
 // GET /auth/users — lista pública de usuários ativos (para tela de login)
 // Retorna id, name e email para o acesso rápido da tela de login — role não exposta
-router.get('/users', (req, res) => {
-  const users = User.findAll()
+router.get('/users', async (req, res) => {
+  const users = (await User.findAll())
     .filter(u => u.active)
     .map(u => ({ id: u.id, name: u.name, email: u.email }));
   res.json({ ok: true, users });
 });
 
 // POST /auth/logout
-router.post('/logout', (req, res) => {
+router.post('/logout', async (req, res) => {
   req.session.destroy(() => res.json({ ok: true }));
 });
 
 // GET /auth/csrf — retorna (ou gera) token CSRF da sessão atual
-router.get('/csrf', requireAuth, (req, res) => {
+router.get('/csrf', requireAuth, async (req, res) => {
   if (!req.session.csrfToken) {
     req.session.csrfToken = crypto.randomBytes(32).toString('hex');
   }
@@ -69,8 +69,8 @@ router.get('/csrf', requireAuth, (req, res) => {
 });
 
 // GET /auth/me
-router.get('/me', requireAuth, (req, res) => {
-  const user = User.findById(req.session.userId);
+router.get('/me', requireAuth, async (req, res) => {
+  const user = await User.findById(req.session.userId);
   if (!user) return res.status(401).json({ ok: false, error: 'Usuário não encontrado.' });
   res.json({ user: { id: user.id, name: user.name, role: user.role, email: user.email } });
 });

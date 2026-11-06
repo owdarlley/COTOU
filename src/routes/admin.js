@@ -16,8 +16,8 @@ function validatePassword(password) {
 }
 
 // GET /admin/usuarios — lista usuários
-router.get('/usuarios', (req, res) => {
-  const users = User.findAll();
+router.get('/usuarios', async (req, res) => {
+  const users = await User.findAll();
   res.json({ ok: true, users });
 });
 
@@ -37,7 +37,7 @@ router.post('/usuarios', async (req, res) => {
     const instanceName = `cotou-user-${user.id}`;
     try {
       await createInstance(instanceName);
-      User.setWhatsappInstanceName(user.id, instanceName);
+      await User.setWhatsappInstanceName(user.id, instanceName);
     } catch (waErr) {
       console.warn(`[WhatsApp] Falha ao criar instância para usuário ${user.id}:`, waErr.message);
     }
@@ -48,8 +48,8 @@ router.post('/usuarios', async (req, res) => {
 });
 
 // GET /admin/usuarios/:id — detalhe do usuário
-router.get('/usuarios/:id', (req, res) => {
-  const user = User.findById(parseInt(req.params.id));
+router.get('/usuarios/:id', async (req, res) => {
+  const user = await User.findById(parseInt(req.params.id));
   if (!user) return res.status(404).json({ ok: false, error: 'Usuário não encontrado.' });
   res.json({ ok: true, user });
 });
@@ -58,9 +58,9 @@ router.get('/usuarios/:id', (req, res) => {
 router.put('/usuarios/:id', async (req, res) => {
   const id = parseInt(req.params.id);
   const { name, email, role, phone_whatsapp, active, new_password } = req.body;
-  const user = User.findById(id);
+  const user = await User.findById(id);
   if (!user) return res.status(404).json({ ok: false, error: 'Usuário não encontrado.' });
-  User.update(id, { name, email, role, phone_whatsapp, active: active !== undefined ? (active ? 1 : 0) : user.active });
+  await User.update(id, { name, email, role, phone_whatsapp, active: active !== undefined ? (active ? 1 : 0) : user.active });
   if (new_password) {
     const pwErr = validatePassword(new_password);
     if (pwErr) return res.status(400).json({ ok: false, error: pwErr });
@@ -70,18 +70,18 @@ router.put('/usuarios/:id', async (req, res) => {
 });
 
 // POST /admin/usuarios/:id/desativar — desativar usuário
-router.post('/usuarios/:id/desativar', (req, res) => {
+router.post('/usuarios/:id/desativar', async (req, res) => {
   const id = parseInt(req.params.id);
   if (id === req.session.userId) {
     return res.status(400).json({ ok: false, error: 'Você não pode desativar seu próprio usuário.' });
   }
-  User.deactivate(id);
+  await User.deactivate(id);
   res.json({ ok: true });
 });
 
 // POST /admin/usuarios/:id/ativar — reativar usuário
-router.post('/usuarios/:id/ativar', (req, res) => {
-  User.update(parseInt(req.params.id), { active: 1 });
+router.post('/usuarios/:id/ativar', async (req, res) => {
+  await User.update(parseInt(req.params.id), { active: 1 });
   res.json({ ok: true });
 });
 
@@ -95,23 +95,23 @@ router.post('/usuarios/:id/senha', async (req, res) => {
 });
 
 // GET /admin/audit-log — log global de auditoria (admin only)
-router.get('/audit-log', (req, res) => {
+router.get('/audit-log', async (req, res) => {
   const limit = Math.min(parseInt(req.query.limit) || 100, 500);
   const offset = parseInt(req.query.offset) || 0;
-  const { rows, total } = AuditLog.findAll({ limit, offset });
+  const { rows, total } = await AuditLog.findAll({ limit, offset });
   res.json({ ok: true, logs: rows, total, limit, offset });
 });
 
 // GET /admin/settings
-router.get('/settings', (req, res) => {
-  res.json({ ok: true, whatsapp_template: Settings.get('whatsapp_template', '') });
+router.get('/settings', async (req, res) => {
+  res.json({ ok: true, whatsapp_template: await Settings.get('whatsapp_template', '') });
 });
 
 // PUT /admin/settings
-router.put('/settings', (req, res) => {
+router.put('/settings', async (req, res) => {
   const { whatsapp_template } = req.body;
   if (typeof whatsapp_template !== 'string') return res.status(400).json({ ok: false, error: 'Valor inválido.' });
-  Settings.set('whatsapp_template', whatsapp_template);
+  await Settings.set('whatsapp_template', whatsapp_template);
   res.json({ ok: true });
 });
 

@@ -6,16 +6,16 @@ const QuotationItem = require('../models/QuotationItem');
 const { notifyUser, notifyAllByRole } = require('../services/notificationService');
 
 // Serve a página pública de aprovação (sem auth)
-router.get('/aprovar/:token', (req, res) => {
+router.get('/aprovar/:token', async (req, res) => {
   res.sendFile(path.join(__dirname, '../../public/aprovar.html'));
 });
 
 // Dados da cotação pelo token (sem auth)
-router.get('/api/aprovar/:token', (req, res) => {
-  const q = Quotation.getByApprovalToken(req.params.token);
+router.get('/api/aprovar/:token', async (req, res) => {
+  const q = await Quotation.getByApprovalToken(req.params.token);
   if (!q) return res.status(404).json({ ok: false, expired: true, message: 'Link inválido ou expirado.' });
   if (q.customer_approved !== null) return res.status(410).json({ ok: false, used: true, approved: q.customer_approved === 1, message: 'Este link já foi utilizado.' });
-  const items = QuotationItem.findByQuotationId(q.id);
+  const items = await QuotationItem.findByQuotationId(q.id);
   res.json({ ok: true, quotation: q, items });
 });
 
@@ -25,7 +25,7 @@ router.post('/api/aprovar/:token', express.json(), async (req, res) => {
   if (!['approve', 'reject'].includes(action)) return res.status(400).json({ ok: false, message: 'Ação inválida.' });
 
   const ip = req.ip || req.connection?.remoteAddress;
-  const q = Quotation.useApprovalToken(req.params.token, action === 'approve', ip);
+  const q = await Quotation.useApprovalToken(req.params.token, action === 'approve', ip);
   if (!q) return res.status(410).json({ ok: false, message: 'Link inválido ou expirado.' });
 
   const label = action === 'approve' ? 'aprovou' : 'recusou';
