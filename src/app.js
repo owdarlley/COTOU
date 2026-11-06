@@ -1,14 +1,13 @@
 require('dotenv').config();
 const express = require('express');
+require('express-async-errors');
 const session = require('express-session');
-const FileStore = require('session-file-store')(session);
+const PgSessionStore = require('./config/pgSessionStore');
 const cors = require('cors');
 const helmet = require('helmet');
 const compression = require('compression');
 const path = require('path');
-const fs = require('fs');
 
-const { runMigrations } = require('./config/database');
 const logger = require('./config/logger');
 const pinoHttp = require('pino-http');
 const { requireAuth } = require('./middleware/auth');
@@ -24,8 +23,6 @@ const adminRoutes = require('./routes/admin');
 const apiRoutes = require('./routes/api');
 const aprovacaoRoutes = require('./routes/aprovacao');
 const webhookRoutes = require('./routes/webhook');
-
-runMigrations();
 
 const app = express();
 
@@ -48,6 +45,7 @@ app.use(compression());
 const allowedOrigins = [
   'https://owdarlley.github.io',
   'https://cotou.darlley.dev.br',
+  'https://cotou.vercel.app',
   process.env.FRONTEND_URL,
   'http://localhost:5173',
   'http://localhost:3000',
@@ -67,16 +65,13 @@ app.use(express.urlencoded({ extended: true, limit: '2mb' }));
 app.use('/uploads', express.static(path.join(__dirname, '../public/uploads')));
 
 // Força entrega sem cache do index.html — redireciona com ?v=timestamp para quebrar cache do browser e CDN
-app.get(['/prototype', '/prototype/index.html'], (req, res) => {
+app.get(['/prototype', '/prototype/index.html'], async (req, res) => {
   if (!req.query.v) return res.redirect(302, `/prototype/index.html?v=${Date.now()}`);
   res.set('Cache-Control', 'no-store, no-cache, must-revalidate');
   res.set('Pragma', 'no-cache');
   res.sendFile(require('path').join(__dirname, '../public/prototype/index.html'));
 });
 app.use('/prototype', express.static(path.join(__dirname, '../public/prototype')));
-
-const dataDir = path.resolve('./data');
-if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
 
 const sessionSecret = process.env.SESSION_SECRET;
 if (!sessionSecret) {
@@ -86,8 +81,11 @@ if (!sessionSecret) {
   logger.warn('[AVISO] SESSION_SECRET não definida — usando valor temporário. Configure o .env antes de ir para produção.');
 }
 
+// Front (github.io) e API (cotou.darlley.dev.br) são sites diferentes: precisa de SameSite=None + Secure.
+const cookieSecure = process.env.COOKIE_SECURE === 'true' || !!process.env.VERCEL;
+
 const sessionMiddleware = session({
-  store: new FileStore({ path: './data/sessions', ttl: 28800, retries: 0, logFn: () => {} }),
+  store: new PgSessionStore({ ttlSeconds: 28800 }),
   secret: sessionSecret || 'cotou-dev-only',
   resave: false,
   saveUninitialized: false,
@@ -95,14 +93,14 @@ const sessionMiddleware = session({
     maxAge: 1000 * 60 * 60 * 8,
     httpOnly: true,
     // secure/sameSite:none only when actually behind HTTPS (set COOKIE_SECURE=true in .env after SSL is configured)
-    secure: process.env.COOKIE_SECURE === 'true',
-    sameSite: process.env.COOKIE_SECURE === 'true' ? 'none' : 'lax'
+    secure: cookieSecure,
+    sameSite: cookieSecure ? 'none' : 'lax'
   }
 });
 app.use(sessionMiddleware);
 
 // CSRF — valida X-CSRF-Token em todas as mutations autenticadas
-app.use((req, res, next) => {
+app.use(async (req, res, next) => {
   if (['GET', 'HEAD', 'OPTIONS'].includes(req.method)) return next();
   const exempt = ['/auth/login', '/auth/logout', '/api/whatsapp/webhook'];
   if (exempt.some(p => req.path === p)) return next();
@@ -115,16 +113,16 @@ app.use((req, res, next) => {
 });
 
 // Health check
-app.get('/health', (req, res) => res.json({ ok: true, uptime: process.uptime() }));
+app.get('/health', async (req, res) => res.json({ ok: true, uptime: process.uptime() }));
 
 // Dashboard summary
-app.get('/', requireAuth, (req, res) => {
-  const counts = Quotation.countByStatus(req.session.userId, req.session.userRole);
+app.get('/', requireAuth, async (req, res) => {
+  const counts = await Quotation.countByStatus(req.session.userId, req.session.userRole);
   const statusMap = {};
   counts.forEach(r => { statusMap[r.status] = r.count; });
-  const recent = Quotation.findAll({ userId: req.session.userId, role: req.session.userRole, page: 1, limit: 5 });
-  const unreadCount = Notification.countUnread(req.session.userId);
-  const user = User.findById(req.session.userId);
+  const recent = await Quotation.findAll({ userId: req.session.userId, role: req.session.userRole, page: 1, limit: 5 });
+  const unreadCount = await Notification.countUnread(req.session.userId);
+  const user = await User.findById(req.session.userId);
   res.json({
     ok: true,
     user: { id: user.id, name: user.name, role: user.role, email: user.email },
@@ -145,7 +143,7 @@ app.use('/notificacoes', notificationsRoutes);
 app.use('/admin', adminRoutes);
 app.use('/api', apiRoutes);
 
-app.use((req, res) => res.status(404).json({ ok: false, error: 'Rota não encontrada' }));
+app.use(async (req, res) => res.status(404).json({ ok: false, error: 'Rota não encontrada' }));
 app.use((err, req, res, next) => {
   logger.error({ err }, 'Erro interno do servidor');
   res.status(500).json({ ok: false, error: 'Erro interno do servidor' });

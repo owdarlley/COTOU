@@ -6,20 +6,20 @@ const PartsCatalog = require('../models/PartsCatalog');
 router.use(requireAuth);
 
 // GET /pecas — lista peças (query: q, page)
-router.get('/', (req, res) => {
+router.get('/', async (req, res) => {
   const { q = '', page = 1 } = req.query;
-  const result = PartsCatalog.findAll({ q, page: parseInt(page) });
+  const result = await PartsCatalog.findAll({ q, page: parseInt(page) });
   res.json({ ok: true, ...result, q });
 });
 
 // POST /pecas — criar peça (admin/compras)
-router.post('/', requireRole('admin', 'compras'), (req, res) => {
+router.post('/', requireRole('admin', 'compras'), async (req, res) => {
   const { code, name, description, default_price } = req.body;
   if (!code || !name) {
     return res.status(400).json({ ok: false, error: 'Código e nome são obrigatórios.' });
   }
   try {
-    const id = PartsCatalog.create({
+    const id = await PartsCatalog.create({
       code: code.trim().toUpperCase(),
       name: name.trim(),
       description,
@@ -32,9 +32,9 @@ router.post('/', requireRole('admin', 'compras'), (req, res) => {
 });
 
 // PUT /pecas/:id — atualizar peça
-router.put('/:id', requireRole('admin', 'compras'), (req, res) => {
+router.put('/:id', requireRole('admin', 'compras'), async (req, res) => {
   const { code, name, description, default_price } = req.body;
-  PartsCatalog.update(parseInt(req.params.id), {
+  await PartsCatalog.update(parseInt(req.params.id), {
     code: code ? code.trim().toUpperCase() : undefined,
     name: name ? name.trim() : undefined,
     description,
@@ -44,15 +44,15 @@ router.put('/:id', requireRole('admin', 'compras'), (req, res) => {
 });
 
 // DELETE /pecas/:id — remover peça
-router.delete('/:id', requireRole('admin', 'compras'), (req, res) => {
-  PartsCatalog.delete(parseInt(req.params.id));
+router.delete('/:id', requireRole('admin', 'compras'), async (req, res) => {
+  await PartsCatalog.delete(parseInt(req.params.id));
   res.json({ ok: true });
 });
 
 // Manter compatibilidade com rotas POST legacy
-router.post('/:id/editar', requireRole('admin', 'compras'), (req, res) => {
+router.post('/:id/editar', requireRole('admin', 'compras'), async (req, res) => {
   const { code, name, description, default_price } = req.body;
-  PartsCatalog.update(parseInt(req.params.id), {
+  await PartsCatalog.update(parseInt(req.params.id), {
     code: code ? code.trim().toUpperCase() : undefined,
     name: name ? name.trim() : undefined,
     description,
@@ -61,8 +61,8 @@ router.post('/:id/editar', requireRole('admin', 'compras'), (req, res) => {
   res.json({ ok: true });
 });
 
-router.post('/:id/excluir', requireRole('admin', 'compras'), (req, res) => {
-  PartsCatalog.delete(parseInt(req.params.id));
+router.post('/:id/excluir', requireRole('admin', 'compras'), async (req, res) => {
+  await PartsCatalog.delete(parseInt(req.params.id));
   res.json({ ok: true });
 });
 

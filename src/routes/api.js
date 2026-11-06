@@ -49,31 +49,31 @@ router.get('/saldo', requireRole('admin'), async (req, res) => {
 });
 
 // Autocomplete de peças
-router.get('/pecas', (req, res) => {
+router.get('/pecas', async (req, res) => {
   const q = req.query.q || '';
   if (q.length < 1) return res.json([]);
-  res.json(PartsCatalog.search(q));
+  res.json(await PartsCatalog.search(q));
 });
 
 // Notificações
-router.get('/notificacoes', (req, res) => {
-  const { items } = Notification.findByUserId(req.session.userId, { limit: 10 });
+router.get('/notificacoes', async (req, res) => {
+  const { items } = await Notification.findByUserId(req.session.userId, { limit: 10 });
   res.json(items);
 });
 
-router.post('/notificacoes/:id/lida', (req, res) => {
-  Notification.markRead(parseInt(req.params.id), req.session.userId);
-  const unreadCount = Notification.countUnread(req.session.userId);
+router.post('/notificacoes/:id/lida', async (req, res) => {
+  await Notification.markRead(parseInt(req.params.id), req.session.userId);
+  const unreadCount = await Notification.countUnread(req.session.userId);
   res.json({ ok: true, unreadCount });
 });
 
-router.post('/notificacoes/todas-lidas', (req, res) => {
-  Notification.markAllRead(req.session.userId);
+router.post('/notificacoes/todas-lidas', async (req, res) => {
+  await Notification.markAllRead(req.session.userId);
   res.json({ ok: true });
 });
 
-router.delete('/notificacoes', (req, res) => {
-  Notification.deleteAll(req.session.userId);
+router.delete('/notificacoes', async (req, res) => {
+  await Notification.deleteAll(req.session.userId);
   res.json({ ok: true });
 });
 
@@ -91,7 +91,7 @@ router.post('/whatsapp/instancia/criar', async (req, res) => {
   try {
     await createInstance(instanceName);
     // Vincula o nome mas NÃO marca como conectado — só o /status confirma conexão real
-    User.setWhatsappInstanceName(targetId, instanceName);
+    await User.setWhatsappInstanceName(targetId, instanceName);
     res.json({ ok: true, instanceName });
   } catch (err) {
     res.status(502).json({ ok: false, error: err.message });
@@ -102,7 +102,7 @@ router.get('/whatsapp/instancia/qrcode', async (req, res) => {
   delete req.headers['if-none-match'];
   res.set('Cache-Control', 'no-store');
   const targetId = resolveTargetUserId(req);
-  const user = User.findById(targetId);
+  const user = await User.findById(targetId);
   if (!user?.whatsapp_instance_name) return res.status(400).json({ ok: false, message: 'Instância não criada. Chame /criar primeiro.' });
   try {
     const data = await getQRCode(user.whatsapp_instance_name);
@@ -120,20 +120,20 @@ router.get('/whatsapp/instancia/status', async (req, res) => {
   delete req.headers['if-none-match'];
   res.set('Cache-Control', 'no-store');
   const targetId = resolveTargetUserId(req);
-  const user = User.findById(targetId);
+  const user = await User.findById(targetId);
   if (!user?.whatsapp_instance_name) return res.json({ ok: true, connected: false });
   try {
     const status = await getStatus(user.whatsapp_instance_name);
     // Sincroniza DB com estado real da Evolution API
     if (status.connected && !user.whatsapp_connected_at) {
-      User.markWhatsappConnected(targetId);
+      await User.markWhatsappConnected(targetId);
       // Configura webhook automaticamente na primeira conexão
       const webhookUrl = process.env.APP_URL ? `${process.env.APP_URL}/api/whatsapp/webhook` : null;
       if (webhookUrl) setWebhook(user.whatsapp_instance_name, webhookUrl).catch(e => {
         console.error('[WhatsApp] Falha ao configurar webhook:', e.message);
       });
     } else if (!status.connected && user.whatsapp_connected_at) {
-      User.clearWhatsappConnectedAt(targetId);
+      await User.clearWhatsappConnectedAt(targetId);
     }
     res.json({ ok: true, ...status, instanceName: user.whatsapp_instance_name });
   } catch (err) {
@@ -143,13 +143,13 @@ router.get('/whatsapp/instancia/status', async (req, res) => {
 
 router.delete('/whatsapp/instancia/desconectar', async (req, res) => {
   const targetId = resolveTargetUserId(req);
-  const user = User.findById(targetId);
+  const user = await User.findById(targetId);
   if (user?.whatsapp_instance_name) {
     // Só faz logout — mantém a instância para que o QR fique disponível imediatamente
     try { await logoutInstance(user.whatsapp_instance_name); } catch (e) {
       console.warn('[WhatsApp] Falha ao desconectar instância:', e.message);
     }
-    User.clearWhatsappConnectedAt(targetId);
+    await User.clearWhatsappConnectedAt(targetId);
   }
   res.json({ ok: true });
 });
@@ -160,7 +160,7 @@ router.post('/whatsapp/consultar-fornecedor', async (req, res) => {
   if (!supplierPhone || !message) {
     return res.status(400).json({ ok: false, message: 'supplierPhone e message são obrigatórios.' });
   }
-  const user = User.findById(req.session.userId);
+  const user = await User.findById(req.session.userId);
   if (!user?.whatsapp_instance_name) {
     return res.status(400).json({ ok: false, message: 'Instância WhatsApp não configurada. Conecte seu WhatsApp primeiro.' });
   }
@@ -182,13 +182,13 @@ router.post('/whatsapp/consultar-fornecedor', async (req, res) => {
 
 // Envio WhatsApp
 router.post('/whatsapp/enviar/:id', whatsappSendLimiter, async (req, res) => {
-  const quotation = Quotation.findById(parseInt(req.params.id));
+  const quotation = await Quotation.findById(parseInt(req.params.id));
   if (!quotation) return res.status(404).json({ ok: false, error: 'Cotação não encontrada.' });
   if (quotation.status !== 'cotado' && quotation.status !== 'peca_chegou') {
     return res.status(400).json({ ok: false, error: 'Cotação ainda não foi respondida pelo setor de compras.' });
   }
 
-  const user = User.findById(req.session.userId);
+  const user = await User.findById(req.session.userId);
   const instanceName = user?.whatsapp_instance_name || null;
 
   if (!instanceName) {
@@ -205,11 +205,11 @@ router.post('/whatsapp/enviar/:id', whatsappSendLimiter, async (req, res) => {
     return res.status(400).json({ ok: false, error: 'Não foi possível verificar a conexão do WhatsApp. Verifique sua instância nas configurações.' });
   }
 
-  const items = QuotationItem.findByQuotationId(quotation.id);
+  const items = await QuotationItem.findByQuotationId(quotation.id);
   try {
-    const approvalToken = Quotation.generateApprovalToken(quotation.id);
+    const approvalToken = await Quotation.generateApprovalToken(quotation.id);
     await sendQuoteMessage(quotation.customer_phone, quotation, items, instanceName, approvalToken);
-    Quotation.markWhatsappSent(quotation.id, req.session.userId);
+    await Quotation.markWhatsappSent(quotation.id, req.session.userId);
     res.json({ ok: true, message: 'Mensagem enviada com sucesso!', approvalToken });
   } catch (err) {
     const isConnectionClosed = JSON.stringify(err.evolutionBody || '').includes('Connection Closed');
@@ -221,28 +221,28 @@ router.post('/whatsapp/enviar/:id', whatsappSendLimiter, async (req, res) => {
 });
 
 // Clientes
-router.get('/customers',        (req, res) => res.json({ ok: true, data: Customer.findAll({}) }));
-router.get('/customers/search', (req, res) => res.json(Customer.search(req.query.q || '')));
-router.put('/customers/:id',    requireRole('admin', 'vendas'), (req, res) => {
+router.get('/customers',        async (req, res) => res.json({ ok: true, data: await Customer.findAll({}) }));
+router.get('/customers/search', async (req, res) => res.json(await Customer.search(req.query.q || '')));
+router.put('/customers/:id',    requireRole('admin', 'vendas'), async (req, res) => {
   if (!req.body?.name) return res.status(400).json({ ok: false, error: 'Nome é obrigatório.' });
-  Customer.update(parseInt(req.params.id, 10), req.body);
+  await Customer.update(parseInt(req.params.id, 10), req.body);
   res.json({ ok: true });
 });
 
 // Fornecedores
-router.get('/suppliers',        (req, res) => res.json({ ok: true, data: Supplier.findAll() }));
-router.post('/suppliers',       requireRole('admin', 'compras'), (req, res) => {
+router.get('/suppliers',        async (req, res) => res.json({ ok: true, data: await Supplier.findAll() }));
+router.post('/suppliers',       requireRole('admin', 'compras'), async (req, res) => {
   if (!req.body?.name) return res.status(400).json({ ok: false, error: 'Nome é obrigatório.' });
-  const r = Supplier.create(req.body);
+  const r = await Supplier.create(req.body);
   res.json({ ok: true, id: r.lastInsertRowid });
 });
-router.put('/suppliers/:id',    requireRole('admin', 'compras'), (req, res) => {
+router.put('/suppliers/:id',    requireRole('admin', 'compras'), async (req, res) => {
   if (!req.body?.name) return res.status(400).json({ ok: false, error: 'Nome é obrigatório.' });
-  Supplier.update(parseInt(req.params.id, 10), req.body);
+  await Supplier.update(parseInt(req.params.id, 10), req.body);
   res.json({ ok: true });
 });
-router.delete('/suppliers/:id', requireRole('admin', 'compras'), (req, res) => {
-  Supplier.remove(parseInt(req.params.id, 10));
+router.delete('/suppliers/:id', requireRole('admin', 'compras'), async (req, res) => {
+  await Supplier.remove(parseInt(req.params.id, 10));
   res.json({ ok: true });
 });
 

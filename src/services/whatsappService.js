@@ -37,7 +37,7 @@ function buildShortMessage(quotation, items) {
   return `Olá, ${quotation.customer_name}! 👋\n\nSua cotação *${quotation.quote_number}* está pronta!\n\n🚗 *${vehicle}* — Placa ${quotation.license_plate}\n\n📦 *Peças:*\n${itens}${prazoLinha}\n\n💰 *Total: R$ ${grandTotal.toFixed(2)}*\n\nPara confirmar ou recusar, responda com:\n*1* — ✅ Confirmar pedido\n*2* — ❌ Não tenho interesse`;
 }
 
-function buildMessage(quotation, items, approvalToken) {
+async function buildMessage(quotation, items, approvalToken) {
   const laborTotal = items.reduce((s, i) => s + (i.labor_cost_compras || i.labor_cost_vendas || 0), 0);
   const partsTotal = items.reduce((s, i) => s + (i.total_price || 0), 0);
   const grandTotal = partsTotal + laborTotal;
@@ -58,7 +58,7 @@ function buildMessage(quotation, items, approvalToken) {
   const vehicle = `${quotation.make || ''} ${quotation.model || ''} ${quotation.year_model || ''}`.trim();
   const laborLine = laborTotal > 0 ? `🔧 Mão de obra: R$ ${laborTotal.toFixed(2)}\n` : '';
 
-  const template = Settings.get('whatsapp_template') || DEFAULT_TEMPLATE;
+  const template = (await Settings.get('whatsapp_template')) || DEFAULT_TEMPLATE;
   let msg = template
     .replace(/\[NOME DO CLIENTE\]/g, quotation.customer_name || '')
     .replace(/\[NÚMERO DA COTAÇÃO\]/g, quotation.quote_number || '')
@@ -106,7 +106,7 @@ async function sendQuoteMessage(customerPhone, quotation, items, instanceName, a
   if (!instance) throw new Error('Instância WhatsApp não definida. Conecte seu WhatsApp nas configurações.');
 
   const number = formatPhoneForWhatsApp(customerPhone);
-  const text = buildMessage(quotation, items, approvalToken);
+  const text = await buildMessage(quotation, items, approvalToken);
 
   try {
     const { data } = await axios.post(

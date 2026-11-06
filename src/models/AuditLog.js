@@ -2,9 +2,9 @@ const { db } = require('../config/database');
 const logger = require('../config/logger');
 
 class AuditLog {
-  static insert({ userId, quotationId, action, oldValue, newValue, ip }) {
+  static async insert({ userId, quotationId, action, oldValue, newValue, ip }) {
     try {
-      db.prepare(
+      await db.prepare(
         'INSERT INTO audit_log (user_id, quotation_id, action, old_value_json, new_value_json, ip_address) VALUES (?,?,?,?,?,?)'
       ).run(
         userId || null,
@@ -19,8 +19,8 @@ class AuditLog {
     }
   }
 
-  static findByQuotationId(quotationId) {
-    return db.prepare(`
+  static async findByQuotationId(quotationId) {
+    return await db.prepare(`
       SELECT a.*, u.name AS user_name
       FROM audit_log a
       LEFT JOIN users u ON u.id = a.user_id
@@ -29,8 +29,8 @@ class AuditLog {
     `).all(quotationId);
   }
 
-  static findAll({ limit = 50, offset = 0 } = {}) {
-    const rows = db.prepare(`
+  static async findAll({ limit = 50, offset = 0 } = {}) {
+    const rows = await db.prepare(`
       SELECT a.*, u.name AS user_name, q.quote_number
       FROM audit_log a
       LEFT JOIN users u ON u.id = a.user_id
@@ -38,7 +38,7 @@ class AuditLog {
       ORDER BY a.created_at DESC
       LIMIT ? OFFSET ?
     `).all(limit, offset);
-    const total = db.prepare('SELECT COUNT(*) as count FROM audit_log').get().count;
+    const total = (await db.prepare('SELECT COUNT(*) as count FROM audit_log').get()).count;
     return { rows, total };
   }
 }

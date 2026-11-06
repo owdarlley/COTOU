@@ -6,7 +6,7 @@ function requireAuth(req, res, next) {
 }
 
 function requireRole(...roles) {
-  return (req, res, next) => {
+  return async (req, res, next) => {
     if (!roles.includes(req.session.userRole)) {
       return res.status(403).json({ ok: false, error: 'Sem permissão' });
     }

@@ -1,8 +1,8 @@
 const Notification = require('../models/Notification');
 
 async function notifyUser(userId, { quotationId, quotationItemId, type, title, message }) {
-  const notification = Notification.create({ userId, quotationId, quotationItemId, type, title, message });
-  const unreadCount = Notification.countUnread(userId);
+  const notification = await Notification.create({ userId, quotationId, quotationItemId, type, title, message });
+  const unreadCount = await Notification.countUnread(userId);
 
   try {
     const { getIO } = require('../config/socket');
@@ -24,7 +24,7 @@ async function notifyUser(userId, { quotationId, quotationItemId, type, title, m
 
 async function notifyAllByRole(role, payload) {
   const User = require('../models/User');
-  const users = User.findAllByRole(role);
+  const users = await User.findAllByRole(role);
   for (const u of users) {
     await notifyUser(u.id, payload);
   }

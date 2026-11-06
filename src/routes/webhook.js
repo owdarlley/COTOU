@@ -70,16 +70,16 @@ router.post('/whatsapp/webhook', express.json({ limit: '1mb' }), async (req, res
     if (!phone) return;
 
     logger.info({ phone, action }, '[WH] processando ação do cliente');
-    const quotation = Quotation.findPendingByPhone(phone, instance);
+    const quotation = await Quotation.findPendingByPhone(phone, instance);
     if (!quotation) {
       logger.info({ phone, instance }, '[WH] nenhuma cotação pendente encontrada');
       return;
     }
     logger.info({ quoteNumber: quotation.quote_number }, '[WH] cotação encontrada');
 
-    Quotation.setCustomerApproval(quotation.id, action === 'approve', 'whatsapp');
+    await Quotation.setCustomerApproval(quotation.id, action === 'approve', 'whatsapp');
 
-    AuditLog.insert({
+    await AuditLog.insert({
       quotationId: quotation.id,
       action: action === 'approve' ? 'customer_approved_whatsapp' : 'customer_rejected_whatsapp',
       newValue: { phone },
@@ -107,9 +107,9 @@ router.post('/whatsapp/webhook', express.json({ limit: '1mb' }), async (req, res
 
     const User = require('../models/User');
     if (action === 'approve') {
-      for (const u of User.findAllByRole('compras')) await notifyOnce(u.id);
+      for (const u of await User.findAllByRole('compras')) await notifyOnce(u.id);
     }
-    for (const u of User.findAllByRole('admin')) await notifyOnce(u.id);
+    for (const u of await User.findAllByRole('admin')) await notifyOnce(u.id);
 
     // Emite apenas para quem tem acesso à cotação
     try {

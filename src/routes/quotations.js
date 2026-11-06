@@ -40,9 +40,9 @@ function detectImageType(buffer) {
 }
 
 // GET /cotacoes — lista de cotações (query: status, page)
-router.get('/', (req, res) => {
+router.get('/', async (req, res) => {
   const { status = 'todos', page = 1, limit = 15 } = req.query;
-  const result = Quotation.findAll({
+  const result = await Quotation.findAll({
     status,
     userId: req.session.userId,
     role: req.session.userRole,
@@ -83,7 +83,6 @@ router.post('/', requireRole('vendas', 'admin'), createQuotationLimiter, async (
 
   // Valida e processa foto antes de abrir a transação
   let photoPath = null;
-  let photoFilePath = null;
   const photoBase64 = req.body.photo_base64;
   if (photoBase64 && photoBase64.startsWith('data:image')) {
     const matches = photoBase64.match(/^data:image\/(\w+);base64,(.+)$/);
@@ -105,29 +104,18 @@ router.post('/', requireRole('vendas', 'admin'), createQuotationLimiter, async (
       if (!ALLOWED_IMAGE_TYPES.includes(declaredExt)) {
         return res.status(400).json({ ok: false, error: 'Extensão de imagem não permitida.' });
       }
-      const quoteNumber = generateQuoteNumber();
-      const uploadDir = path.join(__dirname, '../../public/uploads/quotations');
-      try {
-        if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
-        const filename = `${quoteNumber}.${detectedType}`;
-        photoFilePath = path.join(uploadDir, filename);
-        fs.writeFileSync(photoFilePath, buffer);
-        photoPath = `/uploads/quotations/${filename}`;
-      } catch (ioErr) {
-        console.error('[Quotation] Falha ao salvar foto:', ioErr.message);
-        return res.status(500).json({ ok: false, error: 'Falha ao processar imagem. Tente novamente.' });
-      }
+      // Vercel não tem disco persistente: guarda a foto como data URL no banco
+      photoPath = `data:image/${detectedType};base64,${buffer.toString('base64')}`;
     }
   }
 
-  const quoteNumber = generateQuoteNumber();
+  const quoteNumber = await generateQuoteNumber();
   let quotationId;
 
   try {
-    db.exec('BEGIN IMMEDIATE');
-
-    const customer = Customer.findOrCreate({ name: customer_name.trim(), phone: customer_phone.trim() });
-    const vehicleId = Vehicle.upsert({
+    await db.transaction(async () => {
+    const customer = await Customer.findOrCreate({ name: customer_name.trim(), phone: customer_phone.trim() });
+    const vehicleId = await Vehicle.upsert({
       license_plate: vehicle_plate,
       make: '', model: vehicle_model || '',
       year_model: parseInt(vehicle_year_model) || null,
@@ -136,7 +124,7 @@ router.post('/', requireRole('vendas', 'admin'), createQuotationLimiter, async (
       plate_data_json: null
     });
 
-    quotationId = Quotation.create({
+    quotationId = await Quotation.create({
       quoteNumber,
       customerId: customer.id,
       vehicleId,
@@ -148,9 +136,9 @@ router.post('/', requireRole('vendas', 'admin'), createQuotationLimiter, async (
     for (let i = 0; i < itemNames.length; i++) {
       if (!itemNames[i] || !itemNames[i].trim()) continue;
       const code = itemCodes[i] ? itemCodes[i].trim() : null;
-      const catalog = code ? PartsCatalog.findByCode(code) : null;
+      const catalog = code ? await PartsCatalog.findByCode(code) : null;
       const qty = parseInt(itemQtds[i]);
-      QuotationItem.create({
+      await QuotationItem.create({
         quotationId,
         partName: itemNames[i].trim(),
         partCode: code,
@@ -160,17 +148,13 @@ router.post('/', requireRole('vendas', 'admin'), createQuotationLimiter, async (
       });
     }
 
-    db.exec('COMMIT');
+    });
   } catch (err) {
-    db.exec('ROLLBACK');
-    if (photoFilePath) {
-      try { fs.unlinkSync(photoFilePath); } catch {}
-    }
     console.error('[Quotation] Falha ao criar cotação:', err.message);
     return res.status(500).json({ ok: false, error: 'Erro ao salvar cotação. Tente novamente.' });
   }
 
-  AuditLog.insert({
+  await AuditLog.insert({
     userId: req.session.userId,
     quotationId,
     action: 'created',
@@ -179,7 +163,7 @@ router.post('/', requireRole('vendas', 'admin'), createQuotationLimiter, async (
   });
 
   try {
-    const quotation = Quotation.findById(quotationId);
+    const quotation = await Quotation.findById(quotationId);
     const notifNova = {
       quotationId,
       type: 'nova_cotacao',
@@ -196,8 +180,8 @@ router.post('/', requireRole('vendas', 'admin'), createQuotationLimiter, async (
 });
 
 // GET /cotacoes/:id — detalhe da cotação
-router.get('/:id', (req, res) => {
-  const quotation = Quotation.findById(parseInt(req.params.id));
+router.get('/:id', async (req, res) => {
+  const quotation = await Quotation.findById(parseInt(req.params.id));
   if (!quotation) return res.status(404).json({ ok: false, error: 'Cotação não encontrada.' });
 
   // Vendas só acessam suas próprias cotações; compras/admin veem tudo
@@ -205,7 +189,7 @@ router.get('/:id', (req, res) => {
     return res.status(403).json({ ok: false, error: 'Acesso negado.' });
   }
 
-  const items = QuotationItem.findByQuotationId(quotation.id);
+  const items = await QuotationItem.findByQuotationId(quotation.id);
   const partsTotal = items.reduce((s, i) => s + (i.total_price || 0), 0);
   const laborTotal = items.reduce((s, i) => s + (i.labor_cost_compras || i.labor_cost_vendas || 0), 0);
 
@@ -221,7 +205,7 @@ router.get('/:id', (req, res) => {
 
 // POST /cotacoes/:id/status — mudar status (compras/admin)
 router.post('/:id/status', requireRole('compras', 'admin'), async (req, res) => {
-  const quotation = Quotation.findById(parseInt(req.params.id));
+  const quotation = await Quotation.findById(parseInt(req.params.id));
   if (!quotation) return res.status(404).json({ ok: false, error: 'Cotação não encontrada.' });
 
   const { status } = req.body;
@@ -230,9 +214,9 @@ router.post('/:id/status', requireRole('compras', 'admin'), async (req, res) => 
     return res.status(400).json({ ok: false, error: 'Status inválido.' });
   }
 
-  Quotation.updateStatus(quotation.id, status, req.session.userId);
+  await Quotation.updateStatus(quotation.id, status, req.session.userId);
 
-  AuditLog.insert({
+  await AuditLog.insert({
     userId: req.session.userId,
     quotationId: quotation.id,
     action: 'status_changed',
@@ -259,7 +243,7 @@ router.post('/:id/status', requireRole('compras', 'admin'), async (req, res) => 
 
 // POST /cotacoes/:id/responder — compras preenche valores
 router.post('/:id/responder', requireRole('compras', 'admin'), async (req, res) => {
-  const quotation = Quotation.findById(parseInt(req.params.id));
+  const quotation = await Quotation.findById(parseInt(req.params.id));
   if (!quotation) return res.status(404).json({ ok: false, error: 'Cotação não encontrada.' });
 
   const {
@@ -285,7 +269,7 @@ router.post('/:id/responder', requireRole('compras', 'admin'), async (req, res) 
       const totalPrice = parseFloat(tPrices[i]);
       const labor = parseFloat(labors[i]);
       const dDays = parseInt(days[i]);
-      QuotationItem.updatePrices(parseInt(ids[i]), {
+      await QuotationItem.updatePrices(parseInt(ids[i]), {
         unitPrice: (!isNaN(unitPrice) && unitPrice >= 0) ? unitPrice : null,
         totalPrice: (!isNaN(totalPrice) && totalPrice >= 0) ? totalPrice : null,
         laborCostCompras: (!isNaN(labor) && labor >= 0) ? labor : 0,
@@ -296,13 +280,13 @@ router.post('/:id/responder', requireRole('compras', 'admin'), async (req, res) 
       });
     }
 
-    Quotation.respond(quotation.id, { buyerId: req.session.userId, notesCompras: notes_compras });
+    await Quotation.respond(quotation.id, { buyerId: req.session.userId, notesCompras: notes_compras });
   } catch (err) {
     console.error('[Quotation] Falha ao registrar resposta:', err.message);
     return res.status(500).json({ ok: false, error: 'Erro ao salvar resposta. Tente novamente.' });
   }
 
-  AuditLog.insert({
+  await AuditLog.insert({
     userId: req.session.userId,
     quotationId: quotation.id,
     action: 'prices_filled',
@@ -327,13 +311,13 @@ router.post('/:id/responder', requireRole('compras', 'admin'), async (req, res) 
 
 // POST /cotacoes/:id/resposta-cliente — vendas registra resposta do cliente
 router.post('/:id/resposta-cliente', requireRole('vendas', 'admin'), async (req, res) => {
-  const quotation = Quotation.findById(parseInt(req.params.id));
+  const quotation = await Quotation.findById(parseInt(req.params.id));
   if (!quotation) return res.status(404).json({ ok: false, error: 'Cotação não encontrada.' });
 
   const approved = req.body.approved === '1' || req.body.approved === true || req.body.approved === 1;
-  Quotation.setCustomerApproval(quotation.id, approved, 'manual');
+  await Quotation.setCustomerApproval(quotation.id, approved, 'manual');
 
-  AuditLog.insert({
+  await AuditLog.insert({
     userId: req.session.userId,
     quotationId: quotation.id,
     action: approved ? 'customer_approved_manual' : 'customer_rejected_manual',
@@ -361,19 +345,19 @@ router.post('/:id/resposta-cliente', requireRole('vendas', 'admin'), async (req,
 
 // POST /cotacoes/:id/peca-chegou — marcar chegada da peça (compras/admin)
 router.post('/:id/peca-chegou', requireRole('compras', 'admin'), async (req, res) => {
-  const quotation = Quotation.findById(parseInt(req.params.id));
+  const quotation = await Quotation.findById(parseInt(req.params.id));
   if (!quotation) return res.status(404).json({ ok: false, error: 'Cotação não encontrada.' });
 
   const { item_id } = req.body;
   if (item_id) {
-    QuotationItem.markArrived(parseInt(item_id));
+    await QuotationItem.markArrived(parseInt(item_id));
   } else {
-    const items = QuotationItem.findByQuotationId(quotation.id);
-    items.forEach(item => QuotationItem.markArrived(item.id));
-    Quotation.markPartArrived(quotation.id);
+    const items = await QuotationItem.findByQuotationId(quotation.id);
+    for (const item of items) await QuotationItem.markArrived(item.id);
+    await Quotation.markPartArrived(quotation.id);
   }
 
-  AuditLog.insert({
+  await AuditLog.insert({
     userId: req.session.userId,
     quotationId: quotation.id,
     action: 'part_arrived',
@@ -397,8 +381,8 @@ router.post('/:id/peca-chegou', requireRole('compras', 'admin'), async (req, res
 
   // WhatsApp automático ao cliente avisando que a peça chegou
   if (quotation.customer_phone) {
-    const buyerUser = quotation.assigned_buyer_id ? User.findById(quotation.assigned_buyer_id) : null;
-    const sellerUser = quotation.created_by_user_id ? User.findById(quotation.created_by_user_id) : null;
+    const buyerUser = quotation.assigned_buyer_id ? await User.findById(quotation.assigned_buyer_id) : null;
+    const sellerUser = quotation.created_by_user_id ? await User.findById(quotation.created_by_user_id) : null;
     const instance = buyerUser?.whatsapp_instance_name || sellerUser?.whatsapp_instance_name;
     if (instance) {
       const firstName = (quotation.customer_name || '').split(' ')[0] || 'Cliente';
@@ -414,9 +398,9 @@ router.post('/:id/peca-chegou', requireRole('compras', 'admin'), async (req, res
 });
 
 // GET /api/cotacoes/:id/audit-log — histórico de auditoria da cotação
-router.get('/:id/audit-log', (req, res) => {
+router.get('/:id/audit-log', async (req, res) => {
   const id = parseInt(req.params.id);
-  const qt = Quotation.findById(id);
+  const qt = await Quotation.findById(id);
   if (!qt) return res.status(404).json({ ok: false, error: 'Cotação não encontrada.' });
 
   const { userRole, userId } = req.session;
@@ -424,7 +408,7 @@ router.get('/:id/audit-log', (req, res) => {
     qt.created_by_user_id === userId || qt.assigned_buyer_id === userId;
   if (!hasAccess) return res.status(403).json({ ok: false, error: 'Acesso negado.' });
 
-  const logs = AuditLog.findByQuotationId(id);
+  const logs = await AuditLog.findByQuotationId(id);
   res.json({ ok: true, logs });
 });
 
