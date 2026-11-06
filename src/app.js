@@ -115,6 +115,9 @@ app.use(async (req, res, next) => {
 // Health check
 app.get('/health', async (req, res) => res.json({ ok: true, uptime: process.uptime() }));
 
+// Raiz abre o front (protótipo React)
+app.get('/', (req, res) => res.redirect(302, '/prototype'));
+
 // Dashboard summary
 app.get('/', requireAuth, async (req, res) => {
   const counts = await Quotation.countByStatus(req.session.userId, req.session.userRole);
