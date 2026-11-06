@@ -116,7 +116,7 @@ app.use(async (req, res, next) => {
 app.get('/health', async (req, res) => res.json({ ok: true, uptime: process.uptime() }));
 
 // Raiz abre o front (protótipo React)
-app.get('/', (req, res) => res.redirect(302, '/prototype'));
+app.get('/', (req, res) => res.redirect(302, '/prototype/index.html'));
 
 // Dashboard summary
 app.get('/', requireAuth, async (req, res) => {

@@ -1,7 +1,32 @@
 {
   "version": 2,
   "functions": {
-    "api/index.js": { "maxDuration": 30, "includeFiles": "public/**" }
+    "api/index.js": {
+      "maxDuration": 30,
+      "includeFiles": "public/**"
+    }
   },
-  "rewrites": [{ "source": "/(.*)", "destination": "/api/index.js" }]
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/api/index.js"
+    }
+  ],
+  "redirects": [
+    {
+      "source": "/",
+      "destination": "/prototype/index.html",
+      "permanent": false
+    },
+    {
+      "source": "/prototype",
+      "destination": "/prototype/index.html",
+      "permanent": false
+    },
+    {
+      "source": "/prototype/",
+      "destination": "/prototype/index.html",
+      "permanent": false
+    }
+  ]
 }
