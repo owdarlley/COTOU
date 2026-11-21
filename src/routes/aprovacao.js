@@ -5,6 +5,32 @@ const Quotation = require('../models/Quotation');
 const QuotationItem = require('../models/QuotationItem');
 const { notifyUser, notifyAllByRole } = require('../services/notificationService');
 
+// LGPD (minimização): a página pública só recebe o que o cliente precisa ver.
+// Nada de notas internas, IP, telefone, foto, fornecedor ou dados de usuários.
+function publicQuotation(q) {
+  return {
+    quote_number: q.quote_number,
+    customer_name: q.customer_name,
+    license_plate: q.license_plate,
+    make: q.make,
+    model: q.model,
+    year_model: q.year_model,
+    approval_token_expires_at: q.approval_token_expires_at,
+  };
+}
+
+function publicItem(i) {
+  return {
+    part_name: i.part_name,
+    quantity: i.quantity,
+    unit_price: i.unit_price,
+    total_price: i.total_price,
+    labor_cost_vendas: i.labor_cost_vendas,
+    labor_cost_compras: i.labor_cost_compras,
+    delivery_days: i.delivery_days,
+  };
+}
+
 // Serve a página pública de aprovação (sem auth)
 router.get('/aprovar/:token', async (req, res) => {
   res.sendFile(path.join(__dirname, '../../public/aprovar.html'));
@@ -16,7 +42,7 @@ router.get('/api/aprovar/:token', async (req, res) => {
   if (!q) return res.status(404).json({ ok: false, expired: true, message: 'Link inválido ou expirado.' });
   if (q.customer_approved !== null) return res.status(410).json({ ok: false, used: true, approved: q.customer_approved === 1, message: 'Este link já foi utilizado.' });
   const items = await QuotationItem.findByQuotationId(q.id);
-  res.json({ ok: true, quotation: q, items });
+  res.json({ ok: true, quotation: publicQuotation(q), items: items.map(publicItem) });
 });
 
 // Cliente confirma ou recusa (sem auth)

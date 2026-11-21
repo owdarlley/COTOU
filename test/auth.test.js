@@ -79,13 +79,9 @@ describe('CSRF', () => {
 });
 
 describe('GET /auth/users', () => {
-  test('retorna lista de usuários sem senhas', async () => {
+  test('não existe mais: não expõe nomes e e-mails sem login (LGPD)', async () => {
     const { status, data } = await makeClient(base).get('/auth/users');
-    assert.equal(status, 200);
-    assert.ok(Array.isArray(data.users));
-    for (const u of data.users) {
-      assert.ok(!u.password_hash, 'não deve expor password_hash');
-      assert.ok(!u.role, 'não deve expor role');
-    }
+    assert.equal(status, 404);
+    assert.ok(!data.users, 'não deve devolver lista de usuários');
   });
 });
