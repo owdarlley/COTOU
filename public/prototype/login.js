@@ -2,6 +2,25 @@
 
 const { useState } = React;
 
+const RECENT_LOGINS_KEY = 'cotou_recent_logins';
+const RECENT_LOGINS_MAX = 4;
+
+function readRecentLogins() {
+  try {
+    const list = JSON.parse(localStorage.getItem(RECENT_LOGINS_KEY) || '[]');
+    return Array.isArray(list) ? list.filter(u => u && u.email).slice(0, RECENT_LOGINS_MAX) : [];
+  } catch (_) { return []; }
+}
+
+function writeRecentLogins(list) {
+  try { localStorage.setItem(RECENT_LOGINS_KEY, JSON.stringify(list.slice(0, RECENT_LOGINS_MAX))); } catch (_) {}
+}
+
+function rememberRecentLogin(user) {
+  const rest = readRecentLogins().filter(u => u.email !== user.email);
+  writeRecentLogins([user, ...rest]);
+}
+
 function LoginScreen() {
   const { state, dispatch } = useStore();
   const [email, setEmail] = useState('');
@@ -12,10 +31,17 @@ function LoginScreen() {
   const [picked, setPicked] = React.useState(null);
   const pwdRef = React.useRef(null);
 
+  // Acesso rápido: só as contas que já entraram neste aparelho (guardadas localmente).
+  // O servidor não expõe mais a lista de usuários (LGPD).
   React.useEffect(() => {
-    fetch(PLATE_PROXY_URL + '/auth/users')
-      .then(r => r.json()).then(d => { if (d.ok) setLoginUsers(d.users); }).catch(() => {});
+    setLoginUsers(readRecentLogins());
   }, []);
+
+  function forgetRecentLogin(email) {
+    const next = readRecentLogins().filter(u => u.email !== email);
+    writeRecentLogins(next);
+    setLoginUsers(next);
+  }
 
   // Backend URL configurator — necessário quando o frontend está no GitHub Pages
   const [backendUrl, setBackendUrl] = React.useState(PLATE_PROXY_URL);
@@ -57,6 +83,7 @@ function LoginScreen() {
               phone_whatsapp: '', whatsapp_instance: null, whatsapp_connected: false };
         dispatch({ type: 'upsert_user', user: u });
       }
+      rememberRecentLogin({ name: data.user.name, email: email.trim().toLowerCase(), role: data.user.role });
       if (data.csrfToken) { _csrfToken = data.csrfToken; window.__PLATE_PROXY_URL = PLATE_PROXY_URL; }
       dispatch({ type: 'login', userId: data.user.id });
       // Sync real WA connection status from backend right after login
@@ -190,12 +217,20 @@ function LoginScreen() {
               <div className="role-pick">
                 {loginUsers.map(u => (
                   <button
-                    key={u.id}
+                    key={u.email}
                     type="button"
-                    className={`role-tile ${picked === u.id ? 'active' : ''}`}
-                    onClick={() => { setEmail(u.email); setPicked(u.id); setTimeout(() => pwdRef.current?.focus(), 50); }}
+                    className={`role-tile ${picked === u.email ? 'active' : ''}`}
+                    style={{ position: 'relative' }}
+                    onClick={() => { setEmail(u.email); setPicked(u.email); setTimeout(() => pwdRef.current?.focus(), 50); }}
                   >
-                    <RoleBadge role={u.role} />
+                    <span
+                      role="button"
+                      title="Esquecer esta conta neste aparelho"
+                      aria-label="Esquecer esta conta neste aparelho"
+                      onClick={(e) => { e.stopPropagation(); forgetRecentLogin(u.email); }}
+                      style={{ position: 'absolute', top: 4, right: 8, color: 'var(--text-faint)', cursor: 'pointer' }}
+                    >×</span>
+                    {u.role && <RoleBadge role={u.role} />}
                     <div className="role-tile-name" style={{ marginTop: 6 }}>{u.name}</div>
                     <div className="role-tile-mail">{u.email}</div>
                   </button>

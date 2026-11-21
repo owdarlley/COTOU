@@ -194,7 +194,7 @@ COTOU/
 │   │   ├── admin.js                 # /admin/* — usuários, configurações, audit log
 │   │   ├── api.js                   # /api/* — placa, WhatsApp, clientes, fornecedores
 │   │   ├── aprovacao.js             # /aprovar/:token — aprovação pública (sem auth)
-│   │   ├── auth.js                  # /auth/* — login, logout, me, users
+│   │   ├── auth.js                  # /auth/* — login, logout, me
 │   │   ├── notifications.js         # /notificacoes/*
 │   │   ├── parts.js                 # /pecas/* — catálogo de peças
 │   │   ├── quotations.js            # /cotacoes/* — CRUD + fluxo completo
@@ -388,7 +388,6 @@ Todas as rotas (exceto as marcadas como "Público") exigem sessão autenticada.
 | POST | `/auth/login` | Público | Login com e-mail e senha |
 | POST | `/auth/logout` | Sim | Encerra sessão |
 | GET | `/auth/me` | Sim | Dados do usuário autenticado |
-| GET | `/auth/users` | Público | Lista usuários ativos (acesso rápido na tela de login) |
 
 **Login:**
 ```json

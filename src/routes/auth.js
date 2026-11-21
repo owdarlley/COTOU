@@ -46,15 +46,6 @@ router.post('/login', loginLimiter, async (req, res) => {
   });
 });
 
-// GET /auth/users — lista pública de usuários ativos (para tela de login)
-// Retorna id, name e email para o acesso rápido da tela de login — role não exposta
-router.get('/users', async (req, res) => {
-  const users = (await User.findAll())
-    .filter(u => u.active)
-    .map(u => ({ id: u.id, name: u.name, email: u.email }));
-  res.json({ ok: true, users });
-});
-
 // POST /auth/logout
 router.post('/logout', async (req, res) => {
   req.session.destroy(() => res.json({ ok: true }));
